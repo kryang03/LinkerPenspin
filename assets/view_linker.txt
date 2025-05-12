@@ -1,0 +1,397 @@
+--- Simulation Parameters ---
+  dt: 0.01666666753590107
+  substeps: 2
+  gravity: Vec3(0.000000, 0.000000, 0.000000)
+  up_axis: UpAxis.UP_AXIS_Z
+  PhysX Params:
+    use_gpu: True
+    solver_type: 1
+    num_position_iterations: 6
+    num_velocity_iterations: 1
+    contact_offset: 0.004999999888241291
+    rest_offset: 0.0
+    max_gpu_contact_pairs: 8388608
+------------------------------
+--- Running on Device: cuda:0 (Compute ID: 0, Graphics ID: 0) ---
+------------------------------
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: disabled
+assets/view_linker.py:255: DeprecationWarning: an integer is required (got type isaacgym._bindings.linux-x86_64.gym_38.DofDriveMode).  Implicit conversion to integers using __int__ is deprecated, and may be removed in a future version of Python.
+  asset_options.default_dof_drive_mode = gymapi.DOF_MODE_POS
+--- Asset Options ---
+  fix_base_link: True
+  flip_visual_attachments: False
+  use_mesh_materials: True
+  disable_gravity: True
+  thickness: 0.019999999552965164
+  vhacd_enabled: True
+    vhacd_resolution: 300000
+  mesh_normal_mode: MeshNormalMode.COMPUTE_PER_VERTEX
+  default_dof_drive_mode: 1
+------------------------------
+Loading asset from: linker_hand/L25_dof_urdf.urdf in root: /home/yang/Code/linker_penspin/assets/../assets
+Using VHACD cache directory '/home/yang/.isaacgym/vhacd'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/base_link.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint0.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint1.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint2.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint3.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint0.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint1.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint2.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint3.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint0.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint1.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint2.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint3.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint0.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint1.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint2.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint3.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint0.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint1.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint2.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint3.STL'
+Started convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint4.STL'
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint2.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint2.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint2.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint3.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint2.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint0.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint1.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint1.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint0.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint0.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/index_joint3.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint1.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint1.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint1.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/middle_joint3.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint0.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/ring_joint3.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/little_joint3.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint4.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/base_link.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint2.STL': 10 hulls
+Finished convex decomposition for mesh '/home/yang/Code/linker_penspin/assets/../assets/linker_hand/meshes/thumb_joint0.STL': 10 hulls
+
+--- Asset Details ---
+  Number of Rigid Bodies: 22
+  Number of Collision Shapes: 220
+  Rigid Body Names:
+    0: base_link
+    1: index_joint0
+    2: index_joint1
+    3: index_joint2
+    4: index_joint3
+    5: little_joint0
+    6: little_joint1
+    7: little_joint2
+    8: little_joint3
+    9: middle_joint0
+    10: middle_joint1
+    11: middle_joint2
+    12: middle_joint3
+    13: ring_joint0
+    14: ring_joint1
+    15: ring_joint2
+    16: ring_joint3
+    17: thumb_joint0
+    18: thumb_joint1
+    19: thumb_joint2
+    20: thumb_joint3
+    21: thumb_joint4
+
+--- Verifying DoF Consistency ---
+  Number of DoFs (IsaacGym): 21
+  DoF Names (IsaacGym):
+    0: index_joint0
+    1: index_joint1
+    2: index_joint2
+    3: index_joint3
+    4: little_joint0
+    5: little_joint1
+    6: little_joint2
+    7: little_joint3
+    8: middle_joint0
+    9: middle_joint1
+    10: middle_joint2
+    11: middle_joint3
+    12: ring_joint0
+    13: ring_joint1
+    14: ring_joint2
+    15: ring_joint3
+    16: thumb_joint0
+    17: thumb_joint1
+    18: thumb_joint2
+    19: thumb_joint3
+    20: thumb_joint4
+
+*** WARNING: Mismatch in DoF names/order between IsaacGym and YAML file! ***
+  IsaacGym Names: ['index_joint0', 'index_joint1', 'index_joint2', 'index_joint3', 'little_joint0', 'little_joint1', 'little_joint2', 'little_joint3', 'middle_joint0', 'middle_joint1', 'middle_joint2', 'middle_joint3', 'ring_joint0', 'ring_joint1', 'ring_joint2', 'ring_joint3', 'thumb_joint0', 'thumb_joint1', 'thumb_joint2', 'thumb_joint3', 'thumb_joint4']
+  YAML Names:     ['little_joint0', 'little_joint1', 'little_joint2', 'little_joint3', 'ring_joint0', 'ring_joint1', 'ring_joint2', 'ring_joint3', 'middle_joint0', 'middle_joint1', 'middle_joint2', 'middle_joint3', 'index_joint0', 'index_joint1', 'index_joint2', 'index_joint3', 'thumb_joint0', 'thumb_joint1', 'thumb_joint2', 'thumb_joint3', 'thumb_joint4']
+  Please carefully check the URDF and the YAML file for consistency.
+------------------------------
+
+  Asset Default DoF Properties (from URDF/Asset Options):
+    DoF 0 (index_joint0):
+      hasLimits: True
+      lower: 0.0000
+      upper: 0.1800
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 1 (index_joint1):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 2 (index_joint2):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 3 (index_joint3):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 4 (little_joint0):
+      hasLimits: True
+      lower: -0.1800
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 5 (little_joint1):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 6 (little_joint2):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 7 (little_joint3):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 8 (middle_joint0):
+      hasLimits: False
+      lower: 0.0000
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 9 (middle_joint1):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 10 (middle_joint2):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 11 (middle_joint3):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 12 (ring_joint0):
+      hasLimits: True
+      lower: -0.1800
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 13 (ring_joint1):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 14 (ring_joint2):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 15 (ring_joint3):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 16 (thumb_joint0):
+      hasLimits: True
+      lower: -0.6100
+      upper: 0.6100
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 17 (thumb_joint1):
+      hasLimits: True
+      lower: -1.4300
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 18 (thumb_joint2):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 19 (thumb_joint3):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+    DoF 20 (thumb_joint4):
+      hasLimits: True
+      lower: -1.5700
+      upper: 0.0000
+      driveMode: 1
+      velocity: 1.0000
+      effort: 100.0000
+      stiffness: 340282346638528859811704183484516925440.0000
+      damping: 0.0000
+      friction: 0.0000
+      armature: 0.0000
+------------------------------
+
+--- Actor DoF Properties (After Setting) ---
+  Drive Mode (First DoF): 1
+  Stiffness (First DoF): 5000.0
+  Damping (First DoF): 2000.0
+------------------------------
+
+--- Actor DoF Properties & Defaults ---
+  Lower Limits:
+[ 0.   -1.57 -1.57 -1.57 -0.18 -1.57 -1.57 -1.57  0.   -1.57 -1.57 -1.57
+ -0.18 -1.57 -1.57 -1.57 -0.61 -1.43 -1.57 -1.57 -1.57]
+
+  Upper Limits:
+[0.18 0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.   0.
+ 0.   0.   0.61 0.   0.   0.   0.  ]
+
+  Effort Limits:
+[100. 100. 100. 100. 100. 100. 100. 100. 100. 100. 100. 100. 100. 100.
+ 100. 100. 100. 100. 100. 100. 100.]
+
+  Velocity Limits:
+[1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
+
+  Default Positions (Rest Pose):
+[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
