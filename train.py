@@ -61,6 +61,8 @@ def main(config: DictConfig):
     run_name = f"{config.wandb_name}_{time_str}"
 
     if config.checkpoint:
+        # 如果包含通配符，则从 glob 模块导入 glob 函数。
+        # glob 函数用于查找匹配特定模式的文件路径名。
         if '*' in config.checkpoint:
             from glob import glob
             _ckpt = glob(config.checkpoint)
@@ -111,7 +113,7 @@ def main(config: DictConfig):
         # os.system(f'git diff HEAD > {output_dif}/gitdiff{gitdiff_suffix}.patch')
         # with open(os.path.join(output_dif, f'config_{date}_{git_hash()}.yaml'), 'w') as f:
         #     f.write(OmegaConf.to_yaml(config))
-        agent.restore_train(config.train.load_path)
+        agent.restore_train(config.train.load_path) #这里就是config.checkpoint
         agent.train()
 
 

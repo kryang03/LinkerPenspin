@@ -1,0 +1,16 @@
+tensorboard --logdir /home/yang/Code/linker_penspin/outputs/LinkerHandHora/pose3_50k_cfg2/stage1_tb --port 6007
+TensorBoard 的 event 文件 (events.out.tfevents...) 在训练过程中是会周期性地更新的。
+tensorboard --logdir /home/yang/Code/linker_penspin/outputs/LinkerHandHora/tmp/stage1_tb --port 6007
+
+
+runs/
+├── experiment_1_lr_0.01/
+│   └── events.out.tfevents.165513...  (实验1的事件文件)
+│
+├── experiment_2_lr_0.001/
+│   └── events.out.tfevents.165514...  (实验2的事件文件)
+│
+└── experiment_3_with_Adam_optimizer/
+    └── events.out.tfevents.165515...  (实验3的事件文件)
+当您启动 TensorBoard 时，您需要将 --logdir 指向父目录 runs，而不是任何一个具体的实验子目录。TensorBoard 会自动发现这三个子目录
+tensorboard --logdir /home/yang/Code/linker_penspin/outputs/debug --port 6007

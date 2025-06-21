@@ -56,7 +56,7 @@ env:
     # single scalar means no curriculum
     rotate_reward_scale: 1.0
     obj_linvel_penalty_scale: -0.3
-    pose_diff_penalty_scale: -0.1
+    waypoint_sparse_reward_scale: 0.1
     torque_penalty_scale: -0.1
     work_penalty_scale: -1.0
     rotate_penalty_scale: -0.3

@@ -17,7 +17,7 @@ from scipy.spatial.transform import Rotation as R # Import Rotation directly
 output_image_path = 's03_50k.png'
 xy_output_image_path = 's03_50k_.png'
 # 更新要加载的文件路径
-npy_file_path = '/home/yang/Code/linker_penspin/cache/3pose/pencil/s03_50k.npy'
+npy_file_path = '/home/yang/Code/linker_penspin/cache/4pose/pencil/s03_50k.npy'
 
 def rotate_vector_by_quaternion(vector, quaternion):
     """
@@ -63,7 +63,7 @@ teacher_obj_rot=np.array([
 # 加载 50k 数据
 try:
     grasp_data = np.load(npy_file_path) # Renaming to grasp_data for consistency below
-    print(f"\n成功加载增强后的数据文件: {npy_file_path}")
+    print(f"\n成功加载数据文件: {npy_file_path}")
     print(f"数据形状: {grasp_data.shape}")
 except FileNotFoundError:
     print(f"错误：未找到增强后的文件 {npy_file_path}")
@@ -80,7 +80,7 @@ object_orientations = object_poses[:, 3:7] # [x, y, z, w] 格式
 object_pos = object_poses[:, :3] # [x, y, z] 格式
 # --- 可视化物体朝向分布 (50k 数据 + Teacher) ---
 
-print(f"\n正在生成物体朝向分布可视化 (50k) 并保存到 {output_image_path} ...")
+# print(f"\n正在生成物体朝向分布可视化 (50k) 并保存到 {output_image_path} ...")
 print(f"物体平均位置: {np.mean(object_pos, axis=0).tolist()}")
 # 假设笔的主轴在物体局部坐标系下沿着 Z 轴正方向 [0, 0, 1]
 local_pen_axis = np.array([0.0, 0.0, 1.0])
@@ -211,46 +211,4 @@ except Exception as e:
 
 # 关闭图表
 plt.close(fig_xy)
-
-
-# --- 实现随机选取并呈现姿态的功能 ---
-
-def select_and_present_random_pose(data):
-    """
-    从数据中随机选取一个姿态并呈现其详细信息。
-
-    Args:
-        data (np.ndarray): 形状为 (N, 28) 的抓取姿态数据。
-    """
-    num_poses = data.shape[0]
-    if num_poses == 0:
-        print("数据中没有姿态可供选取。")
-        return
-
-    # 随机选取一个索引
-    random_index = random.randint(0, num_poses - 1)
-    print(f"\n随机选取的姿态索引: {random_index}")
-
-    # 获取选取的姿态数据
-    selected_pose = data[random_index, :]
-
-    # 提取手部关节角度和物体位姿
-    hand_dof_pos = selected_pose[:21]
-    object_pose = selected_pose[21:]
-    object_position = object_pose[:3]
-    object_quaternion = object_pose[3:7] # [x, y, z, w]
-
-    # 呈现详细信息
-    print("\n--- 选取的姿态详细信息 ---")
-    print("手部关节角度 (21 DOF):")
-    print(hand_dof_pos)
-    print("\n物体位姿:")
-    print(f"  位置 (x, y, z): {object_position}")
-    print(f"  朝向 (四元数 x, y, z, w): {object_quaternion}")
-    print("---------------------------")
-
-# 调用函数进行随机选取和呈现 (现在使用 50k grasp_data)
-# print("\n--- 随机选取并呈现一个姿态 (来自 s03) ---")
-# select_and_present_random_pose(grasp_data)
-
 print("\n--- 脚本执行完毕 ---")

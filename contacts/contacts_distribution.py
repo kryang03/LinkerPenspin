@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 # python contacts/contacts_distribution.py
 
-filename = '/home/yang/Code/linker_penspin/contacts/pose4_50k.txt'  # 替换为你的文件名
+filename = '/home/yang/Code/linker_penspin/contacts/pose3_50k_cfg2.txt'  # 替换为你的文件名
 CONTACT_THRESH = 0.01
 
 def analyze_force_distribution(filename):

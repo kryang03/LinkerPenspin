@@ -216,6 +216,8 @@ class PPO(object):
         self.episode_rewards = AverageScalarMeter(20000)
         # 初始化 AverageScalarMeter 用于记录 episode 长度
         self.episode_lengths = AverageScalarMeter(20000)
+        self.total_rot_angle = AverageScalarMeter(20000)
+        self.total_sparse_reward = AverageScalarMeter(20000)
         # 存储当前观察
         self.obs = None
         # 当前 epoch 计数
@@ -231,6 +233,8 @@ class PPO(object):
         batch_size = self.num_actors
         current_rewards_shape = (batch_size, 1)
         self.current_rewards = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
+        self.current_rot_angle = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
+        self.current_sparse_reward = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
         self.current_lengths = torch.zeros(batch_size, dtype=torch.float32, device=self.device)
         # 初始化 dones 标志，最初所有环境都标记为 done
         self.dones = torch.ones((batch_size,), dtype=torch.uint8, device=self.device)
@@ -372,6 +376,7 @@ class PPO(object):
                 # only log scalars
                 if isinstance(v, float) or isinstance(v, int) or (isinstance(v, torch.Tensor) and len(v.shape) == 0):
                     self.extra_info[k] = v
+                    # 打印奖励信息
                     print(f'{k}: {v}')
 
             # 计算整体 FPS 和最近一个 epoch 的 FPS
@@ -392,11 +397,18 @@ class PPO(object):
             # 获取 episode 奖励和长度的平均值
             mean_rewards = self.episode_rewards.get_mean()
             mean_lengths = self.episode_lengths.get_mean()
+            mean_rot_angle = self.total_rot_angle.get_mean()
+            mean_sparse_reward = self.total_sparse_reward.get_mean()
             print('-----------------------')
             print(f'episode rewards: {mean_rewards:.2f} | episode lengths: {mean_lengths:.2f}')
+            print(f'episode rot angle: {mean_rot_angle:.2f}')
+            print(f'epsode sparse reward: {mean_sparse_reward:.2f}')
             # 记录 episode 奖励和长度的平均值到 TensorBoard
             self.writer.add_scalar('episode_rewards/step', mean_rewards, self.agent_steps)
             self.writer.add_scalar('episode_lengths/step', mean_lengths, self.agent_steps)
+            self.writer.add_scalar('total_rot_angle/step', mean_rot_angle, self.agent_steps)
+            self.writer.add_scalar('total_sparse_reward/step', mean_sparse_reward, self.agent_steps)
+
             # 构建 checkpoint 文件名
             checkpoint_name = f'ep_{self.epoch_num}_step_{int(self.agent_steps // 1e6):04}m_reward_{mean_rewards:.2f}'
 
@@ -444,7 +456,7 @@ class PPO(object):
         # 如果文件路径为空，则直接返回
         if not fn:
             return
-        print("loading checkpoint from path", fn)
+        print("restore_train: loading checkpoint from path", fn)
         # 加载 checkpoint 文件
         checkpoint = torch.load(fn)
         # 加载模型状态字典
@@ -722,11 +734,15 @@ class PPO(object):
 
             # 将奖励 reshape 为 (batch_size, 1)
             rewards = rewards.unsqueeze(1)
+            rot_angle = infos['rot_angle'].unsqueeze(1)
+            sparse_reward = infos['reward/waypoint_sparse_reward'].unsqueeze(1)
             # update dones and rewards after env step # 注释
             # 收集 done 标志到 storage
             self.storage.update_data('dones', n, self.dones)
             # 将奖励移动到指定设备
             rewards = rewards.to(self.device)
+            rot_angle = rot_angle.to(self.device)
+            sparse_reward = sparse_reward.to(self.device)
             # 计算 shaped rewards，这里简单乘以 0.01，可能根据具体环境设计 reward shaping
             shaped_rewards = 0.01 * rewards.clone()
             # 如果使用 value bootstrap 且 info 中包含 time_outs 信息，则在 shaped rewards 中加入 bootstrap 项
@@ -737,16 +753,19 @@ class PPO(object):
 
             # 累加当前 episode 的奖励和长度
             self.current_rewards += rewards
+            self.current_rot_angle += rot_angle
+            self.current_sparse_reward += sparse_reward
             self.current_lengths += 1
             # 找到 episode 结束的环境索引
             done_indices = self.dones.nonzero(as_tuple=False)
             # 更新 episode 奖励和长度的 AverageScalarMeter
             self.episode_rewards.update(self.current_rewards[done_indices])
             self.episode_lengths.update(self.current_lengths[done_indices])
-
+            self.total_rot_angle.update(self.current_rot_angle[done_indices])
+            self.total_sparse_reward.update(self.current_sparse_reward[done_indices])
             # 确保 infos 是字典类型
             assert isinstance(infos, dict), 'Info Should be a Dict'
-            # 更新额外信息字典
+            # 更新额外信息字典，储存上一个时间步的信息
             self.extra_info = infos
 
             # 计算 not_dones 标志，用于重置已结束环境的奖励和长度计数器
@@ -754,6 +773,8 @@ class PPO(object):
 
             # 重置已结束环境的当前奖励和长度计数器
             self.current_rewards = self.current_rewards * not_dones.unsqueeze(1)
+            self.current_rot_angle = self.current_rot_angle * not_dones.unsqueeze(1)
+            self.current_sparse_reward = self.current_sparse_reward * not_dones.unsqueeze(1)    
             self.current_lengths = self.current_lengths * not_dones
 
         # rollout 结束后，使用最后一个状态的价值估计来计算 GAE 和 Returns
