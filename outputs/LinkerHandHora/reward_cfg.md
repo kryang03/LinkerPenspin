@@ -96,3 +96,16 @@ REWARD_SCALE_DICT = {
     'position_penalty': 1.0,
     'rotate_penalty': 4.0
 }
+-------------------------------- 
+# 将position_penalty改为height penalty，惩罚和初始状态距离的二范数，并调整了数量级1->1000
+# 将waypoint_sparse_reward中的hand_similarity改为hand_similarity*orientation_similarity
+REWARD_SCALE_DICT = {
+    'obj_linvel_penalty': 1.0,
+    'rotate_reward': 0.7,
+    'waypoint_sparse_reward': 200,
+    'torque_penalty': 0.1,
+    'work_penalty': 0.05,
+    'pencil_z_dist_penalty': 3.0,
+    'position_penalty': 1000.0,
+    'rotate_penalty': 4.0
+}

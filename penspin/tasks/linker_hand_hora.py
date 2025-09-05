@@ -72,7 +72,7 @@ REWARD_SCALE_DICT = {
     'torque_penalty': 0.1,
     'work_penalty': 0.05,
     'pencil_z_dist_penalty': 3.0,
-    'position_penalty': 1.0,
+    'position_penalty': 1000.0,
     'rotate_penalty': 4.0
 }
 #    由于Python 3.7+ dict 保持插入顺序，.values() 返回的视图中的值顺序将与定义时一致
@@ -799,7 +799,7 @@ class LinkerHandHora(VecTask):
                     if grant_reward_for_this_achievement:
                         # 奖励 = 手部姿态相似度 (对于当前 env_k_idx 和 wp_idx)
                         # 累加奖励，考虑的是一个时间步某个环境同时对应了多个参考帧
-                        waypoint_sparse_reward_this_step[env_k_idx] += orientation_similarity[env_k_idx].float() 
+                        waypoint_sparse_reward_this_step[env_k_idx] += hand_similarity*orientation_similarity[env_k_idx].float() 
 
                     # 检查是否因为达成了这个 wp_idx 而完成了整个集合 (掩码变为全1)
                     if torch.all(self.waypoint_achievement_mask[env_k_idx, :]):
@@ -850,8 +850,9 @@ class LinkerHandHora(VecTask):
             z_dist_penalty = to_torch([0], device=self.device)
 
         # penalize large deviation of cube
-        position_penalty = (self.object_pos[:, 0] - OBJ_CANON_POS[0]) ** 2 + (self.object_pos[:, 1] - OBJ_CANON_POS[1]) ** 2 \
-            + (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
+        # position_penalty = (self.object_pos[:, 0] - OBJ_CANON_POS[0]) ** 2 + (self.object_pos[:, 1] - OBJ_CANON_POS[1]) ** 2 \
+        #     + (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
+        position_penalty = (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
         # finger obj deviation penalty
         finger_obj_penalty = ((self.fingertip_pos - self.object_pos.repeat(1, FINGERTIP_CNT)) ** 2).sum(-1)
 

@@ -2,7 +2,7 @@
 # chmod -R u+x ../../Code
 # scripts/vis_teacher.sh pose4_50k_cfg2 > contacts/pose4_50k_cfg2.txt
 # scripts/vis_teacher.sh pose6_50k_cfg4 > contacts/pose6_50k_cfg4.txt
-# scripts/vis_teacher.sh pose3_50k_cfg6 > contacts/pose3_50k_cfg6.txt
+# scripts/vis_teacher.sh pose3_50k_cfg7_200_3 > contacts/pose3_50k_cfg7_200_3.txt
 
 # CHECKLIST
 # 1. 命令的最后一个参数指向output文件夹的名称，三维力信息是否重定向到正确的文件夹
@@ -27,7 +27,7 @@ task.env.randomForceProbScalar=0.25 train.algo=PPO \
 task.env.rotation_axis=+z \
 task.env.genGraspCategory=pencil task.env.privInfo.enable_obj_orientation=True \
 task.env.privInfo.enable_ft_pos=True task.env.privInfo.enable_obj_angvel=True \
-task.env.randomization.randomizeScaleList=[0.3] task.env.grasp_cache_name=4pose \
+task.env.randomization.randomizeScaleList=[0.3] task.env.grasp_cache_name=3pose \
 task.env.asset.handAsset=assets/linker_hand/L25_dof_urdf.urdf \
 task.env.privInfo.enable_tactile=True train.ppo.priv_info=True task.env.hora.point_cloud_sampled_dim=100 \
 task.env.numObservations=126 task.env.initPoseMode=low task.env.reset_height_threshold=0.14 \
