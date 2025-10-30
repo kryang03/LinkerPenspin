@@ -56,9 +56,10 @@ env:
     # single scalar means no curriculum
     rotate_reward_scale: 1.0
     obj_linvel_penalty_scale: -0.3
-    waypoint_sparse_reward_scale: 0.1
+    waypoint_sparse_reward_scale: 1.0
     torque_penalty_scale: -0.1
     work_penalty_scale: -1.0
+    hand_pose_consistency_penalty_scale: -1.0
     rotate_penalty_scale: -0.3
     pencil_z_dist_penalty_scale: -1.0
     # canonical position

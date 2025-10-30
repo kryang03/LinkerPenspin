@@ -98,10 +98,13 @@ def main(config: DictConfig):
         graphics_device_id=config.graphics_device_id,
         headless=config.headless,
     )
+    # env = LinkerHandHora(config=omegaconf_to_dict(config.task),...)
 
     output_dif = os.path.join('outputs', config.train.ppo.output_name)
     os.makedirs(output_dif, exist_ok=True)
     agent = eval(config.train.algo)(env, output_dif, full_config=config)
+    # agent = PPO(env, output_dif, full_config=config)
+    
     if config.test:
         assert config.train.load_path
         agent.restore_test(config.train.load_path)

@@ -401,12 +401,12 @@ class PPO(object):
             mean_sparse_reward = self.total_sparse_reward.get_mean()
             print('-----------------------')
             print(f'episode rewards: {mean_rewards:.2f} | episode lengths: {mean_lengths:.2f}')
-            print(f'episode rot angle: {mean_rot_angle:.2f}')
+            print(f'episode rot angle(rad): {mean_rot_angle:.2f}')
             print(f'epsode sparse reward: {mean_sparse_reward:.2f}')
             # 记录 episode 奖励和长度的平均值到 TensorBoard
             self.writer.add_scalar('episode_rewards/step', mean_rewards, self.agent_steps)
             self.writer.add_scalar('episode_lengths/step', mean_lengths, self.agent_steps)
-            self.writer.add_scalar('total_rot_angle/step', mean_rot_angle, self.agent_steps)
+            self.writer.add_scalar('total_rot_angle(rad)/step', mean_rot_angle, self.agent_steps)
             self.writer.add_scalar('total_sparse_reward/step', mean_sparse_reward, self.agent_steps)
 
             # 构建 checkpoint 文件名
@@ -676,8 +676,10 @@ class PPO(object):
     def play_steps(self):
         # 在 horizon length 步内与环境交互
         for n in range(self.horizon_length):
-            # 使用当前模型预测动作和价值
+
+            # **使用当前模型预测动作和价值**
             res_dict = self.model_act(self.obs)
+
             # 收集当前观察 o_t 到 storage
             self.storage.update_data('obses', n, self.obs['obs'])
             # 收集私有信息到 storage

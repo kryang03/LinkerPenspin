@@ -1,4 +1,4 @@
-tensorboard --logdir /home/yang/Code/linker_penspin/outputs/LinkerHandHora/pose3_50k_cfg2/stage1_tb --port 6007
+tensorboard --logdir /home/yang/Code/linker_penspin/outputs/LinkerHandHora/pose3_3k_cfg_a/stage1_tb --port 6009
 TensorBoard 的 event 文件 (events.out.tfevents...) 在训练过程中是会周期性地更新的。
 tensorboard --logdir /home/yang/Code/linker_penspin/outputs/LinkerHandHora/tmp/stage1_tb --port 6007
 

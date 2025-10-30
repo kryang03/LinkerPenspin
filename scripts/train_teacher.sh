@@ -42,7 +42,7 @@ task.env.privInfo.enable_ft_pos=True task.env.privInfo.enable_obj_angvel=True \
 train.ppo.max_agent_steps=10000000000 \
 task.env.randomization.randomizeScaleList=[0.3] task.env.privInfo.enable_tactile=True \
 train.ppo.priv_info=True task.env.hora.point_cloud_sampled_dim=100 \
-task.env.numObservations=126 task.env.initPoseMode=low task.env.reset_height_threshold=0.14 \
+task.env.numObservations=126 task.env.initPoseMode=low task.env.reset_height_threshold=0.12 \
 task.env.forceScale=2.0 \
 task.env.enable_obj_ends=True wandb_activate=False \
 ${EXTRA_ARGS}

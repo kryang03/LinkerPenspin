@@ -109,3 +109,9 @@ REWARD_SCALE_DICT = {
     'position_penalty': 1000.0,
     'rotate_penalty': 4.0
 }
+-------------------------------- 
+waypoint相关的reward涉及
+1. orientation_eligible_mask = (orientation_similarity > ORIENTATION_SIMILARITY_THRESHOLD)
+2. hand_pos_diff = torch.norm(eligible_hand_pos - wp_hand_pos, dim=1)
+3. hand_similarity = torch.exp(-hand_pos_diff / HAND_SIMILARITY_SCALE_FACTOR)
+   用python3 handpose.py研究曲线
