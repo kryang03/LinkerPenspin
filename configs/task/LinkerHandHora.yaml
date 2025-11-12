@@ -111,16 +111,16 @@ env:
     enableObjCOM: True
     enableObjFriction: True
     enable_obj_restitution: True
-    enable_tactile: False
+    enable_tactile: True         # Teacher默认开启触觉信息
     enableNetContactF: False # 这个参数没有用到
     contact_input_dim: 4  # 这个参数没有用到
     contact_form: 'gpu_contact'
     contact_input: 'binary'
     contact_binarize_threshold: 0.1
-    enable_obj_orientation: False
+    enable_obj_orientation: True  # Teacher默认开启物体姿态信息
     enable_obj_linvel: False
-    enable_obj_angvel: False
-    enable_ft_pos: False
+    enable_obj_angvel: True      # Teacher默认开启物体角速度信息
+    enable_ft_pos: True          # Teacher默认开启指尖位置信息
     enable_ft_orientation: False
     enable_ft_linvel: False
     enable_ft_angvel: False

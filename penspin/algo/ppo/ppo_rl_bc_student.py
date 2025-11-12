@@ -29,7 +29,7 @@ from penspin.utils.robot_config import (
     NUM_DOF, NUM_FINGERS, FINGERTIP_CNT, CONTACT_DIM, PROPRIO_DIM
 )
 
-class DemonTrain(object):
+class PPO_RL_BC_Student(object):
     def __init__(self, env, output_dif, full_config):
         self.device = full_config['rl_device']
         self.network_config = full_config.train.network
@@ -92,7 +92,7 @@ class DemonTrain(object):
         # ---- Student Model ----
         net_config = {
             'actor_units': self.network_config.mlp.units,
-            'priv_mlp_units': self.network_config.priv_mlp.units,
+            'priv_mlp_units': [512, 256, 40],  # Align with teacher's extrin dimension
             'actions_num': self.actions_num,
             'input_shape': self.obs_shape,
             'priv_info_dim': self.priv_info_dim,
@@ -102,15 +102,14 @@ class DemonTrain(object):
             'use_point_transformer': self.network_config.use_point_transformer,
             'proprio_len': self.proprio_len,
             'input_mode': self.input_mode,
-            'use_point_cloud_info': True,  # Student uses point cloud
+            'use_point_cloud_info': False,  # Student does not use point cloud
         }
         # 创建 Student 模型
         self.model = StudentActorCritic(net_config)
         self.model.to(self.device)
 
-        self.running_mean_std = RunningMeanStd(self.obs_shape).to(self.device)
-        self.priv_mean_std = RunningMeanStd(self.priv_info_dim).to(self.device)
         self.proprio_mean_std = RunningMeanStd(self.proprio_len*self.proprio_dim).to(self.device)
+        self.value_mean_std = RunningMeanStd((1,)).to(self.device)
         
         # ---- Optim ----
         self.last_lr = float(self.ppo_config['learning_rate'])
@@ -122,7 +121,8 @@ class DemonTrain(object):
         self.entropy_coef = self.ppo_config['entropy_coef']
         self.critic_coef = self.ppo_config['critic_coef']
         self.bounds_loss_coef = self.ppo_config['bounds_loss_coef']
-        self.distill_loss_coef = self.ppo_config['distill_loss_coef']
+        self.bc_loss_coef = self.ppo_config.get('bc_loss_coef', 1.0)  # 添加默认值
+        self.distill_loss_coef = self.ppo_config.get('distill_loss_coef', 0.0)  # 添加默认值
         self.gamma = self.ppo_config['gamma']
         self.tau = self.ppo_config['tau']
         self.truncate_grads = self.ppo_config['truncate_grads']
@@ -131,10 +131,7 @@ class DemonTrain(object):
         self.normalize_advantage = self.ppo_config['normalize_advantage']
         self.normalize_input = self.ppo_config['normalize_input']
         self.normalize_value = self.ppo_config['normalize_value']
-        self.normalize_priv = self.ppo_config['normalize_priv']
-        self.normalize_point_cloud = self.ppo_config['normalize_point_cloud']
         # ---- PPO Collect Param ----
-        self.is_demon = self.ppo_config['is_demon']
         self.horizon_length = self.ppo_config['horizon_length']
         self.batch_size = self.horizon_length * self.num_actors
         self.minibatch_size = self.ppo_config['minibatch_size']
@@ -150,12 +147,6 @@ class DemonTrain(object):
         self.extra_info = {}
         writer = SummaryWriter(self.tb_dif)
         self.writer = writer
-
-        # ---- Rollout GIFs ----
-        self.gif_frame_counter = 0
-        self.gif_save_every_n = 7500
-        self.gif_save_length = 600
-        self.gif_frames = []
 
         self.episode_rewards = AverageScalarMeter(20000)
         self.episode_lengths = AverageScalarMeter(20000)
@@ -175,21 +166,23 @@ class DemonTrain(object):
         self.agent_steps = 0
         self.max_agent_steps = self.ppo_config['max_agent_steps']
         self.best_rewards = -10000
-        self.best_loss = 10000
         # ---- Timing
         self.data_collect_time = 0
         self.rl_train_time = 0
         self.all_time = 0
 
-    def write_stats(self, losses, grad_norms, latent_losses):
+    def write_stats(self, a_losses, c_losses, b_losses, entropies, kls, grad_norms, latent_losses):
         self.writer.add_scalar('performance/RLTrainFPS', self.agent_steps / self.rl_train_time, self.agent_steps)
         self.writer.add_scalar('performance/EnvStepFPS', self.agent_steps / self.data_collect_time, self.agent_steps)
 
-        self.writer.add_scalar('losses/bc_loss', torch.mean(torch.stack(losses)).item(), self.agent_steps)
+        self.writer.add_scalar('losses/actor_loss', torch.mean(torch.stack(a_losses)).item(), self.agent_steps)
+        self.writer.add_scalar('losses/critic_loss', torch.mean(torch.stack(c_losses)).item(), self.agent_steps)
+        self.writer.add_scalar('losses/bc_loss', torch.mean(torch.stack(b_losses)).item(), self.agent_steps)
         self.writer.add_scalar('losses/latent_loss', torch.mean(torch.stack(latent_losses)).item(), self.agent_steps)
-
+        self.writer.add_scalar('losses/entropy', torch.mean(torch.stack(entropies)).item(), self.agent_steps)
         self.writer.add_scalar('info/last_lr', self.last_lr, self.agent_steps)
         self.writer.add_scalar('info/e_clip', self.e_clip, self.agent_steps)
+        self.writer.add_scalar('info/kl', torch.mean(torch.stack(kls)).item(), self.agent_steps)
         self.writer.add_scalar('info/grad_norms', torch.mean(torch.stack(grad_norms)).item(), self.agent_steps)
 
         for k, v in self.extra_info.items():
@@ -200,43 +193,23 @@ class DemonTrain(object):
     def set_eval(self):
         self.model.eval()
         if self.normalize_input:
-            self.running_mean_std.eval()
-        if self.normalize_priv:
-            self.priv_mean_std.eval()
+            self.proprio_mean_std.eval()
 
     def set_train(self):
         self.model.train()
         if self.normalize_input:
-            self.running_mean_std.train()
-        if self.normalize_priv:
-            self.priv_mean_std.train()
+            self.proprio_mean_std.train()
 
-    def model_act(self, obs_dict, is_demon=True):
-        processed_obs = self.running_mean_std_demon(obs_dict['obs']) if is_demon else self.running_mean_std(obs_dict['obs'])
-        priv_info = obs_dict['priv_info']
+    def model_act(self, obs_dict):
         proprio_hist = obs_dict['proprio_hist']
-        if self.normalize_priv:
-            priv_info = self.priv_mean_std_demon(obs_dict['priv_info']) if is_demon else self.priv_mean_std(obs_dict['priv_info'])
-        if self.normalize_point_cloud:
-            point_cloud = self.point_cloud_mean_std_demon(
-                obs_dict['point_cloud_info'].reshape(-1, 3)
-            ).reshape((processed_obs.shape[0], -1, 3)) if is_demon else self.point_cloud_mean_std(
-                obs_dict['point_cloud_info'].reshape(-1, 3)
-            ).reshape((processed_obs.shape[0], -1, 3))
-        else:
-            point_cloud = obs_dict['point_cloud_info']
+        if self.normalize_input:
+            proprio_hist = self.proprio_mean_std(proprio_hist)
+        
         input_dict = {
-            'obs': processed_obs,
-            'priv_info': priv_info,
-            'rot_axis_buf': obs_dict['rot_axis_buf'],
-            'critic_info': obs_dict['critic_info'],
             'proprio_hist': proprio_hist,
-            'tactile_hist': obs_dict['tactile_hist'],
-            'obj_ends': obs_dict['obj_ends'],
-            'point_cloud_info': point_cloud,
         }
-        res_dict = self.demon_model.act(input_dict) if is_demon else self.model.act(input_dict)
-        # res_dict['values'] = self.value_mean_std(res_dict['values'], True)
+        res_dict = self.model.act(input_dict)
+        res_dict['values'] = self.value_mean_std(res_dict['values'], True)
         return res_dict
 
     def train(self):
@@ -248,13 +221,8 @@ class DemonTrain(object):
 
         while self.agent_steps < self.max_agent_steps:
             self.epoch_num += 1
-            losses, grad_norms, latent_losses = self.train_epoch()
+            a_losses, c_losses, b_losses, entropies, kls, grad_norms, latent_losses = self.train_epoch()
             self.storage.data_dict = None
-
-            for k, v in self.extra_info.items():
-                # only log scalars
-                if isinstance(v, float) or isinstance(v, int) or (isinstance(v, torch.Tensor) and len(v.shape) == 0):
-                    self.extra_info[k] = v
 
             all_fps = self.agent_steps / (time.time() - _t)
             last_fps = self.batch_size / (time.time() - _last_t)
@@ -263,46 +231,25 @@ class DemonTrain(object):
                           f'Last FPS: {last_fps:.1f} | ' \
                           f'Collect Time: {self.data_collect_time / 60:.1f} min | ' \
                           f'Train RL Time: {self.rl_train_time / 60:.1f} min | ' \
-                          f'Current Best Reward: {self.best_rewards:.2f} | ' \
-                          f'Current Best Loss: {self.best_loss:.2f}'
+                          f'Current Best Reward: {self.best_rewards:.2f}'
             print(info_string)
 
-            self.write_stats(losses, grad_norms, latent_losses)
+            self.write_stats(a_losses, c_losses, b_losses, entropies, kls, grad_norms, latent_losses)
             mean_rewards = self.episode_rewards.get_mean()
             mean_lengths = self.episode_lengths.get_mean()
             self.writer.add_scalar('episode_rewards/step', mean_rewards, self.agent_steps)
             self.writer.add_scalar('episode_lengths/step', mean_lengths, self.agent_steps)
             checkpoint_name = f'ep_{self.epoch_num}_step_{int(self.agent_steps // 1e6):04}m_reward_{mean_rewards:.2f}'
 
-            loss = torch.mean(torch.stack(losses)).item()
             if self.save_freq > 0:
-                if not self.is_demon:
-                    if (self.epoch_num % self.save_freq == 0) and (mean_rewards <= self.best_rewards):
-                        self.save(os.path.join(self.nn_dir, checkpoint_name))
-                        self.save(os.path.join(self.nn_dir, f'last'))
-                else:
-                    if (self.epoch_num % self.save_freq == 0) and (loss >= self.best_loss):
-                        self.save(os.path.join(self.nn_dir, checkpoint_name))
-                        self.save(os.path.join(self.nn_dir, f'last'))
+                if self.epoch_num % self.save_freq == 0:
+                    self.save(os.path.join(self.nn_dir, checkpoint_name))
+                    self.save(os.path.join(self.nn_dir, 'last'))
 
             if mean_rewards > self.best_rewards and self.agent_steps >= self.save_best_after:
+                print(f'save current best reward: {mean_rewards:.2f}')
                 self.best_rewards = mean_rewards
-                if not self.is_demon:
-                    print(f'save current best reward: {mean_rewards:.2f}')
-                    # remove previous best file
-                    prev_best_ckpt = os.path.join(self.nn_dir, f'best_reward_{self.best_rewards:.2f}.pth')
-                    if os.path.exists(prev_best_ckpt):
-                        os.remove(prev_best_ckpt)
-                    self.save(os.path.join(self.nn_dir, f'best_reward_{mean_rewards:.2f}'))
-            if loss < self.best_loss and self.agent_steps >= self.save_best_after:
-                self.best_loss = loss
-                if self.is_demon:
-                    print(f'save current best loss: {loss:.2f}')
-                    # remove previous best file
-                    prev_best_ckpt = os.path.join(self.nn_dir, f'best_loss_{self.best_loss:.2f}.pth')
-                    if os.path.exists(prev_best_ckpt):
-                        os.remove(prev_best_ckpt)
-                    self.save(os.path.join(self.nn_dir, f'best_loss_{self.best_loss :.2f}'))
+                self.save(os.path.join(self.nn_dir, 'best'))
 
         print('max steps achieved')
 
@@ -310,10 +257,10 @@ class DemonTrain(object):
         weights = {
             'model': self.model.state_dict(),
         }
-        if self.running_mean_std:
-            weights['running_mean_std'] = self.running_mean_std.state_dict()
-        if self.normalize_priv:
-            weights['priv_mean_std'] = self.priv_mean_std.state_dict()
+        if self.normalize_input:
+            weights['proprio_mean_std'] = self.proprio_mean_std.state_dict()
+        if self.normalize_value:
+            weights['value_mean_std'] = self.value_mean_std.state_dict()
 
         torch.save(weights, f'{name}.pth')
 
@@ -323,9 +270,10 @@ class DemonTrain(object):
         print("loading checkpoint from path", fn)
         checkpoint = torch.load(fn)
         self.model.load_state_dict(checkpoint['model'])
-        self.running_mean_std.load_state_dict(checkpoint['running_mean_std'])
-        if self.normalize_priv:
-            self.priv_mean_std.load_state_dict(checkpoint['priv_mean_std'])
+        if self.normalize_input:
+            self.proprio_mean_std.load_state_dict(checkpoint['proprio_mean_std'])
+        if self.normalize_value:
+            self.value_mean_std.load_state_dict(checkpoint['value_mean_std'])
 
     def demon_load(self, path):
         print("loading demonstration checkpoint from path", path)
@@ -348,38 +296,22 @@ class DemonTrain(object):
         checkpoint = torch.load(fn)
         self.model.load_state_dict(checkpoint['model'])
         if self.normalize_input:
-            self.running_mean_std.load_state_dict(checkpoint['running_mean_std'])
-        if self.normalize_priv:
-            self.priv_mean_std.load_state_dict(checkpoint['priv_mean_std'])
-        if self.normalize_point_cloud:
-            self.point_cloud_mean_std.load_state_dict(checkpoint['point_cloud_mean_std'])
+            self.proprio_mean_std.load_state_dict(checkpoint['proprio_mean_std'])
+        if self.normalize_value:
+            self.value_mean_std.load_state_dict(checkpoint['value_mean_std'])
 
     def test(self):
         self.set_eval()
         obs_dict = self.env.reset()
         obs_dict['proprio_hist'] = obs_dict['proprio_hist'][..., -self.proprio_len:, :self.proprio_dim]
         while True:
-            if not self.ppo_config.distill:
-                if self.normalize_point_cloud:
-                    point_cloud = self.point_cloud_mean_std(
-                        obs_dict['point_cloud_info'].reshape(-1, 3)
-                    ).reshape((obs_dict['obs'].shape[0], -1, 3))
-                else:
-                    point_cloud = obs_dict['point_cloud_info']
-            if self.ppo_config.distill:
-                student_pc = obs_dict['student_pc_info']
-                input_dict = {
-                    'obs': self.running_mean_std(obs_dict['obs']),
-                    'proprio_hist': obs_dict['proprio_hist'],
-                    'student_pc_info': student_pc,
-                }
-            else:
-                input_dict = {
-                    'obs': self.running_mean_std(obs_dict['obs']),
-                    'priv_info': self.priv_mean_std(obs_dict['priv_info']) if self.normalize_priv else obs_dict['priv_info'],
-                    'proprio_hist': obs_dict['proprio_hist'],
-                    'point_cloud_info': point_cloud,
-                }
+            proprio_hist = obs_dict['proprio_hist']
+            if self.normalize_input:
+                proprio_hist = self.proprio_mean_std(proprio_hist)
+            
+            input_dict = {
+                'proprio_hist': proprio_hist,
+            }
             mu, extrin, extrin_gt = self.model.act_inference(input_dict)
             mu = torch.clamp(mu, -1.0, 1.0)
             obs_dict, r, done, info = self.env.step(mu, extrin_record=extrin)
@@ -400,93 +332,109 @@ class DemonTrain(object):
         # update network
         _t = time.time()
         self.set_train()
-        losses = []
+        a_losses = []
+        c_losses = []
+        b_losses = []
+        entropies = []
+        kls = []
         grad_norms = []
         latent_losses = []
+
         for _ in range(0, self.mini_epochs_num):
+            ep_kls = []
             for i in range(len(self.storage)):
                 (value_preds, old_action_log_probs, advantage, old_mu, old_sigma, returns, actions, obs,
-                 priv_info, critic_info, point_cloud_info, proprio_hist, tactile_hist, obj_ends) = self.storage[i]
+                 priv_info, critic_info, point_cloud_info, proprio_hist, _, _) = self.storage[i]
 
-                batch_dict = {
-                    'obs': self.running_mean_std(obs),
-                    'priv_info': self.priv_mean_std(priv_info) if self.normalize_priv else priv_info,
-                    'proprio_hist': proprio_hist,
-                    'tactile_hist': tactile_hist,
-                    'obj_ends': obj_ends,
+                # Student input
+                student_batch_dict = {
+                    'proprio_hist': self.proprio_mean_std(proprio_hist) if self.normalize_input else proprio_hist,
+                    'critic_info': critic_info,
                 }
-                mu, sigma, _, e, e_gt = self.model._actor_critic(batch_dict)
-                # demonstration
-                demon_batch_dict = {
-                    'obs': self.running_mean_std_demon(obs),
-                    'priv_info': self.priv_mean_std_demon(priv_info),
-                    'point_cloud_info': self.point_cloud_mean_std_demon(point_cloud_info.reshape(-1, 3)).reshape((obs.shape[0], -1, 3)),
-                    'proprio_hist': proprio_hist,
-                }
-                mu_demon, e_demon, e_gtdemon = self.demon_model.act_inference(demon_batch_dict)
+                res_dict = self.model(student_batch_dict)
+                mu = res_dict['mus']
+                sigma = res_dict['sigmas']
+                e = res_dict['extrin']
+                e_gt = res_dict['extrin_gt']
+                values = res_dict['values']
+
+                # PPO loss
+                action_log_probs = self.model.get_action_log_probs(actions, mu, sigma)
+                ratio = torch.exp(action_log_probs - old_action_log_probs)
+                surr1 = advantage * ratio
+                surr2 = advantage * torch.clamp(ratio, 1.0 - self.e_clip, 1.0 + self.e_clip)
+                a_loss = torch.max(-surr1, -surr2).mean()
+
+                # critic loss
+                value_clipped = value_preds + (values - value_preds).clamp(-self.e_clip, self.e_clip)
+                c_loss = torch.max((values - returns) ** 2, (value_clipped - returns) ** 2).mean()
+
+                # entropy loss
+                entropy = self.model.get_entropy(sigma).mean()
+
+                # demonstration from teacher
+                with torch.no_grad():
+                    demon_batch_dict = {
+                        'obs': self.running_mean_std_demon(obs),
+                        'priv_info': self.priv_mean_std_demon(priv_info),
+                        'point_cloud_info': self.point_cloud_mean_std_demon(point_cloud_info.reshape(-1, 3)).reshape((obs.shape[0], -1, 3)),
+                        'proprio_hist': proprio_hist,
+                    }
+                    mu_demon, _, e_gtdemon = self.demon_model.act_inference(demon_batch_dict)
+
+                # behavior cloning loss
+                bc_loss = self.recon_criterion(torch.clamp(mu, -1, 1), torch.clamp(mu_demon, -1, 1)).mean()
+
+                # latent alignment loss
                 latent_loss = ((e_gt - e_gtdemon.detach()) ** 2).mean()
-                grad_norm = torch.norm(torch.cat([p.reshape(-1) for p in self.model.parameters()]))
-                bc_loss = torch.sum(self.recon_criterion(
-                    torch.clamp(mu, -1, 1), torch.clamp(mu_demon, -1, 1)
-                ), dim=-1).mean()
+
+                # total loss
+                loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy + self.bc_loss_coef * bc_loss
                 if self.enable_latent_loss:
-                    loss = bc_loss + latent_loss
-                else:
-                    loss = bc_loss
+                    loss += self.distill_loss_coef * latent_loss
+
                 self.optimizer.zero_grad()
                 loss.backward()
-
-                grad_norms.append(grad_norm)
-                losses.append(bc_loss)
-                latent_losses.append(latent_loss)
-                if self.truncate_grads:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_norm)
+                grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_norm)
                 self.optimizer.step()
 
-                self.storage.update_mu_sigma(mu.detach(), sigma.detach())
+                with torch.no_grad():
+                    kl_dist = policy_kl(old_mu, old_sigma, mu, sigma)
+                    ep_kls.append(kl_dist)
+
+                a_losses.append(a_loss)
+                c_losses.append(c_loss)
+                b_losses.append(bc_loss)
+                entropies.append(entropy)
+                grad_norms.append(grad_norm)
+                latent_losses.append(latent_loss)
+
+            kls.append(torch.mean(torch.stack(ep_kls)))
+            self.last_lr = self.scheduler.update(self.last_lr, kl_dist)
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] = self.last_lr
 
         self.rl_train_time += (time.time() - _t)
-        return losses, grad_norms, latent_losses
+        return a_losses, c_losses, b_losses, entropies, kls, grad_norms, latent_losses
 
     def play_steps(self):
         for n in range(self.horizon_length):
-            res_dict = self.model_act(self.obs, self.is_demon)
+            res_dict = self.model_act(self.obs)
             # collect o_t
             self.storage.update_data('obses', n, self.obs['obs'])
             self.storage.update_data('priv_info', n, self.obs['priv_info'])
+            self.storage.update_data('critic_info', n, self.obs['critic_info'])
             self.storage.update_data('point_cloud_info', n, self.obs['point_cloud_info'])
             self.storage.update_data('proprio_hist', n, self.obs['proprio_hist'])
-            self.storage.update_data('tactile_hist', n, self.obs['tactile_hist'])
-            self.storage.update_data('obj_ends', n, self.obs['obj_ends'])
-            for k in ['mus', 'sigmas']:
+
+            for k in ['values', 'mus', 'sigmas']:
                 self.storage.update_data(k, n, res_dict[k])
             # do env step
             actions = torch.clamp(res_dict['mus'], -1.0, 1.0)
-
-            # render() is called during env.step()
-            # to save time, save gif only per gif_save_every_n steps
-            # 1 step = #gpu * #envs agent steps
-            record_frame = False
-            if self.gif_frame_counter >= self.gif_save_every_n and self.gif_frame_counter % self.gif_save_every_n < self.gif_save_length:
-                record_frame = True
-            record_frame = record_frame and int(os.getenv('LOCAL_RANK', '0')) == 0
-            self.env.enable_camera_sensors = record_frame
-            self.gif_frame_counter += 1
+            self.storage.update_data('actions', n, actions)
 
             self.obs, rewards, self.dones, infos = self.env.step(actions)
             self.obs['proprio_hist'] = self.obs['proprio_hist'][..., -self.proprio_len:, :self.proprio_dim]
-
-            if record_frame and self.env.with_camera:
-                self.gif_frames.append(self.env.capture_frame())
-                # add frame to GIF
-                if len(self.gif_frames) == self.gif_save_length:
-                    frame_array = np.array(self.gif_frames)[None]  # add batch axis
-                    self.writer.add_video(
-                        'rollout_gif', frame_array, global_step=self.agent_steps,
-                        dataformats='NTHWC', fps=20,
-                    )
-                    self.writer.flush()
-                    self.gif_frames.clear()
 
             rewards = rewards.unsqueeze(1)
             # update dones and rewards after env step
@@ -508,10 +456,13 @@ class DemonTrain(object):
             self.current_lengths = self.current_lengths * not_dones
 
         res_dict = self.model_act(self.obs)
-        # last_values = res_dict['values']
+        last_values = res_dict['values']
 
         self.agent_steps = self.agent_steps + self.batch_size
+        self.storage.compute_returns(last_values, self.gamma, self.tau)
         self.storage.prepare_training()
+        if self.normalize_advantage:
+            self.storage.normalize_advantage()
 
 
 def policy_kl(p0_mu, p0_sigma, p1_mu, p1_sigma):

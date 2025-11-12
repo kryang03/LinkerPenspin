@@ -29,7 +29,6 @@ class TemporalConv(nn.Module):
         x = self.low_dim_proj(x.flatten(1))
         return x
 
-
 class TemporalTransformer(nn.Module):
     def __init__(self, embedding_dim, n_head, depth, output_dim, use_pe=False, pre_ffn=False, input_dim=0):
         super(TemporalTransformer, self).__init__()

@@ -13,8 +13,10 @@
 import gym
 import torch
 from torch.utils.data import Dataset
-NUM_DOF=21
-CONTACT_DIM=15
+
+# 导入统一的机器人配置常量
+from penspin.utils.robot_config import NUM_DOF, CONTACT_DIM, PROPRIO_DIM
+
 def transform_op(arr):
     """
     swap and then flatten axes 0 and 1
@@ -27,7 +29,8 @@ def transform_op(arr):
 
 class ExperienceBuffer(Dataset):
     def __init__(self, num_envs, horizon_length, batch_size, minibatch_size,
-                 obs_dim, act_dim, priv_dim, critic_info_dim, point_cloud_sampled_dim, device, proprio_dim=2*NUM_DOF*30,proprio_length=30):
+                 obs_dim, act_dim, priv_dim, critic_info_dim, point_cloud_sampled_dim, device, 
+                 proprio_dim=PROPRIO_DIM, proprio_length=30):
         self.device = device
         self.num_envs = num_envs
         self.transitions_per_env = horizon_length

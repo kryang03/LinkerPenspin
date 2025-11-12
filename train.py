@@ -40,6 +40,9 @@ from hydra.utils import to_absolute_path
 
 from penspin.algo.ppo.ppo import PPO
 from penspin.algo.ppo.demon import DemonTrain
+from penspin.algo.ppo.ppo_rl_teacher import PPOTeacher
+from penspin.algo.ppo.ppo_rl_bc_teacher import PPO_RL_BC_Teacher
+from penspin.algo.ppo.ppo_rl_bc_student import PPO_RL_BC_Student
 
 from penspin.tasks import isaacgym_task_map
 from penspin.utils.reformat import omegaconf_to_dict, print_dict

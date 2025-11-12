@@ -22,27 +22,21 @@ from isaacgym.torch_utils import quat_conjugate, quat_mul, to_torch, quat_apply,
 from penspin.utils.point_cloud_prep import sample_cylinder, sample_cuboid
 from .base.vec_task import VecTask
 from penspin.utils.misc import tprint
-# 指尖连杆名称 (用于后续查找索引)
-FINGERTIP_LINK_NAMES = [
-    "little_joint3",
-    "ring_joint3",
-    "middle_joint3",
-    "index_joint3",
-    "thumb_joint4"
-]
-FINGERTIP_CNT = len(FINGERTIP_LINK_NAMES)
+# Import centralized robot dimension constants
+from penspin.utils.robot_config import (
+    NUM_DOF,
+    PROPRIO_DIM,
+    CONTACT_DIM,
+    FINGERTIP_CNT,
+    FINGERTIP_LINK_NAMES,
+    CONTACT_LINK_NAMES,
+    FINGERTIP_POS_DIM,
+    PRIV_FINGERTIP_ROT_DIM,
+    OBS_WITH_CONTACT_FINGERTIP_DIM
+)
+
 # 刚体的 位置 (3) + 姿态 (4, 四元数) + 线速度 (3) + 角速度 (3)
 RIGID_BODY_STATES = 13
-# 用于生成 sensor_handle_indices
-CONTACT_LINK_NAMES = [
-    "little_joint3",
-    "ring_joint3",
-    "middle_joint3",
-    "index_joint3",
-    "thumb_joint4",
-]
-# 采用的contact维度，即contacts = contacts[:, self.sensor_handle_indices, :]在squeeze后的维度
-CONTACT_DIM = len(CONTACT_LINK_NAMES) * 3
 
 # CHECKLIST
 # 用于查找生成的初始化抓取状态文件夹
@@ -142,7 +136,7 @@ class LinkerHandHora(VecTask):
 
         self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1, 3)
         print("Contact Tensor Dimension [1, numRigidBody, 3]", self.contact_forces.shape)
-        # Allegro的numRigidBody = 56 见/real/robot_controller/real_robot/utils.py
+
         self.linker_hand_dof_state = self.dof_state.view(self.num_envs, -1, 2)[:, :self.num_linker_hand_dofs]
         self.linker_hand_dof_pos = self.linker_hand_dof_state[..., 0] # 关节角（Revolute）
         self.linker_hand_dof_vel = self.linker_hand_dof_state[..., 1] # 关节角速度（Revolute）
@@ -590,7 +584,7 @@ class LinkerHandHora(VecTask):
         # 提取 obs_buf_lag_history 中最近的三个时间步的obs历史 (前 obs_buf.shape[1]//3=42 部分)
         # 形状变化：(num_envs, history_len, obs_dim) -> (num_envs, 3, obs_dim_per_step//3) -> (num_envs, 3 * obs_dim_per_step//3)
 
-        t_buf = (self.obs_buf_lag_history[:, -3:,:2*self.num_linker_hand_dofs].reshape(self.num_envs, -1)).clone()
+        t_buf = (self.obs_buf_lag_history[:, -3:, :PROPRIO_DIM].reshape(self.num_envs, -1)).clone()
                 # t_buf shape: torch.Size([1, 3*42])
 
         # 将提取的历史部分赋值给主观测缓冲区的开头部分
@@ -606,19 +600,19 @@ class LinkerHandHora(VecTask):
         cur_obs_buf = noisy_joint_pos.clone().unsqueeze(1)  # [1, 1, self.num_linker_hand_dofs]
         # 获取当前时间步的目标关节位置，并添加一个维度，形状变为 (num_envs, 1, num_linker_hand_dofs)
         cur_tar_buf = self.cur_targets[:, None]  # [1, 1, self.num_linker_hand_dofs]
-        # 将当前关节位置和目标位置拼接，形状变为 (num_envs, 1, 2 * num_linker_hand_dofs)
-        cur_obs_buf = torch.cat([cur_obs_buf, cur_tar_buf], dim=-1)  # [1, 1, 2 * self.num_linker_hand_dofs]
+        # 将当前关节位置和目标位置拼接，形状变为 (num_envs, 1, PROPRIO_DIM)
+        cur_obs_buf = torch.cat([cur_obs_buf, cur_tar_buf], dim=-1)  # [1, 1, PROPRIO_DIM]
         
         # 如果启用了触觉，则将感知到的触觉信息拼接到当前观测中
         if self.config['env']['privInfo']['enable_tactile']:
             # 拼接 sensed_contacts (形状 num_envs, CONTACT_DIM) -> unsqueeze(1) -> (num_envs, 1, CONTACT_DIM)
             # 这里拼接的是sensor_contact的维度
-            cur_obs_buf = torch.cat([cur_obs_buf, self.sensed_contacts.unsqueeze(1)], dim=-1) # [1, 1, 2*self.num_linker_hand_dofs+CONTACT_DIM]
-            # 拼接指尖位置 fingertip_pos (形状 num_envs, 15) -> unsqueeze(1) -> (num_envs, 1, 15)
-            cur_obs_buf = torch.cat([cur_obs_buf, self.fingertip_pos.clone().unsqueeze(1)], dim=-1) # [1, 1, 2*self.num_linker_hand_dofs+CONTACT_DIM+NUM_FINGERTIP*3各个指头分别的pos]
+            cur_obs_buf = torch.cat([cur_obs_buf, self.sensed_contacts.unsqueeze(1)], dim=-1) # [1, 1, PROPRIO_DIM+CONTACT_DIM]
+            # 拼接指尖位置 fingertip_pos (形状 num_envs, FINGERTIP_POS_DIM) -> unsqueeze(1) -> (num_envs, 1, FINGERTIP_POS_DIM)
+            cur_obs_buf = torch.cat([cur_obs_buf, self.fingertip_pos.clone().unsqueeze(1)], dim=-1) # [1, 1, PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM]
           
         self.obs_buf_lag_history[:] = torch.cat([prev_obs_buf, cur_obs_buf], dim=1)
-        # obs_buf_lag_history shape: torch.Size([1, 80, 2*self.num_linker_hand_dofs+CONTACT_DIM+NUM_FINGERTIP*3各个指头分别的pos])
+        # obs_buf_lag_history shape: torch.Size([1, 80, PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM])
 
         # --------------------------------------------------------------
         # 5. 环境重置时特殊处理 (Reset Handling)
@@ -629,17 +623,17 @@ class LinkerHandHora(VecTask):
         # 这确保重置后的历史观测从初始状态开始
         # 注意：初始目标位置也用初始姿态填充，这可能是为了在episode开始时agent目标就是保持初始姿态
         self.obs_buf_lag_history[at_reset_env_ids, :, 0:self.num_linker_hand_dofs] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
-        self.obs_buf_lag_history[at_reset_env_ids, :, self.num_linker_hand_dofs:2*self.num_linker_hand_dofs] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
+        self.obs_buf_lag_history[at_reset_env_ids, :, self.num_linker_hand_dofs:PROPRIO_DIM] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
         # 对于重置的环境，用当前的物体端点位置填充其历史缓冲区
         self.obj_ends_history[at_reset_env_ids, :, :] = cur_obj_ends[at_reset_env_ids]
 
         # 如果启用了触觉，则对于重置的环境，将其观测历史缓冲区中触觉相关部分清零
-        # 范围是 2*self.num_linker_hand_dofs 到 64
+        # 范围是 PROPRIO_DIM 到 PROPRIO_DIM+CONTACT_DIM
         if self.config['env']['privInfo']['enable_tactile']:
-            self.obs_buf_lag_history[at_reset_env_ids, :, 2*self.num_linker_hand_dofs:2*self.num_linker_hand_dofs+CONTACT_DIM] = torch.zeros((len(at_reset_env_ids),80,CONTACT_DIM),device=self.device)
+            self.obs_buf_lag_history[at_reset_env_ids, :, PROPRIO_DIM:PROPRIO_DIM+CONTACT_DIM] = torch.zeros((len(at_reset_env_ids),80,CONTACT_DIM),device=self.device)
             # 对于重置的环境，用当前的指尖位置填充其观测历史缓冲区中指尖位置部分
-            # 范围是 64 到 76
-            self.obs_buf_lag_history[at_reset_env_ids, :, 2*self.num_linker_hand_dofs+CONTACT_DIM:2*self.num_linker_hand_dofs+CONTACT_DIM+3*FINGERTIP_CNT] = self.fingertip_pos[at_reset_env_ids].unsqueeze(1)
+            # 范围是 PROPRIO_DIM+CONTACT_DIM 到 PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM
+            self.obs_buf_lag_history[at_reset_env_ids, :, PROPRIO_DIM+CONTACT_DIM:PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM] = self.fingertip_pos[at_reset_env_ids].unsqueeze(1)
 
         # 重置相关的速度信息缓冲
         # 在接触或碰撞时记录的物体和指尖线速度/角速度，在重置时也需要清零或用当前值填充
@@ -673,12 +667,12 @@ class LinkerHandHora(VecTask):
         # 6. 提取特定历史缓冲区 (Extract Specific History Buffers)
         # --------------------------------------------------------------
         # 从主观测历史 obs_buf_lag_history 中提取最近 prop_hist_len 个时间步的本体感知信息 (关节位置和目标)
-        # 范围是 0 到 2*self.num_linker_hand_dofs，因为只使用关节位置和目标位置
-        self.proprio_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, :2*self.num_linker_hand_dofs]  # [1, 30, 2*self.num_linker_hand_dofs] - 示例形状
+        # 范围是 0 到 PROPRIO_DIM，因为只使用关节位置和目标位置
+        self.proprio_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, :PROPRIO_DIM]  # [1, 30, PROPRIO_DIM] - 示例形状
         # 如果启用了触觉，从主观测历史中提取最近 prop_hist_len 个时间步的触觉信息
-        # 范围是 2*self.num_linker_hand_dofs 到 2*self.num_linker_hand_dofs + CONTACT_DIM
+        # 范围是 PROPRIO_DIM 到 PROPRIO_DIM + CONTACT_DIM
         if self.config['env']['privInfo']['enable_tactile']:
-            self.tactile_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, 2*self.num_linker_hand_dofs:2*self.num_linker_hand_dofs + CONTACT_DIM]
+            self.tactile_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, PROPRIO_DIM:PROPRIO_DIM + CONTACT_DIM]
 
         # --------------------------------------------------------------
         # 7. 更新私有信息缓冲区 (Update Privileged Information Buffer)
@@ -1126,6 +1120,21 @@ class LinkerHandHora(VecTask):
         self.obs_dict['rot_axis_buf'] = self.rot_axis_buf.to(self.rl_device)
         if self.enable_obj_ends:
             self.obs_dict['obj_ends'] = self.obj_ends_history.to(self.rl_device)
+        # one-time shape summary for debugging
+        if self.debug_shape_summary and not self._shape_summary_logged_once:
+            try:
+                print("[Shape Summary][reset]")
+                print(f"  priv_info_buf:          {tuple(self.priv_info_buf.shape)}")
+                print(f"  proprio_hist_buf:       {tuple(self.proprio_hist_buf.shape)}")
+                print(f"  tactile_hist_buf:       {tuple(self.tactile_hist_buf.shape)}")
+                print(f"  point_cloud_buf:        {tuple(self.point_cloud_buf.shape)}")
+                print(f"  critic_info_buf:        {tuple(self.critic_info_buf.shape)}")
+                if self.enable_obj_ends:
+                    print(f"  obj_ends_history:       {tuple(self.obj_ends_history.shape)}")
+                print(f"  numObservations (obs):  {self.config['env']['numObservations']}")
+                print(f"  CONTACT_DIM:            {CONTACT_DIM}, FINGERTIP_POS_DIM: {FINGERTIP_POS_DIM}, PROPRIO_DIM: {PROPRIO_DIM}")
+            finally:
+                self._shape_summary_logged_once = True
         return self.obs_dict
 
     def step(self, actions, extrin_record: Optional[torch.Tensor] = None):
@@ -1148,6 +1157,21 @@ class LinkerHandHora(VecTask):
         self.obs_dict['rot_axis_buf'] = self.rot_axis_buf.to(self.rl_device)
         if self.enable_obj_ends:
             self.obs_dict['obj_ends'] = self.obj_ends_history.to(self.rl_device)
+        # one-time shape summary for debugging (if not printed in reset path)
+        if self.debug_shape_summary and not self._shape_summary_logged_once:
+            try:
+                print("[Shape Summary][step]")
+                print(f"  priv_info_buf:          {tuple(self.priv_info_buf.shape)}")
+                print(f"  proprio_hist_buf:       {tuple(self.proprio_hist_buf.shape)}")
+                print(f"  tactile_hist_buf:       {tuple(self.tactile_hist_buf.shape)}")
+                print(f"  point_cloud_buf:        {tuple(self.point_cloud_buf.shape)}")
+                print(f"  critic_info_buf:        {tuple(self.critic_info_buf.shape)}")
+                if self.enable_obj_ends:
+                    print(f"  obj_ends_history:       {tuple(self.obj_ends_history.shape)}")
+                print(f"  numObservations (obs):  {self.config['env']['numObservations']}")
+                print(f"  CONTACT_DIM:            {CONTACT_DIM}, FINGERTIP_POS_DIM: {FINGERTIP_POS_DIM}, PROPRIO_DIM: {PROPRIO_DIM}")
+            finally:
+                self._shape_summary_logged_once = True
         return self.obs_dict, self.rew_buf, self.reset_buf, self.extras
 
     def capture_frame(self) -> np.ndarray:
@@ -1336,8 +1360,8 @@ class LinkerHandHora(VecTask):
         priv_dims['obj_angvel'] = 3
         priv_dims['fingertip_position'] = 3 * FINGERTIP_CNT
         priv_dims['fingertip_orientation'] = 4 * FINGERTIP_CNT
-        priv_dims['fingertip_linvel'] = FINGERTIP_CNT * 3
-        priv_dims['fingertip_angvel'] = FINGERTIP_CNT * 3
+        priv_dims['fingertip_linvel'] = FINGERTIP_POS_DIM
+        priv_dims['fingertip_angvel'] = FINGERTIP_POS_DIM
         priv_dims['hand_scale'] = 1
         priv_dims['obj_restitution'] = 1
         priv_dims['tactile'] = self.num_contacts
@@ -1409,10 +1433,36 @@ class LinkerHandHora(VecTask):
         self.random_action_noise_e = torch.zeros((num_envs, self.config['env']['numActions']), device=self.device, dtype=torch.float)
         # ---- stage 2 buffers
         # stage 2 related buffers
-        self.proprio_hist_buf = torch.zeros((num_envs, self.prop_hist_len, 2*self.num_linker_hand_dofs), device=self.device, dtype=torch.float)
+        self.proprio_hist_buf = torch.zeros((num_envs, self.prop_hist_len, PROPRIO_DIM), device=self.device, dtype=torch.float)
         self.tactile_hist_buf = torch.zeros((num_envs, self.prop_hist_len, CONTACT_DIM), device=self.device, dtype=torch.float)
         # a bit unintuitive: first 4 is quaternion and last 3 is position, due to development order
         self.noisy_quaternion_buf = torch.zeros((num_envs, self.prop_hist_len, 7), device=self.device, dtype=torch.float)
+        # debug and verification controls
+        self.debug_shape_summary = self.config['env'].get('debug_shape_summary', False)
+        self.enable_strict_dim_assertions = self.config['env'].get('enable_strict_dim_assertions', False)
+        self._shape_summary_logged_once = False
+
+        # final sanity check for priv_info layout and dimension
+        try:
+            total_span = 0
+            for name, (s, e) in self.priv_info_dict.items():
+                # basic non-overlap and ordering assumptions
+                assert e > s, f"priv_info slice for {name} must have positive length"
+                total_span += (e - s)
+                if name == 'tactile' and self.enable_priv_tactile:
+                    assert (e - s) == CONTACT_DIM, f"tactile dim mismatch: {(e - s)} vs CONTACT_DIM={CONTACT_DIM}"
+                if name == 'fingertip_position' and self.enable_priv_fingertip_position:
+                    assert (e - s) == FINGERTIP_POS_DIM, f"fingertip_position dim mismatch: {(e - s)} vs FINGERTIP_POS_DIM={FINGERTIP_POS_DIM}"
+                if name == 'obj_restitution' and self.enable_priv_obj_restitution:
+                    assert (e - s) == 1, "obj_restitution must be scalar"
+            if self.enable_strict_dim_assertions:
+                assert total_span == self.priv_info_dim, f"priv_info_dim mismatch: total_span={total_span} vs priv_info_dim={self.priv_info_dim}"
+        except AssertionError as ae:
+            print(f"[PrivInfo Verify] Assertion failed: {ae}")
+            if self.enable_strict_dim_assertions:
+                raise
+        else:
+            print(f"[PrivInfo Verify] OK: priv_info_dim={self.priv_info_dim}, slices={len(self.priv_info_dict)}")
 
     def _setup_reward_config(self, r_config):
         # the list

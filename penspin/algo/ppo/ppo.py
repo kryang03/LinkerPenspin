@@ -18,8 +18,8 @@ import numpy as np
 
 # 从 penspin.algo.ppo 模块导入 ExperienceBuffer，用于存储智能体与环境交互的数据
 from penspin.algo.ppo.experience import ExperienceBuffer
-# 从 penspin.algo.models 模块导入 ActorCritic 模型，包含策略网络（Actor）和价值网络（Critic）
-from penspin.algo.models.models import ActorCritic
+# 从 penspin.algo.models 模块导入重构后的 ActorCritic 模型
+from penspin.algo.models.models import TeacherActorCritic, StudentActorCritic, create_actor_critic
 # 从 penspin.algo.models 模块导入 RunningMeanStd，用于对输入进行标准化处理
 from penspin.algo.models.running_mean_std import RunningMeanStd
 
@@ -29,9 +29,10 @@ from penspin.utils.misc import AverageScalarMeter
 # 导入 tensorboardX 中的 SummaryWriter，用于记录训练过程中的日志和可视化数据
 from tensorboardX import SummaryWriter
 
-CONTACT_DIM = 15
-FINGERTIP_CNT = 5
-NUM_DOF = 21
+# 导入统一的机器人配置常量
+from penspin.utils.robot_config import (
+    NUM_DOF, NUM_FINGERS, FINGERTIP_CNT, CONTACT_DIM, PROPRIO_DIM
+)
 
 # 定义 PPO 类，实现 Proximal Policy Optimization 算法
 class PPO(object):
@@ -100,24 +101,14 @@ class PPO(object):
             'priv_mlp_units': self.network_config.priv_mlp.units, # 私有信息 MLP 的层单元数
             'actions_num': self.actions_num, # 动作数量
             'input_shape': self.obs_shape, # 输入（观察）的形状
-            'priv_info': self.priv_info, # 是否使用私有信息
-            'proprio_adapt': self.proprio_adapt, # 是否使用本体感觉信息进行适应
             'priv_info_dim': self.priv_info_dim, # 私有信息的维度
             'critic_info_dim': self.critic_info_dim, # Critic 信息的维度
             'asymm_actor_critic': self.asymm_actor_critic, # 是否使用非对称 Actor-Critic
-            'point_cloud_sampled_dim': self.point_cloud_buffer_dim, # 采样后的点云维度
             'point_mlp_units': self.network_config.point_mlp.units, # 点云 MLP 的层单元数
-            'use_fine_contact': self.env.contact_input == 'fine', # 是否使用细粒度接触信息
-            'contact_mlp_units': self.network_config.contact_mlp.units, # 接触信息 MLP 的层单元数
             'use_point_transformer': self.network_config.use_point_transformer, # 是否使用 Point Transformer 处理点云
-            'use_point_cloud_info': self.use_point_cloud_info, # 是否使用点云信息
-            'proprio_mode': self.proprio_mode, # 本体感觉模式
-            'input_mode': self.input_mode, # 输入模式
-            'proprio_len': self.proprio_len, # 本体感觉历史信息长度
-            'student': self.ppo_config.distill, # 是否作为 student 模型（用于蒸馏）
         }
-        # 实例化 Actor-Critic 模型
-        self.model = ActorCritic(net_config)
+        # 实例化 Teacher Actor-Critic 模型 (用于 PPO 训练)
+        self.model = TeacherActorCritic(net_config)
         # 将模型移动到指定设备
         self.model.to(self.device)
 
@@ -125,8 +116,8 @@ class PPO(object):
         self.running_mean_std = RunningMeanStd(self.obs_shape).to(self.device)
         # 初始化 RunningMeanStd 用于标准化私有信息
         self.priv_mean_std = RunningMeanStd(self.priv_info_dim).to(self.device)
-        # 定义本体感觉维度
-        self.proprio_dim = 2*NUM_DOF
+        # 本体感觉维度（使用配置常量）
+        self.proprio_dim = PROPRIO_DIM
         # 如果是 student 模型，点云标准化使用 6 维，否则使用 3 维
         if self.ppo_config.distill:
             self.point_cloud_mean_std = RunningMeanStd(6,).to(self.device)
