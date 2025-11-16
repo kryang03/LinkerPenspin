@@ -6,7 +6,8 @@
 # scripts/visualize.sh pose3_50k_cfg9 > contacts/pose3_50k_cfg9.txt
 # scripts/visualize.sh pose3_3k_cfg_c > contacts/pose3_3k_cfg_c.txt
 
-#best:scripts/visualize.sh pose3_50k_cfg2 > contacts/pose3_50k_cfg2.txt
+#best:
+# scripts/visualize.sh pose3_50k_cfg2 > contacts/pose3_50k_cfg2.txt
 # CHECKLIST
 # 1. 命令的最后一个参数指向output文件夹的名称，三维力信息是否重定向到正确的文件夹
 # 2. 检查checkpoint的名称

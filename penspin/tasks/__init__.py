@@ -26,16 +26,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-from penspin.tasks.allegro_hand_hora import AllegroHandHora
-from penspin.tasks.allegro_hand_grasp import AllegroHandGrasp
 from penspin.tasks.linker_hand_hora import LinkerHandHora
 from penspin.tasks.linker_hand_grasp import LinkerHandGrasp
 
 # Mappings from strings to environments
 isaacgym_task_map = {
-    'AllegroHandHora': AllegroHandHora,
-    'AllegroHandGrasp': AllegroHandGrasp,
     'LinkerHandHora': LinkerHandHora,
     'LinkerHandGrasp': LinkerHandGrasp,
 }

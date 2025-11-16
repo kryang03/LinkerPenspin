@@ -1,0 +1,1987 @@
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+ninja: no work to do.
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: True
+checkpoint: /home/user/Code/LinkerPenspin/outputs/LinkerHandHora/pose3_50k_cfg2/stage1_nn/best_reward_90.69.pth
+headless: False
+wandb_activate: False
+wandb_group: 
+wandb_name: 
+wandb_entity: 
+wandb_project: dexpen
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 1
+        numObservations: 126
+        numActions: 21
+        envSpacing: 0.5
+        obs_with_binary_contact: False
+        episodeLength: 4000
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 3
+            dgain: 0.1
+            action_scale: 0.04167
+            torque_limit: 0.7
+        rotation_axis: +z
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        reset_height_threshold: 0.14
+        grasp_cache_name: 3pose
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThres: 1.0
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            waypoint_sparse_reward_scale: 1.0
+            torque_penalty_scale: -0.1
+            work_penalty_scale: -1.0
+            hand_pose_consistency_penalty_scale: -1.0
+            rotate_penalty_scale: -0.3
+            pencil_z_dist_penalty_scale: -1.0
+            position_penalty_scale: -0.1
+            action_penalty_scale: 0.0
+        baseObjScale: 0.3
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.01
+            randomizeMassUpper: 0.02
+            randomizeCOM: True
+            randomizeCOMLower: -0.001
+            randomizeCOMUpper: 0.001
+            randomizeFriction: True
+            randomizeFrictionLower: 0.3
+            randomizeFrictionUpper: 3.0
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [0.3]
+            randomizeScaleLower: 0.25
+            randomizeScaleUpper: 0.3
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjScale: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            enableNetContactF: False
+            contact_input_dim: 4
+            contact_form: gpu_contact
+            contact_input: binary
+            contact_binarize_threshold: 0.1
+            enable_obj_orientation: True
+            enable_obj_linvel: False
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_ft_orientation: False
+            enable_ft_linvel: False
+            enable_ft_angvel: False
+            enable_hand_scale: False
+        object: 
+            type: cylinder_pencil-5-7
+            evalObjectType: None
+            sampleProb: [1.0]
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf.urdf
+        enableCameraSensors: False
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPO
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: /home/user/Code/LinkerPenspin/outputs/LinkerHandHora/pose3_50k_cfg2/stage1_nn/best_reward_90.69.pth
+    demon_path: None
+    ppo: 
+        output_name: debug
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 1
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 8
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 0
+        save_frequency: 500
+        max_agent_steps: 3000000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+---- Primitive List ----
+['cylinder_pencil-5-7']
+---- Object List ----
+using 1 training objects
+[PrivInfo Verify] OK: priv_info_dim=47, slices=10
+loading /home/user/Code/LinkerPenspin/penspin/tasks/../../assets/cylinder/pencil-5-7/0000.npy radius 0.04 length 0.4 BEFORE scale
+0 / 1 num_envsContact Tensor Dimension [1, numRigidBody, 3] torch.Size([1, 23, 3])
+3pose/pencil/s03_3k
+3pose/pencil/s03_3k
+RunningMeanStd:  (126,)
+RunningMeanStd:  47
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 0, 'total_episodes': 0}
+Fx: 0.0351, Fy: 0.0000, Fz: 0.1123, Norm: 0.1176
+Fx: 0.0351, Fy: 0.0000, Fz: 0.1123, Norm: 0.1176
+Fx: 0.0351, Fy: 0.0000, Fz: 0.1123, Norm: 0.1176
+Fx: 0.0351, Fy: 0.0000, Fz: 0.1123, Norm: 0.1176
+Fx: 0.0351, Fy: 0.0000, Fz: 0.1123, Norm: 0.1176
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 0, 'total_episodes': 0}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0954, Norm: 0.0954
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0954, Norm: 0.0954
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0954, Norm: 0.0954
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0954, Norm: 0.0954
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0954, Norm: 0.0954
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 0, 'total_episodes': 0}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0999, Norm: 0.0999
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0999, Norm: 0.0999
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0999, Norm: 0.0999
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0999, Norm: 0.0999
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0999, Norm: 0.0999
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 0, 'total_episodes': 0}
+Fx: -0.0000, Fy: 0.0223, Fz: 0.0920, Norm: 0.0946
+Fx: -0.0000, Fy: 0.0223, Fz: 0.0920, Norm: 0.0946
+Fx: -0.0000, Fy: 0.0223, Fz: 0.0920, Norm: 0.0946
+Fx: -0.0000, Fy: 0.0223, Fz: 0.0920, Norm: 0.0946
+Fx: -0.0000, Fy: 0.0223, Fz: 0.0920, Norm: 0.0946
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+[演示] 环境0本轮累计转笔圈数: 0.16
+Fx: 0.0444, Fy: 0.0404, Fz: 0.1243, Norm: 0.1381
+Fx: 0.0444, Fy: 0.0404, Fz: 0.1243, Norm: 0.1381
+Fx: 0.0444, Fy: 0.0404, Fz: 0.1243, Norm: 0.1381
+Fx: 0.0444, Fy: 0.0404, Fz: 0.1243, Norm: 0.1381
+Fx: 0.0444, Fy: 0.0404, Fz: 0.1243, Norm: 0.1381
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.0357, Fy: -0.0000, Fz: 0.0425, Norm: 0.0555
+Fx: 0.0357, Fy: -0.0000, Fz: 0.0425, Norm: 0.0555
+Fx: 0.0357, Fy: -0.0000, Fz: 0.0425, Norm: 0.0555
+Fx: 0.0357, Fy: -0.0000, Fz: 0.0425, Norm: 0.0555
+Fx: 0.0357, Fy: -0.0000, Fz: 0.0425, Norm: 0.0555
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.5759, Fy: 0.0459, Fz: 2.3281, Norm: 2.3987
+Fx: 0.5759, Fy: 0.0459, Fz: 2.3281, Norm: 2.3987
+Fx: 0.5759, Fy: 0.0459, Fz: 2.3281, Norm: 2.3987
+Fx: 0.5759, Fy: 0.0459, Fz: 2.3281, Norm: 2.3987
+Fx: 0.5759, Fy: 0.0459, Fz: 2.3281, Norm: 2.3987
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.0000, Fy: 0.0654, Fz: 0.1069, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0654, Fz: 0.1069, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0654, Fz: 0.1069, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0654, Fz: 0.1069, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0654, Fz: 0.1069, Norm: 0.1253
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.0000, Fy: 0.0823, Fz: 0.2070, Norm: 0.2227
+Fx: 0.0000, Fy: 0.0823, Fz: 0.2070, Norm: 0.2227
+Fx: 0.0000, Fy: 0.0823, Fz: 0.2070, Norm: 0.2227
+Fx: 0.0000, Fy: 0.0823, Fz: 0.2070, Norm: 0.2227
+Fx: 0.0000, Fy: 0.0823, Fz: 0.2070, Norm: 0.2227
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: -0.0000, Fy: 0.0670, Fz: 0.1226, Norm: 0.1397
+Fx: -0.0000, Fy: 0.0670, Fz: 0.1226, Norm: 0.1397
+Fx: -0.0000, Fy: 0.0670, Fz: 0.1226, Norm: 0.1397
+Fx: -0.0000, Fy: 0.0670, Fz: 0.1226, Norm: 0.1397
+Fx: -0.0000, Fy: 0.0670, Fz: 0.1226, Norm: 0.1397
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.0000, Fy: 0.0311, Fz: 0.1214, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0311, Fz: 0.1214, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0311, Fz: 0.1214, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0311, Fz: 0.1214, Norm: 0.1253
+Fx: 0.0000, Fy: 0.0311, Fz: 0.1214, Norm: 0.1253
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 1, 'total_episodes': 1}
+Fx: 0.0000, Fy: -0.0000, Fz: 0.0330, Norm: 0.0330
+Fx: 0.0000, Fy: -0.0000, Fz: 0.0330, Norm: 0.0330
+Fx: 0.0000, Fy: -0.0000, Fz: 0.0330, Norm: 0.0330
+Fx: 0.0000, Fy: -0.0000, Fz: 0.0330, Norm: 0.0330
+Fx: 0.0000, Fy: -0.0000, Fz: 0.0330, Norm: 0.0330
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 2, 'total_episodes': 2}
+[演示] 环境0本轮累计转笔圈数: 0.05
+Fx: 0.0506, Fy: -0.0000, Fz: 0.0000, Norm: 0.0506
+Fx: 0.0506, Fy: -0.0000, Fz: 0.0000, Norm: 0.0506
+Fx: 0.0506, Fy: -0.0000, Fz: 0.0000, Norm: 0.0506
+Fx: 0.0506, Fy: -0.0000, Fz: 0.0000, Norm: 0.0506
+Fx: 0.0506, Fy: -0.0000, Fz: 0.0000, Norm: 0.0506
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 2, 'total_episodes': 2}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0892, Norm: 0.0892
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0892, Norm: 0.0892
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0892, Norm: 0.0892
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0892, Norm: 0.0892
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0892, Norm: 0.0892
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 2, 'total_episodes': 2}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1214, Norm: 0.1214
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1214, Norm: 0.1214
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1214, Norm: 0.1214
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1214, Norm: 0.1214
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1214, Norm: 0.1214
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+[演示] 环境0本轮累计转笔圈数: 0.03
+Fx: 0.0000, Fy: 0.0528, Fz: 0.1395, Norm: 0.1492
+Fx: 0.0000, Fy: 0.0528, Fz: 0.1395, Norm: 0.1492
+Fx: 0.0000, Fy: 0.0528, Fz: 0.1395, Norm: 0.1492
+Fx: 0.0000, Fy: 0.0528, Fz: 0.1395, Norm: 0.1492
+Fx: 0.0000, Fy: 0.0528, Fz: 0.1395, Norm: 0.1492
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0843, Norm: 0.0843
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0843, Norm: 0.0843
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0843, Norm: 0.0843
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0843, Norm: 0.0843
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0843, Norm: 0.0843
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2396, Norm: 0.2396
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2396, Norm: 0.2396
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2396, Norm: 0.2396
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2396, Norm: 0.2396
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2396, Norm: 0.2396
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.0000, Fy: -0.0000, Fz: 0.6273, Norm: 0.6273
+Fx: 0.0000, Fy: -0.0000, Fz: 0.6273, Norm: 0.6273
+Fx: 0.0000, Fy: -0.0000, Fz: 0.6273, Norm: 0.6273
+Fx: 0.0000, Fy: -0.0000, Fz: 0.6273, Norm: 0.6273
+Fx: 0.0000, Fy: -0.0000, Fz: 0.6273, Norm: 0.6273
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.1063, Fy: -0.0000, Fz: 0.5745, Norm: 0.5843
+Fx: 0.1063, Fy: -0.0000, Fz: 0.5745, Norm: 0.5843
+Fx: 0.1063, Fy: -0.0000, Fz: 0.5745, Norm: 0.5843
+Fx: 0.1063, Fy: -0.0000, Fz: 0.5745, Norm: 0.5843
+Fx: 0.1063, Fy: -0.0000, Fz: 0.5745, Norm: 0.5843
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.1923, Fy: -0.0000, Fz: 1.2435, Norm: 1.2583
+Fx: 0.1923, Fy: -0.0000, Fz: 1.2435, Norm: 1.2583
+Fx: 0.1923, Fy: -0.0000, Fz: 1.2435, Norm: 1.2583
+Fx: 0.1923, Fy: -0.0000, Fz: 1.2435, Norm: 1.2583
+Fx: 0.1923, Fy: -0.0000, Fz: 1.2435, Norm: 1.2583
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.0604, Fy: -0.0000, Fz: 0.5540, Norm: 0.5573
+Fx: 0.0604, Fy: -0.0000, Fz: 0.5540, Norm: 0.5573
+Fx: 0.0604, Fy: -0.0000, Fz: 0.5540, Norm: 0.5573
+Fx: 0.0604, Fy: -0.0000, Fz: 0.5540, Norm: 0.5573
+Fx: 0.0604, Fy: -0.0000, Fz: 0.5540, Norm: 0.5573
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.3116, Fy: -0.0000, Fz: 2.3686, Norm: 2.3890
+Fx: 0.3116, Fy: -0.0000, Fz: 2.3686, Norm: 2.3890
+Fx: 0.3116, Fy: -0.0000, Fz: 2.3686, Norm: 2.3890
+Fx: 0.3116, Fy: -0.0000, Fz: 2.3686, Norm: 2.3890
+Fx: 0.3116, Fy: -0.0000, Fz: 2.3686, Norm: 2.3890
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.3716, Fy: -0.0000, Fz: 1.9727, Norm: 2.0074
+Fx: 0.3716, Fy: -0.0000, Fz: 1.9727, Norm: 2.0074
+Fx: 0.3716, Fy: -0.0000, Fz: 1.9727, Norm: 2.0074
+Fx: 0.3716, Fy: -0.0000, Fz: 1.9727, Norm: 2.0074
+Fx: 0.3716, Fy: -0.0000, Fz: 1.9727, Norm: 2.0074
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.3177, Fy: -0.0000, Fz: 1.1537, Norm: 1.1966
+Fx: 0.3177, Fy: -0.0000, Fz: 1.1537, Norm: 1.1966
+Fx: 0.3177, Fy: -0.0000, Fz: 1.1537, Norm: 1.1966
+Fx: 0.3177, Fy: -0.0000, Fz: 1.1537, Norm: 1.1966
+Fx: 0.3177, Fy: -0.0000, Fz: 1.1537, Norm: 1.1966
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 1.1313, Fy: -0.0000, Fz: 3.5797, Norm: 3.7542
+Fx: 1.1313, Fy: -0.0000, Fz: 3.5797, Norm: 3.7542
+Fx: 1.1313, Fy: -0.0000, Fz: 3.5797, Norm: 3.7542
+Fx: 1.1313, Fy: -0.0000, Fz: 3.5797, Norm: 3.7542
+Fx: 1.1313, Fy: -0.0000, Fz: 3.5797, Norm: 3.7542
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.4261, Fy: -0.0000, Fz: 3.0372, Norm: 3.0669
+Fx: 0.4261, Fy: -0.0000, Fz: 3.0372, Norm: 3.0669
+Fx: 0.4261, Fy: -0.0000, Fz: 3.0372, Norm: 3.0669
+Fx: 0.4261, Fy: -0.0000, Fz: 3.0372, Norm: 3.0669
+Fx: 0.4261, Fy: -0.0000, Fz: 3.0372, Norm: 3.0669
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.2636, Fy: -0.0000, Fz: 1.7584, Norm: 1.7781
+Fx: 0.2636, Fy: -0.0000, Fz: 1.7584, Norm: 1.7781
+Fx: 0.2636, Fy: -0.0000, Fz: 1.7584, Norm: 1.7781
+Fx: 0.2636, Fy: -0.0000, Fz: 1.7584, Norm: 1.7781
+Fx: 0.2636, Fy: -0.0000, Fz: 1.7584, Norm: 1.7781
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.2354, Fy: -0.0000, Fz: 1.4904, Norm: 1.5089
+Fx: 0.2354, Fy: -0.0000, Fz: 1.4904, Norm: 1.5089
+Fx: 0.2354, Fy: -0.0000, Fz: 1.4904, Norm: 1.5089
+Fx: 0.2354, Fy: -0.0000, Fz: 1.4904, Norm: 1.5089
+Fx: 0.2354, Fy: -0.0000, Fz: 1.4904, Norm: 1.5089
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.2547, Fy: -0.0000, Fz: 1.2306, Norm: 1.2567
+Fx: 0.2547, Fy: -0.0000, Fz: 1.2306, Norm: 1.2567
+Fx: 0.2547, Fy: -0.0000, Fz: 1.2306, Norm: 1.2567
+Fx: 0.2547, Fy: -0.0000, Fz: 1.2306, Norm: 1.2567
+Fx: 0.2547, Fy: -0.0000, Fz: 1.2306, Norm: 1.2567
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: 0.0446, Fy: 0.0223, Fz: 0.4212, Norm: 0.4242
+Fx: 0.0446, Fy: 0.0223, Fz: 0.4212, Norm: 0.4242
+Fx: 0.0446, Fy: 0.0223, Fz: 0.4212, Norm: 0.4242
+Fx: 0.0446, Fy: 0.0223, Fz: 0.4212, Norm: 0.4242
+Fx: 0.0446, Fy: 0.0223, Fz: 0.4212, Norm: 0.4242
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 3, 'total_episodes': 3}
+Fx: -0.0000, Fy: 0.0506, Fz: 0.1519, Norm: 0.1601
+Fx: -0.0000, Fy: 0.0506, Fz: 0.1519, Norm: 0.1601
+Fx: -0.0000, Fy: 0.0506, Fz: 0.1519, Norm: 0.1601
+Fx: -0.0000, Fy: 0.0506, Fz: 0.1519, Norm: 0.1601
+Fx: -0.0000, Fy: 0.0506, Fz: 0.1519, Norm: 0.1601
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 4, 'total_episodes': 4}
+[演示] 环境0本轮累计转笔圈数: 0.14
+Fx: -0.0000, Fy: 0.0344, Fz: 0.1094, Norm: 0.1147
+Fx: -0.0000, Fy: 0.0344, Fz: 0.1094, Norm: 0.1147
+Fx: -0.0000, Fy: 0.0344, Fz: 0.1094, Norm: 0.1147
+Fx: -0.0000, Fy: 0.0344, Fz: 0.1094, Norm: 0.1147
+Fx: -0.0000, Fy: 0.0344, Fz: 0.1094, Norm: 0.1147
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 4, 'total_episodes': 4}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0334, Norm: 0.0334
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0334, Norm: 0.0334
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0334, Norm: 0.0334
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0334, Norm: 0.0334
+Fx: -0.0000, Fy: 0.0000, Fz: 0.0334, Norm: 0.0334
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+[演示] 环境0本轮累计转笔圈数: 0.01
+Fx: 0.3264, Fy: -0.0000, Fz: -0.0000, Norm: 0.3264
+Fx: 0.3264, Fy: -0.0000, Fz: -0.0000, Norm: 0.3264
+Fx: 0.3264, Fy: -0.0000, Fz: -0.0000, Norm: 0.3264
+Fx: 0.3264, Fy: -0.0000, Fz: -0.0000, Norm: 0.3264
+Fx: 0.3264, Fy: -0.0000, Fz: -0.0000, Norm: 0.3264
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9610, Norm: 0.9610
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9610, Norm: 0.9610
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9610, Norm: 0.9610
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9610, Norm: 0.9610
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9610, Norm: 0.9610
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: 0.0000, Fy: -0.0000, Fz: 0.3326, Norm: 0.3326
+Fx: 0.0000, Fy: -0.0000, Fz: 0.3326, Norm: 0.3326
+Fx: 0.0000, Fy: -0.0000, Fz: 0.3326, Norm: 0.3326
+Fx: 0.0000, Fy: -0.0000, Fz: 0.3326, Norm: 0.3326
+Fx: 0.0000, Fy: -0.0000, Fz: 0.3326, Norm: 0.3326
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: 0.0518, Fy: -0.0000, Fz: 0.8621, Norm: 0.8636
+Fx: 0.0518, Fy: -0.0000, Fz: 0.8621, Norm: 0.8636
+Fx: 0.0518, Fy: -0.0000, Fz: 0.8621, Norm: 0.8636
+Fx: 0.0518, Fy: -0.0000, Fz: 0.8621, Norm: 0.8636
+Fx: 0.0518, Fy: -0.0000, Fz: 0.8621, Norm: 0.8636
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: 0.0318, Fy: -0.0000, Fz: 0.9040, Norm: 0.9046
+Fx: 0.0318, Fy: -0.0000, Fz: 0.9040, Norm: 0.9046
+Fx: 0.0318, Fy: -0.0000, Fz: 0.9040, Norm: 0.9046
+Fx: 0.0318, Fy: -0.0000, Fz: 0.9040, Norm: 0.9046
+Fx: 0.0318, Fy: -0.0000, Fz: 0.9040, Norm: 0.9046
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9216, Norm: 0.9216
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9216, Norm: 0.9216
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9216, Norm: 0.9216
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9216, Norm: 0.9216
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9216, Norm: 0.9216
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7499, Norm: 0.7499
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7499, Norm: 0.7499
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7499, Norm: 0.7499
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7499, Norm: 0.7499
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7499, Norm: 0.7499
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 5, 'total_episodes': 5}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2164, Norm: 0.2164
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2164, Norm: 0.2164
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2164, Norm: 0.2164
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2164, Norm: 0.2164
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2164, Norm: 0.2164
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+[演示] 环境0本轮累计转笔圈数: 0.02
+Fx: 0.0428, Fy: -0.0000, Fz: 0.0509, Norm: 0.0665
+Fx: 0.0428, Fy: -0.0000, Fz: 0.0509, Norm: 0.0665
+Fx: 0.0428, Fy: -0.0000, Fz: 0.0509, Norm: 0.0665
+Fx: 0.0428, Fy: -0.0000, Fz: 0.0509, Norm: 0.0665
+Fx: 0.0428, Fy: -0.0000, Fz: 0.0509, Norm: 0.0665
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0326, Fy: -0.0000, Fz: 0.3670, Norm: 0.3685
+Fx: 0.0326, Fy: -0.0000, Fz: 0.3670, Norm: 0.3685
+Fx: 0.0326, Fy: -0.0000, Fz: 0.3670, Norm: 0.3685
+Fx: 0.0326, Fy: -0.0000, Fz: 0.3670, Norm: 0.3685
+Fx: 0.0326, Fy: -0.0000, Fz: 0.3670, Norm: 0.3685
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0750, Fy: -0.0000, Fz: 0.6283, Norm: 0.6327
+Fx: 0.0750, Fy: -0.0000, Fz: 0.6283, Norm: 0.6327
+Fx: 0.0750, Fy: -0.0000, Fz: 0.6283, Norm: 0.6327
+Fx: 0.0750, Fy: -0.0000, Fz: 0.6283, Norm: 0.6327
+Fx: 0.0750, Fy: -0.0000, Fz: 0.6283, Norm: 0.6327
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0270, Fy: -0.0000, Fz: 0.4907, Norm: 0.4914
+Fx: 0.0270, Fy: -0.0000, Fz: 0.4907, Norm: 0.4914
+Fx: 0.0270, Fy: -0.0000, Fz: 0.4907, Norm: 0.4914
+Fx: 0.0270, Fy: -0.0000, Fz: 0.4907, Norm: 0.4914
+Fx: 0.0270, Fy: -0.0000, Fz: 0.4907, Norm: 0.4914
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.3909, Fy: -0.0000, Fz: 2.0919, Norm: 2.1281
+Fx: 0.3909, Fy: -0.0000, Fz: 2.0919, Norm: 2.1281
+Fx: 0.3909, Fy: -0.0000, Fz: 2.0919, Norm: 2.1281
+Fx: 0.3909, Fy: -0.0000, Fz: 2.0919, Norm: 2.1281
+Fx: 0.3909, Fy: -0.0000, Fz: 2.0919, Norm: 2.1281
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.1067, Fy: -0.0000, Fz: 0.3346, Norm: 0.3512
+Fx: 0.1067, Fy: -0.0000, Fz: 0.3346, Norm: 0.3512
+Fx: 0.1067, Fy: -0.0000, Fz: 0.3346, Norm: 0.3512
+Fx: 0.1067, Fy: -0.0000, Fz: 0.3346, Norm: 0.3512
+Fx: 0.1067, Fy: -0.0000, Fz: 0.3346, Norm: 0.3512
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.2059, Fy: -0.0000, Fz: 1.0069, Norm: 1.0278
+Fx: 0.2059, Fy: -0.0000, Fz: 1.0069, Norm: 1.0278
+Fx: 0.2059, Fy: -0.0000, Fz: 1.0069, Norm: 1.0278
+Fx: 0.2059, Fy: -0.0000, Fz: 1.0069, Norm: 1.0278
+Fx: 0.2059, Fy: -0.0000, Fz: 1.0069, Norm: 1.0278
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0807, Fy: -0.0000, Fz: 0.9934, Norm: 0.9967
+Fx: 0.0807, Fy: -0.0000, Fz: 0.9934, Norm: 0.9967
+Fx: 0.0807, Fy: -0.0000, Fz: 0.9934, Norm: 0.9967
+Fx: 0.0807, Fy: -0.0000, Fz: 0.9934, Norm: 0.9967
+Fx: 0.0807, Fy: -0.0000, Fz: 0.9934, Norm: 0.9967
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.1374, Fy: -0.0000, Fz: 0.8915, Norm: 0.9021
+Fx: 0.1374, Fy: -0.0000, Fz: 0.8915, Norm: 0.9021
+Fx: 0.1374, Fy: -0.0000, Fz: 0.8915, Norm: 0.9021
+Fx: 0.1374, Fy: -0.0000, Fz: 0.8915, Norm: 0.9021
+Fx: 0.1374, Fy: -0.0000, Fz: 0.8915, Norm: 0.9021
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.2189, Fy: -0.0000, Fz: 0.9036, Norm: 0.9298
+Fx: 0.2189, Fy: -0.0000, Fz: 0.9036, Norm: 0.9298
+Fx: 0.2189, Fy: -0.0000, Fz: 0.9036, Norm: 0.9298
+Fx: 0.2189, Fy: -0.0000, Fz: 0.9036, Norm: 0.9298
+Fx: 0.2189, Fy: -0.0000, Fz: 0.9036, Norm: 0.9298
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.7302, Fy: -0.0000, Fz: 2.0629, Norm: 2.1883
+Fx: 0.7302, Fy: -0.0000, Fz: 2.0629, Norm: 2.1883
+Fx: 0.7302, Fy: -0.0000, Fz: 2.0629, Norm: 2.1883
+Fx: 0.7302, Fy: -0.0000, Fz: 2.0629, Norm: 2.1883
+Fx: 0.7302, Fy: -0.0000, Fz: 2.0629, Norm: 2.1883
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.0367, Fy: -0.0000, Fz: 2.4667, Norm: 2.6757
+Fx: 1.0367, Fy: -0.0000, Fz: 2.4667, Norm: 2.6757
+Fx: 1.0367, Fy: -0.0000, Fz: 2.4667, Norm: 2.6757
+Fx: 1.0367, Fy: -0.0000, Fz: 2.4667, Norm: 2.6757
+Fx: 1.0367, Fy: -0.0000, Fz: 2.4667, Norm: 2.6757
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.7624, Fy: -0.0000, Fz: 1.7842, Norm: 1.9402
+Fx: 0.7624, Fy: -0.0000, Fz: 1.7842, Norm: 1.9402
+Fx: 0.7624, Fy: -0.0000, Fz: 1.7842, Norm: 1.9402
+Fx: 0.7624, Fy: -0.0000, Fz: 1.7842, Norm: 1.9402
+Fx: 0.7624, Fy: -0.0000, Fz: 1.7842, Norm: 1.9402
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.8901, Fy: -0.0000, Fz: 1.8542, Norm: 2.0568
+Fx: 0.8901, Fy: -0.0000, Fz: 1.8542, Norm: 2.0568
+Fx: 0.8901, Fy: -0.0000, Fz: 1.8542, Norm: 2.0568
+Fx: 0.8901, Fy: -0.0000, Fz: 1.8542, Norm: 2.0568
+Fx: 0.8901, Fy: -0.0000, Fz: 1.8542, Norm: 2.0568
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.1858, Fy: -0.0000, Fz: 2.4542, Norm: 2.7257
+Fx: 1.1858, Fy: -0.0000, Fz: 2.4542, Norm: 2.7257
+Fx: 1.1858, Fy: -0.0000, Fz: 2.4542, Norm: 2.7257
+Fx: 1.1858, Fy: -0.0000, Fz: 2.4542, Norm: 2.7257
+Fx: 1.1858, Fy: -0.0000, Fz: 2.4542, Norm: 2.7257
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.1657, Fy: -0.0000, Fz: 2.2632, Norm: 2.5458
+Fx: 1.1657, Fy: -0.0000, Fz: 2.2632, Norm: 2.5458
+Fx: 1.1657, Fy: -0.0000, Fz: 2.2632, Norm: 2.5458
+Fx: 1.1657, Fy: -0.0000, Fz: 2.2632, Norm: 2.5458
+Fx: 1.1657, Fy: -0.0000, Fz: 2.2632, Norm: 2.5458
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.0047, Fy: -0.0000, Fz: 1.9069, Norm: 2.1554
+Fx: 1.0047, Fy: -0.0000, Fz: 1.9069, Norm: 2.1554
+Fx: 1.0047, Fy: -0.0000, Fz: 1.9069, Norm: 2.1554
+Fx: 1.0047, Fy: -0.0000, Fz: 1.9069, Norm: 2.1554
+Fx: 1.0047, Fy: -0.0000, Fz: 1.9069, Norm: 2.1554
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.0843, Fy: -0.0000, Fz: 2.0153, Norm: 2.2885
+Fx: 1.0843, Fy: -0.0000, Fz: 2.0153, Norm: 2.2885
+Fx: 1.0843, Fy: -0.0000, Fz: 2.0153, Norm: 2.2885
+Fx: 1.0843, Fy: -0.0000, Fz: 2.0153, Norm: 2.2885
+Fx: 1.0843, Fy: -0.0000, Fz: 2.0153, Norm: 2.2885
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.1777, Fy: -0.0000, Fz: 2.1110, Norm: 2.4172
+Fx: 1.1777, Fy: -0.0000, Fz: 2.1110, Norm: 2.4172
+Fx: 1.1777, Fy: -0.0000, Fz: 2.1110, Norm: 2.4172
+Fx: 1.1777, Fy: -0.0000, Fz: 2.1110, Norm: 2.4172
+Fx: 1.1777, Fy: -0.0000, Fz: 2.1110, Norm: 2.4172
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.3070, Fy: -0.0000, Fz: 2.1153, Norm: 2.4865
+Fx: 1.3070, Fy: -0.0000, Fz: 2.1153, Norm: 2.4865
+Fx: 1.3070, Fy: -0.0000, Fz: 2.1153, Norm: 2.4865
+Fx: 1.3070, Fy: -0.0000, Fz: 2.1153, Norm: 2.4865
+Fx: 1.3070, Fy: -0.0000, Fz: 2.1153, Norm: 2.4865
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 1.4271, Fy: -0.0000, Fz: 3.4797, Norm: 3.7609
+Fx: 1.4271, Fy: -0.0000, Fz: 3.4797, Norm: 3.7609
+Fx: 1.4271, Fy: -0.0000, Fz: 3.4797, Norm: 3.7609
+Fx: 1.4271, Fy: -0.0000, Fz: 3.4797, Norm: 3.7609
+Fx: 1.4271, Fy: -0.0000, Fz: 3.4797, Norm: 3.7609
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.9629, Fy: -0.0000, Fz: 2.2319, Norm: 2.4307
+Fx: 0.9629, Fy: -0.0000, Fz: 2.2319, Norm: 2.4307
+Fx: 0.9629, Fy: -0.0000, Fz: 2.2319, Norm: 2.4307
+Fx: 0.9629, Fy: -0.0000, Fz: 2.2319, Norm: 2.4307
+Fx: 0.9629, Fy: -0.0000, Fz: 2.2319, Norm: 2.4307
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.7400, Fy: -0.0000, Fz: 1.8849, Norm: 2.0249
+Fx: 0.7400, Fy: -0.0000, Fz: 1.8849, Norm: 2.0249
+Fx: 0.7400, Fy: -0.0000, Fz: 1.8849, Norm: 2.0249
+Fx: 0.7400, Fy: -0.0000, Fz: 1.8849, Norm: 2.0249
+Fx: 0.7400, Fy: -0.0000, Fz: 1.8849, Norm: 2.0249
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.5889, Fy: -0.0000, Fz: 1.6742, Norm: 1.7747
+Fx: 0.5889, Fy: -0.0000, Fz: 1.6742, Norm: 1.7747
+Fx: 0.5889, Fy: -0.0000, Fz: 1.6742, Norm: 1.7747
+Fx: 0.5889, Fy: -0.0000, Fz: 1.6742, Norm: 1.7747
+Fx: 0.5889, Fy: -0.0000, Fz: 1.6742, Norm: 1.7747
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.3832, Fy: -0.0000, Fz: 1.2586, Norm: 1.3157
+Fx: 0.3832, Fy: -0.0000, Fz: 1.2586, Norm: 1.3157
+Fx: 0.3832, Fy: -0.0000, Fz: 1.2586, Norm: 1.3157
+Fx: 0.3832, Fy: -0.0000, Fz: 1.2586, Norm: 1.3157
+Fx: 0.3832, Fy: -0.0000, Fz: 1.2586, Norm: 1.3157
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.2610, Fy: -0.0000, Fz: 1.0241, Norm: 1.0569
+Fx: 0.2610, Fy: -0.0000, Fz: 1.0241, Norm: 1.0569
+Fx: 0.2610, Fy: -0.0000, Fz: 1.0241, Norm: 1.0569
+Fx: 0.2610, Fy: -0.0000, Fz: 1.0241, Norm: 1.0569
+Fx: 0.2610, Fy: -0.0000, Fz: 1.0241, Norm: 1.0569
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.4079, Fy: -0.0000, Fz: 1.0317, Norm: 1.1095
+Fx: 0.4079, Fy: -0.0000, Fz: 1.0317, Norm: 1.1095
+Fx: 0.4079, Fy: -0.0000, Fz: 1.0317, Norm: 1.1095
+Fx: 0.4079, Fy: -0.0000, Fz: 1.0317, Norm: 1.1095
+Fx: 0.4079, Fy: -0.0000, Fz: 1.0317, Norm: 1.1095
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.1175, Fy: -0.0000, Fz: 0.4068, Norm: 0.4234
+Fx: 0.1175, Fy: -0.0000, Fz: 0.4068, Norm: 0.4234
+Fx: 0.1175, Fy: -0.0000, Fz: 0.4068, Norm: 0.4234
+Fx: 0.1175, Fy: -0.0000, Fz: 0.4068, Norm: 0.4234
+Fx: 0.1175, Fy: -0.0000, Fz: 0.4068, Norm: 0.4234
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.3559, Fy: -0.0000, Fz: 0.9222, Norm: 0.9885
+Fx: 0.3559, Fy: -0.0000, Fz: 0.9222, Norm: 0.9885
+Fx: 0.3559, Fy: -0.0000, Fz: 0.9222, Norm: 0.9885
+Fx: 0.3559, Fy: -0.0000, Fz: 0.9222, Norm: 0.9885
+Fx: 0.3559, Fy: -0.0000, Fz: 0.9222, Norm: 0.9885
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.2693, Fy: -0.0000, Fz: 0.9634, Norm: 1.0004
+Fx: 0.2693, Fy: -0.0000, Fz: 0.9634, Norm: 1.0004
+Fx: 0.2693, Fy: -0.0000, Fz: 0.9634, Norm: 1.0004
+Fx: 0.2693, Fy: -0.0000, Fz: 0.9634, Norm: 1.0004
+Fx: 0.2693, Fy: -0.0000, Fz: 0.9634, Norm: 1.0004
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.1293, Fy: -0.0000, Fz: 0.5752, Norm: 0.5895
+Fx: 0.1293, Fy: -0.0000, Fz: 0.5752, Norm: 0.5895
+Fx: 0.1293, Fy: -0.0000, Fz: 0.5752, Norm: 0.5895
+Fx: 0.1293, Fy: -0.0000, Fz: 0.5752, Norm: 0.5895
+Fx: 0.1293, Fy: -0.0000, Fz: 0.5752, Norm: 0.5895
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0947, Fy: -0.0000, Fz: 0.4306, Norm: 0.4409
+Fx: 0.0947, Fy: -0.0000, Fz: 0.4306, Norm: 0.4409
+Fx: 0.0947, Fy: -0.0000, Fz: 0.4306, Norm: 0.4409
+Fx: 0.0947, Fy: -0.0000, Fz: 0.4306, Norm: 0.4409
+Fx: 0.0947, Fy: -0.0000, Fz: 0.4306, Norm: 0.4409
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0307, Fy: -0.0000, Fz: 0.1784, Norm: 0.1811
+Fx: 0.0307, Fy: -0.0000, Fz: 0.1784, Norm: 0.1811
+Fx: 0.0307, Fy: -0.0000, Fz: 0.1784, Norm: 0.1811
+Fx: 0.0307, Fy: -0.0000, Fz: 0.1784, Norm: 0.1811
+Fx: 0.0307, Fy: -0.0000, Fz: 0.1784, Norm: 0.1811
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0677, Fy: -0.0000, Fz: 0.2778, Norm: 0.2860
+Fx: 0.0677, Fy: -0.0000, Fz: 0.2778, Norm: 0.2860
+Fx: 0.0677, Fy: -0.0000, Fz: 0.2778, Norm: 0.2860
+Fx: 0.0677, Fy: -0.0000, Fz: 0.2778, Norm: 0.2860
+Fx: 0.0677, Fy: -0.0000, Fz: 0.2778, Norm: 0.2860
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0587, Fy: -0.0000, Fz: 0.2147, Norm: 0.2226
+Fx: 0.0587, Fy: -0.0000, Fz: 0.2147, Norm: 0.2226
+Fx: 0.0587, Fy: -0.0000, Fz: 0.2147, Norm: 0.2226
+Fx: 0.0587, Fy: -0.0000, Fz: 0.2147, Norm: 0.2226
+Fx: 0.0587, Fy: -0.0000, Fz: 0.2147, Norm: 0.2226
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.0000, Fy: -0.0000, Fz: 0.1751, Norm: 0.1751
+Fx: 0.0000, Fy: -0.0000, Fz: 0.1751, Norm: 0.1751
+Fx: 0.0000, Fy: -0.0000, Fz: 0.1751, Norm: 0.1751
+Fx: 0.0000, Fy: -0.0000, Fz: 0.1751, Norm: 0.1751
+Fx: 0.0000, Fy: -0.0000, Fz: 0.1751, Norm: 0.1751
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.3775, Fy: 0.0547, Fz: 1.0041, Norm: 1.0741
+Fx: 0.3775, Fy: 0.0547, Fz: 1.0041, Norm: 1.0741
+Fx: 0.3775, Fy: 0.0547, Fz: 1.0041, Norm: 1.0741
+Fx: 0.3775, Fy: 0.0547, Fz: 1.0041, Norm: 1.0741
+Fx: 0.3775, Fy: 0.0547, Fz: 1.0041, Norm: 1.0741
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 6, 'total_episodes': 6}
+Fx: 0.5487, Fy: -0.0000, Fz: 0.9674, Norm: 1.1122
+Fx: 0.5487, Fy: -0.0000, Fz: 0.9674, Norm: 1.1122
+Fx: 0.5487, Fy: -0.0000, Fz: 0.9674, Norm: 1.1122
+Fx: 0.5487, Fy: -0.0000, Fz: 0.9674, Norm: 1.1122
+Fx: 0.5487, Fy: -0.0000, Fz: 0.9674, Norm: 1.1122
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+[演示] 环境0本轮累计转笔圈数: 0.17
+Fx: 0.1360, Fy: 0.1323, Fz: 0.5877, Norm: 0.6176
+Fx: 0.1360, Fy: 0.1323, Fz: 0.5877, Norm: 0.6176
+Fx: 0.1360, Fy: 0.1323, Fz: 0.5877, Norm: 0.6176
+Fx: 0.1360, Fy: 0.1323, Fz: 0.5877, Norm: 0.6176
+Fx: 0.1360, Fy: 0.1323, Fz: 0.5877, Norm: 0.6176
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: 0.0275, Fz: 0.2623, Norm: 0.2637
+Fx: -0.0000, Fy: 0.0275, Fz: 0.2623, Norm: 0.2637
+Fx: -0.0000, Fy: 0.0275, Fz: 0.2623, Norm: 0.2637
+Fx: -0.0000, Fy: 0.0275, Fz: 0.2623, Norm: 0.2637
+Fx: -0.0000, Fy: 0.0275, Fz: 0.2623, Norm: 0.2637
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: 0.0662, Fz: 0.1174, Norm: 0.1348
+Fx: -0.0000, Fy: 0.0662, Fz: 0.1174, Norm: 0.1348
+Fx: -0.0000, Fy: 0.0662, Fz: 0.1174, Norm: 0.1348
+Fx: -0.0000, Fy: 0.0662, Fz: 0.1174, Norm: 0.1348
+Fx: -0.0000, Fy: 0.0662, Fz: 0.1174, Norm: 0.1348
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1821, Norm: 0.1821
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1821, Norm: 0.1821
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1821, Norm: 0.1821
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1821, Norm: 0.1821
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1821, Norm: 0.1821
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: 0.0764, Fz: 0.1341, Norm: 0.1544
+Fx: -0.0000, Fy: 0.0764, Fz: 0.1341, Norm: 0.1544
+Fx: -0.0000, Fy: 0.0764, Fz: 0.1341, Norm: 0.1544
+Fx: -0.0000, Fy: 0.0764, Fz: 0.1341, Norm: 0.1544
+Fx: -0.0000, Fy: 0.0764, Fz: 0.1341, Norm: 0.1544
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5405, Norm: 0.5405
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5405, Norm: 0.5405
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5405, Norm: 0.5405
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5405, Norm: 0.5405
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5405, Norm: 0.5405
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2639, Norm: 0.2639
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2639, Norm: 0.2639
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2639, Norm: 0.2639
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2639, Norm: 0.2639
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2639, Norm: 0.2639
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: -0.0000, Fy: 0.0316, Fz: 0.1967, Norm: 0.1992
+Fx: -0.0000, Fy: 0.0316, Fz: 0.1967, Norm: 0.1992
+Fx: -0.0000, Fy: 0.0316, Fz: 0.1967, Norm: 0.1992
+Fx: -0.0000, Fy: 0.0316, Fz: 0.1967, Norm: 0.1992
+Fx: -0.0000, Fy: 0.0316, Fz: 0.1967, Norm: 0.1992
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.1348, Fy: -0.0000, Fz: 0.9485, Norm: 0.9580
+Fx: 0.1348, Fy: -0.0000, Fz: 0.9485, Norm: 0.9580
+Fx: 0.1348, Fy: -0.0000, Fz: 0.9485, Norm: 0.9580
+Fx: 0.1348, Fy: -0.0000, Fz: 0.9485, Norm: 0.9580
+Fx: 0.1348, Fy: -0.0000, Fz: 0.9485, Norm: 0.9580
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.1169, Fy: -0.0000, Fz: 1.0306, Norm: 1.0372
+Fx: 0.1169, Fy: -0.0000, Fz: 1.0306, Norm: 1.0372
+Fx: 0.1169, Fy: -0.0000, Fz: 1.0306, Norm: 1.0372
+Fx: 0.1169, Fy: -0.0000, Fz: 1.0306, Norm: 1.0372
+Fx: 0.1169, Fy: -0.0000, Fz: 1.0306, Norm: 1.0372
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0745, Fy: -0.0000, Fz: 0.6745, Norm: 0.6786
+Fx: 0.0745, Fy: -0.0000, Fz: 0.6745, Norm: 0.6786
+Fx: 0.0745, Fy: -0.0000, Fz: 0.6745, Norm: 0.6786
+Fx: 0.0745, Fy: -0.0000, Fz: 0.6745, Norm: 0.6786
+Fx: 0.0745, Fy: -0.0000, Fz: 0.6745, Norm: 0.6786
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0689, Fy: -0.0000, Fz: 0.6581, Norm: 0.6617
+Fx: 0.0689, Fy: -0.0000, Fz: 0.6581, Norm: 0.6617
+Fx: 0.0689, Fy: -0.0000, Fz: 0.6581, Norm: 0.6617
+Fx: 0.0689, Fy: -0.0000, Fz: 0.6581, Norm: 0.6617
+Fx: 0.0689, Fy: -0.0000, Fz: 0.6581, Norm: 0.6617
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0764, Fy: -0.0000, Fz: 0.6308, Norm: 0.6355
+Fx: 0.0764, Fy: -0.0000, Fz: 0.6308, Norm: 0.6355
+Fx: 0.0764, Fy: -0.0000, Fz: 0.6308, Norm: 0.6355
+Fx: 0.0764, Fy: -0.0000, Fz: 0.6308, Norm: 0.6355
+Fx: 0.0764, Fy: -0.0000, Fz: 0.6308, Norm: 0.6355
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.1418, Fy: -0.0000, Fz: 0.7960, Norm: 0.8085
+Fx: 0.1418, Fy: -0.0000, Fz: 0.7960, Norm: 0.8085
+Fx: 0.1418, Fy: -0.0000, Fz: 0.7960, Norm: 0.8085
+Fx: 0.1418, Fy: -0.0000, Fz: 0.7960, Norm: 0.8085
+Fx: 0.1418, Fy: -0.0000, Fz: 0.7960, Norm: 0.8085
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0000, Fy: 0.0510, Fz: 0.1269, Norm: 0.1368
+Fx: 0.0000, Fy: 0.0510, Fz: 0.1269, Norm: 0.1368
+Fx: 0.0000, Fy: 0.0510, Fz: 0.1269, Norm: 0.1368
+Fx: 0.0000, Fy: 0.0510, Fz: 0.1269, Norm: 0.1368
+Fx: 0.0000, Fy: 0.0510, Fz: 0.1269, Norm: 0.1368
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0260, Fy: 0.0000, Fz: 0.1454, Norm: 0.1477
+Fx: 0.0260, Fy: 0.0000, Fz: 0.1454, Norm: 0.1477
+Fx: 0.0260, Fy: 0.0000, Fz: 0.1454, Norm: 0.1477
+Fx: 0.0260, Fy: 0.0000, Fz: 0.1454, Norm: 0.1477
+Fx: 0.0260, Fy: 0.0000, Fz: 0.1454, Norm: 0.1477
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0610, Fy: -0.0000, Fz: 0.1813, Norm: 0.1913
+Fx: 0.0610, Fy: -0.0000, Fz: 0.1813, Norm: 0.1913
+Fx: 0.0610, Fy: -0.0000, Fz: 0.1813, Norm: 0.1913
+Fx: 0.0610, Fy: -0.0000, Fz: 0.1813, Norm: 0.1913
+Fx: 0.0610, Fy: -0.0000, Fz: 0.1813, Norm: 0.1913
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0428, Fy: 0.0000, Fz: 0.1552, Norm: 0.1609
+Fx: 0.0428, Fy: 0.0000, Fz: 0.1552, Norm: 0.1609
+Fx: 0.0428, Fy: 0.0000, Fz: 0.1552, Norm: 0.1609
+Fx: 0.0428, Fy: 0.0000, Fz: 0.1552, Norm: 0.1609
+Fx: 0.0428, Fy: 0.0000, Fz: 0.1552, Norm: 0.1609
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 7, 'total_episodes': 7}
+Fx: 0.0345, Fy: 0.0454, Fz: 0.1538, Norm: 0.1640
+Fx: 0.0345, Fy: 0.0454, Fz: 0.1538, Norm: 0.1640
+Fx: 0.0345, Fy: 0.0454, Fz: 0.1538, Norm: 0.1640
+Fx: 0.0345, Fy: 0.0454, Fz: 0.1538, Norm: 0.1640
+Fx: 0.0345, Fy: 0.0454, Fz: 0.1538, Norm: 0.1640
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+[演示] 环境0本轮累计转笔圈数: 0.08
+Fx: 0.1565, Fy: -0.0000, Fz: 0.1299, Norm: 0.2034
+Fx: 0.1565, Fy: -0.0000, Fz: 0.1299, Norm: 0.2034
+Fx: 0.1565, Fy: -0.0000, Fz: 0.1299, Norm: 0.2034
+Fx: 0.1565, Fy: -0.0000, Fz: 0.1299, Norm: 0.2034
+Fx: 0.1565, Fy: -0.0000, Fz: 0.1299, Norm: 0.2034
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1092, Norm: 0.1092
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1165, Norm: 0.1165
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1165, Norm: 0.1165
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1165, Norm: 0.1165
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1165, Norm: 0.1165
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1165, Norm: 0.1165
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.0241, Fz: 0.0000, Norm: 0.0241
+Fx: -0.0000, Fy: 0.0241, Fz: 0.0000, Norm: 0.0241
+Fx: -0.0000, Fy: 0.0241, Fz: 0.0000, Norm: 0.0241
+Fx: -0.0000, Fy: 0.0241, Fz: 0.0000, Norm: 0.0241
+Fx: -0.0000, Fy: 0.0241, Fz: 0.0000, Norm: 0.0241
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0505, Fy: 0.1207, Fz: -0.0000, Norm: 0.1309
+Fx: 0.0505, Fy: 0.1207, Fz: -0.0000, Norm: 0.1309
+Fx: 0.0505, Fy: 0.1207, Fz: -0.0000, Norm: 0.1309
+Fx: 0.0505, Fy: 0.1207, Fz: -0.0000, Norm: 0.1309
+Fx: 0.0505, Fy: 0.1207, Fz: -0.0000, Norm: 0.1309
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1185, Fy: 0.1081, Fz: 0.0535, Norm: 0.1691
+Fx: 0.1185, Fy: 0.1081, Fz: 0.0535, Norm: 0.1691
+Fx: 0.1185, Fy: 0.1081, Fz: 0.0535, Norm: 0.1691
+Fx: 0.1185, Fy: 0.1081, Fz: 0.0535, Norm: 0.1691
+Fx: 0.1185, Fy: 0.1081, Fz: 0.0535, Norm: 0.1691
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1246, Fy: 0.0927, Fz: 0.0969, Norm: 0.1830
+Fx: 0.1246, Fy: 0.0927, Fz: 0.0969, Norm: 0.1830
+Fx: 0.1246, Fy: 0.0927, Fz: 0.0969, Norm: 0.1830
+Fx: 0.1246, Fy: 0.0927, Fz: 0.0969, Norm: 0.1830
+Fx: 0.1246, Fy: 0.0927, Fz: 0.0969, Norm: 0.1830
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1476, Fy: 0.1189, Fz: 0.1562, Norm: 0.2456
+Fx: 0.1476, Fy: 0.1189, Fz: 0.1562, Norm: 0.2456
+Fx: 0.1476, Fy: 0.1189, Fz: 0.1562, Norm: 0.2456
+Fx: 0.1476, Fy: 0.1189, Fz: 0.1562, Norm: 0.2456
+Fx: 0.1476, Fy: 0.1189, Fz: 0.1562, Norm: 0.2456
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1655, Fy: 0.1188, Fz: 0.1750, Norm: 0.2685
+Fx: 0.1655, Fy: 0.1188, Fz: 0.1750, Norm: 0.2685
+Fx: 0.1655, Fy: 0.1188, Fz: 0.1750, Norm: 0.2685
+Fx: 0.1655, Fy: 0.1188, Fz: 0.1750, Norm: 0.2685
+Fx: 0.1655, Fy: 0.1188, Fz: 0.1750, Norm: 0.2685
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1513, Fy: 0.1260, Fz: 0.1959, Norm: 0.2777
+Fx: 0.1513, Fy: 0.1260, Fz: 0.1959, Norm: 0.2777
+Fx: 0.1513, Fy: 0.1260, Fz: 0.1959, Norm: 0.2777
+Fx: 0.1513, Fy: 0.1260, Fz: 0.1959, Norm: 0.2777
+Fx: 0.1513, Fy: 0.1260, Fz: 0.1959, Norm: 0.2777
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1538, Fy: 0.1134, Fz: 0.1910, Norm: 0.2701
+Fx: 0.1538, Fy: 0.1134, Fz: 0.1910, Norm: 0.2701
+Fx: 0.1538, Fy: 0.1134, Fz: 0.1910, Norm: 0.2701
+Fx: 0.1538, Fy: 0.1134, Fz: 0.1910, Norm: 0.2701
+Fx: 0.1538, Fy: 0.1134, Fz: 0.1910, Norm: 0.2701
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1392, Fy: 0.0937, Fz: 0.1659, Norm: 0.2359
+Fx: 0.1392, Fy: 0.0937, Fz: 0.1659, Norm: 0.2359
+Fx: 0.1392, Fy: 0.0937, Fz: 0.1659, Norm: 0.2359
+Fx: 0.1392, Fy: 0.0937, Fz: 0.1659, Norm: 0.2359
+Fx: 0.1392, Fy: 0.0937, Fz: 0.1659, Norm: 0.2359
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1511, Fy: 0.1172, Fz: 0.2038, Norm: 0.2794
+Fx: 0.1511, Fy: 0.1172, Fz: 0.2038, Norm: 0.2794
+Fx: 0.1511, Fy: 0.1172, Fz: 0.2038, Norm: 0.2794
+Fx: 0.1511, Fy: 0.1172, Fz: 0.2038, Norm: 0.2794
+Fx: 0.1511, Fy: 0.1172, Fz: 0.2038, Norm: 0.2794
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1381, Fy: 0.1165, Fz: 0.2087, Norm: 0.2760
+Fx: 0.1381, Fy: 0.1165, Fz: 0.2087, Norm: 0.2760
+Fx: 0.1381, Fy: 0.1165, Fz: 0.2087, Norm: 0.2760
+Fx: 0.1381, Fy: 0.1165, Fz: 0.2087, Norm: 0.2760
+Fx: 0.1381, Fy: 0.1165, Fz: 0.2087, Norm: 0.2760
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0819, Fy: 0.1605, Fz: 0.2798, Norm: 0.3328
+Fx: 0.0819, Fy: 0.1605, Fz: 0.2798, Norm: 0.3328
+Fx: 0.0819, Fy: 0.1605, Fz: 0.2798, Norm: 0.3328
+Fx: 0.0819, Fy: 0.1605, Fz: 0.2798, Norm: 0.3328
+Fx: 0.0819, Fy: 0.1605, Fz: 0.2798, Norm: 0.3328
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4090, Norm: 0.4090
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4090, Norm: 0.4090
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4090, Norm: 0.4090
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4090, Norm: 0.4090
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4090, Norm: 0.4090
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4765, Norm: 0.4765
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4765, Norm: 0.4765
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4765, Norm: 0.4765
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4765, Norm: 0.4765
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4765, Norm: 0.4765
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.4522, Norm: 0.4522
+Fx: -0.0000, Fy: 0.0000, Fz: 0.4522, Norm: 0.4522
+Fx: -0.0000, Fy: 0.0000, Fz: 0.4522, Norm: 0.4522
+Fx: -0.0000, Fy: 0.0000, Fz: 0.4522, Norm: 0.4522
+Fx: -0.0000, Fy: 0.0000, Fz: 0.4522, Norm: 0.4522
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7998, Norm: 0.7998
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7998, Norm: 0.7998
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7998, Norm: 0.7998
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7998, Norm: 0.7998
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7998, Norm: 0.7998
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0918, Fy: -0.0000, Fz: 0.5600, Norm: 0.5675
+Fx: 0.0918, Fy: -0.0000, Fz: 0.5600, Norm: 0.5675
+Fx: 0.0918, Fy: -0.0000, Fz: 0.5600, Norm: 0.5675
+Fx: 0.0918, Fy: -0.0000, Fz: 0.5600, Norm: 0.5675
+Fx: 0.0918, Fy: -0.0000, Fz: 0.5600, Norm: 0.5675
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0706, Fy: -0.0000, Fz: 0.4222, Norm: 0.4280
+Fx: 0.0706, Fy: -0.0000, Fz: 0.4222, Norm: 0.4280
+Fx: 0.0706, Fy: -0.0000, Fz: 0.4222, Norm: 0.4280
+Fx: 0.0706, Fy: -0.0000, Fz: 0.4222, Norm: 0.4280
+Fx: 0.0706, Fy: -0.0000, Fz: 0.4222, Norm: 0.4280
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1871, Norm: 0.1871
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1871, Norm: 0.1871
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1871, Norm: 0.1871
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1871, Norm: 0.1871
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1871, Norm: 0.1871
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1167, Norm: 0.1167
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1167, Norm: 0.1167
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1167, Norm: 0.1167
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1167, Norm: 0.1167
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1167, Norm: 0.1167
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2105, Norm: 0.2105
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2105, Norm: 0.2105
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2105, Norm: 0.2105
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2105, Norm: 0.2105
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2105, Norm: 0.2105
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2490, Norm: 0.2490
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2490, Norm: 0.2490
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2490, Norm: 0.2490
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2490, Norm: 0.2490
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2490, Norm: 0.2490
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.8230, Fy: -0.0000, Fz: 0.6014, Norm: 1.0193
+Fx: 0.8230, Fy: -0.0000, Fz: 0.6014, Norm: 1.0193
+Fx: 0.8230, Fy: -0.0000, Fz: 0.6014, Norm: 1.0193
+Fx: 0.8230, Fy: -0.0000, Fz: 0.6014, Norm: 1.0193
+Fx: 0.8230, Fy: -0.0000, Fz: 0.6014, Norm: 1.0193
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0433, Norm: 0.0433
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0433, Norm: 0.0433
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0433, Norm: 0.0433
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0433, Norm: 0.0433
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0433, Norm: 0.0433
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.8259, Fz: -0.0000, Norm: 0.8259
+Fx: -0.0000, Fy: 0.8259, Fz: -0.0000, Norm: 0.8259
+Fx: -0.0000, Fy: 0.8259, Fz: -0.0000, Norm: 0.8259
+Fx: -0.0000, Fy: 0.8259, Fz: -0.0000, Norm: 0.8259
+Fx: -0.0000, Fy: 0.8259, Fz: -0.0000, Norm: 0.8259
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.6068, Fz: -0.0000, Norm: 0.6068
+Fx: -0.0000, Fy: 0.6068, Fz: -0.0000, Norm: 0.6068
+Fx: -0.0000, Fy: 0.6068, Fz: -0.0000, Norm: 0.6068
+Fx: -0.0000, Fy: 0.6068, Fz: -0.0000, Norm: 0.6068
+Fx: -0.0000, Fy: 0.6068, Fz: -0.0000, Norm: 0.6068
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.5025, Fz: -0.0000, Norm: 0.5025
+Fx: -0.0000, Fy: 0.5025, Fz: -0.0000, Norm: 0.5025
+Fx: -0.0000, Fy: 0.5025, Fz: -0.0000, Norm: 0.5025
+Fx: -0.0000, Fy: 0.5025, Fz: -0.0000, Norm: 0.5025
+Fx: -0.0000, Fy: 0.5025, Fz: -0.0000, Norm: 0.5025
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.5211, Fz: -0.0000, Norm: 0.5211
+Fx: -0.0000, Fy: 0.5211, Fz: -0.0000, Norm: 0.5211
+Fx: -0.0000, Fy: 0.5211, Fz: -0.0000, Norm: 0.5211
+Fx: -0.0000, Fy: 0.5211, Fz: -0.0000, Norm: 0.5211
+Fx: -0.0000, Fy: 0.5211, Fz: -0.0000, Norm: 0.5211
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.2438, Fz: -0.0000, Norm: 0.2438
+Fx: -0.0000, Fy: 0.2438, Fz: -0.0000, Norm: 0.2438
+Fx: -0.0000, Fy: 0.2438, Fz: -0.0000, Norm: 0.2438
+Fx: -0.0000, Fy: 0.2438, Fz: -0.0000, Norm: 0.2438
+Fx: -0.0000, Fy: 0.2438, Fz: -0.0000, Norm: 0.2438
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.2174, Fz: -0.0000, Norm: 0.2174
+Fx: -0.0000, Fy: 0.2174, Fz: -0.0000, Norm: 0.2174
+Fx: -0.0000, Fy: 0.2174, Fz: -0.0000, Norm: 0.2174
+Fx: -0.0000, Fy: 0.2174, Fz: -0.0000, Norm: 0.2174
+Fx: -0.0000, Fy: 0.2174, Fz: -0.0000, Norm: 0.2174
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.1588, Fz: -0.0000, Norm: 0.1588
+Fx: -0.0000, Fy: 0.1588, Fz: -0.0000, Norm: 0.1588
+Fx: -0.0000, Fy: 0.1588, Fz: -0.0000, Norm: 0.1588
+Fx: -0.0000, Fy: 0.1588, Fz: -0.0000, Norm: 0.1588
+Fx: -0.0000, Fy: 0.1588, Fz: -0.0000, Norm: 0.1588
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.1125, Fz: -0.0000, Norm: 0.1125
+Fx: -0.0000, Fy: 0.1125, Fz: -0.0000, Norm: 0.1125
+Fx: -0.0000, Fy: 0.1125, Fz: -0.0000, Norm: 0.1125
+Fx: -0.0000, Fy: 0.1125, Fz: -0.0000, Norm: 0.1125
+Fx: -0.0000, Fy: 0.1125, Fz: -0.0000, Norm: 0.1125
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.5181, Fz: -0.0000, Norm: 0.5181
+Fx: -0.0000, Fy: 0.5181, Fz: -0.0000, Norm: 0.5181
+Fx: -0.0000, Fy: 0.5181, Fz: -0.0000, Norm: 0.5181
+Fx: -0.0000, Fy: 0.5181, Fz: -0.0000, Norm: 0.5181
+Fx: -0.0000, Fy: 0.5181, Fz: -0.0000, Norm: 0.5181
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.4858, Fz: -0.0000, Norm: 0.4858
+Fx: -0.0000, Fy: 0.4858, Fz: -0.0000, Norm: 0.4858
+Fx: -0.0000, Fy: 0.4858, Fz: -0.0000, Norm: 0.4858
+Fx: -0.0000, Fy: 0.4858, Fz: -0.0000, Norm: 0.4858
+Fx: -0.0000, Fy: 0.4858, Fz: -0.0000, Norm: 0.4858
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.4925, Fz: -0.0000, Norm: 0.4925
+Fx: -0.0000, Fy: 0.4925, Fz: -0.0000, Norm: 0.4925
+Fx: -0.0000, Fy: 0.4925, Fz: -0.0000, Norm: 0.4925
+Fx: -0.0000, Fy: 0.4925, Fz: -0.0000, Norm: 0.4925
+Fx: -0.0000, Fy: 0.4925, Fz: -0.0000, Norm: 0.4925
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.5119, Fz: -0.0000, Norm: 0.5119
+Fx: -0.0000, Fy: 0.5119, Fz: -0.0000, Norm: 0.5119
+Fx: -0.0000, Fy: 0.5119, Fz: -0.0000, Norm: 0.5119
+Fx: -0.0000, Fy: 0.5119, Fz: -0.0000, Norm: 0.5119
+Fx: -0.0000, Fy: 0.5119, Fz: -0.0000, Norm: 0.5119
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.4737, Fz: -0.0000, Norm: 0.4737
+Fx: -0.0000, Fy: 0.4737, Fz: -0.0000, Norm: 0.4737
+Fx: -0.0000, Fy: 0.4737, Fz: -0.0000, Norm: 0.4737
+Fx: -0.0000, Fy: 0.4737, Fz: -0.0000, Norm: 0.4737
+Fx: -0.0000, Fy: 0.4737, Fz: -0.0000, Norm: 0.4737
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.7768, Fz: -0.0000, Norm: 0.7768
+Fx: -0.0000, Fy: 0.7768, Fz: -0.0000, Norm: 0.7768
+Fx: -0.0000, Fy: 0.7768, Fz: -0.0000, Norm: 0.7768
+Fx: -0.0000, Fy: 0.7768, Fz: -0.0000, Norm: 0.7768
+Fx: -0.0000, Fy: 0.7768, Fz: -0.0000, Norm: 0.7768
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.2652, Fy: 1.2525, Fz: -0.0000, Norm: 1.2802
+Fx: 0.2652, Fy: 1.2525, Fz: -0.0000, Norm: 1.2802
+Fx: 0.2652, Fy: 1.2525, Fz: -0.0000, Norm: 1.2802
+Fx: 0.2652, Fy: 1.2525, Fz: -0.0000, Norm: 1.2802
+Fx: 0.2652, Fy: 1.2525, Fz: -0.0000, Norm: 1.2802
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 1.2281, Fz: -0.0000, Norm: 1.2281
+Fx: -0.0000, Fy: 1.2281, Fz: -0.0000, Norm: 1.2281
+Fx: -0.0000, Fy: 1.2281, Fz: -0.0000, Norm: 1.2281
+Fx: -0.0000, Fy: 1.2281, Fz: -0.0000, Norm: 1.2281
+Fx: -0.0000, Fy: 1.2281, Fz: -0.0000, Norm: 1.2281
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.1253, Fy: 1.1840, Fz: -0.0000, Norm: 1.1906
+Fx: 0.1253, Fy: 1.1840, Fz: -0.0000, Norm: 1.1906
+Fx: 0.1253, Fy: 1.1840, Fz: -0.0000, Norm: 1.1906
+Fx: 0.1253, Fy: 1.1840, Fz: -0.0000, Norm: 1.1906
+Fx: 0.1253, Fy: 1.1840, Fz: -0.0000, Norm: 1.1906
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 1.0609, Fz: -0.0000, Norm: 1.0609
+Fx: -0.0000, Fy: 1.0609, Fz: -0.0000, Norm: 1.0609
+Fx: -0.0000, Fy: 1.0609, Fz: -0.0000, Norm: 1.0609
+Fx: -0.0000, Fy: 1.0609, Fz: -0.0000, Norm: 1.0609
+Fx: -0.0000, Fy: 1.0609, Fz: -0.0000, Norm: 1.0609
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: -0.0000, Fy: 0.9473, Fz: -0.0000, Norm: 0.9473
+Fx: -0.0000, Fy: 0.9473, Fz: -0.0000, Norm: 0.9473
+Fx: -0.0000, Fy: 0.9473, Fz: -0.0000, Norm: 0.9473
+Fx: -0.0000, Fy: 0.9473, Fz: -0.0000, Norm: 0.9473
+Fx: -0.0000, Fy: 0.9473, Fz: -0.0000, Norm: 0.9473
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0702, Fy: 1.0087, Fz: -0.0000, Norm: 1.0111
+Fx: 0.0702, Fy: 1.0087, Fz: -0.0000, Norm: 1.0111
+Fx: 0.0702, Fy: 1.0087, Fz: -0.0000, Norm: 1.0111
+Fx: 0.0702, Fy: 1.0087, Fz: -0.0000, Norm: 1.0111
+Fx: 0.0702, Fy: 1.0087, Fz: -0.0000, Norm: 1.0111
+{'max_episode_length': 0, 'object_below_threshold': 0, 'pencil_fall': 8, 'total_episodes': 8}
+Fx: 0.0000, Fy: 1.2469, Fz: -0.0000, Norm: 1.2469
+Fx: 0.0000, Fy: 1.2469, Fz: -0.0000, Norm: 1.2469
+Fx: 0.0000, Fy: 1.2469, Fz: -0.0000, Norm: 1.2469
+Fx: 0.0000, Fy: 1.2469, Fz: -0.0000, Norm: 1.2469
+Fx: 0.0000, Fy: 1.2469, Fz: -0.0000, Norm: 1.2469
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 8, 'total_episodes': 9}
+[演示] 环境0本轮累计转笔圈数: 0.24
+Fx: 0.4149, Fy: 1.1109, Fz: -0.0000, Norm: 1.1858
+Fx: 0.4149, Fy: 1.1109, Fz: -0.0000, Norm: 1.1858
+Fx: 0.4149, Fy: 1.1109, Fz: -0.0000, Norm: 1.1858
+Fx: 0.4149, Fy: 1.1109, Fz: -0.0000, Norm: 1.1858
+Fx: 0.4149, Fy: 1.1109, Fz: -0.0000, Norm: 1.1858
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 8, 'total_episodes': 9}
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0585, Norm: 0.0585
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0585, Norm: 0.0585
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0585, Norm: 0.0585
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0585, Norm: 0.0585
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0585, Norm: 0.0585
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+[演示] 环境0本轮累计转笔圈数: 0.02
+Fx: -0.0000, Fy: 0.0263, Fz: 0.0492, Norm: 0.0558
+Fx: -0.0000, Fy: 0.0263, Fz: 0.0492, Norm: 0.0558
+Fx: -0.0000, Fy: 0.0263, Fz: 0.0492, Norm: 0.0558
+Fx: -0.0000, Fy: 0.0263, Fz: 0.0492, Norm: 0.0558
+Fx: -0.0000, Fy: 0.0263, Fz: 0.0492, Norm: 0.0558
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.3524, Fy: -0.0000, Fz: 1.0637, Norm: 1.1206
+Fx: 0.3524, Fy: -0.0000, Fz: 1.0637, Norm: 1.1206
+Fx: 0.3524, Fy: -0.0000, Fz: 1.0637, Norm: 1.1206
+Fx: 0.3524, Fy: -0.0000, Fz: 1.0637, Norm: 1.1206
+Fx: 0.3524, Fy: -0.0000, Fz: 1.0637, Norm: 1.1206
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4402, Fy: -0.0000, Fz: 1.1277, Norm: 1.2105
+Fx: 0.4402, Fy: -0.0000, Fz: 1.1277, Norm: 1.2105
+Fx: 0.4402, Fy: -0.0000, Fz: 1.1277, Norm: 1.2105
+Fx: 0.4402, Fy: -0.0000, Fz: 1.1277, Norm: 1.2105
+Fx: 0.4402, Fy: -0.0000, Fz: 1.1277, Norm: 1.2105
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6894, Fy: -0.0000, Fz: 1.7797, Norm: 1.9086
+Fx: 0.6894, Fy: -0.0000, Fz: 1.7797, Norm: 1.9086
+Fx: 0.6894, Fy: -0.0000, Fz: 1.7797, Norm: 1.9086
+Fx: 0.6894, Fy: -0.0000, Fz: 1.7797, Norm: 1.9086
+Fx: 0.6894, Fy: -0.0000, Fz: 1.7797, Norm: 1.9086
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6597, Fy: -0.0000, Fz: 1.9985, Norm: 2.1045
+Fx: 0.6597, Fy: -0.0000, Fz: 1.9985, Norm: 2.1045
+Fx: 0.6597, Fy: -0.0000, Fz: 1.9985, Norm: 2.1045
+Fx: 0.6597, Fy: -0.0000, Fz: 1.9985, Norm: 2.1045
+Fx: 0.6597, Fy: -0.0000, Fz: 1.9985, Norm: 2.1045
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.0108, Fy: -0.0000, Fz: 2.7314, Norm: 2.9124
+Fx: 1.0108, Fy: -0.0000, Fz: 2.7314, Norm: 2.9124
+Fx: 1.0108, Fy: -0.0000, Fz: 2.7314, Norm: 2.9124
+Fx: 1.0108, Fy: -0.0000, Fz: 2.7314, Norm: 2.9124
+Fx: 1.0108, Fy: -0.0000, Fz: 2.7314, Norm: 2.9124
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.3644, Fy: -0.0000, Fz: 0.9314, Norm: 1.0001
+Fx: 0.3644, Fy: -0.0000, Fz: 0.9314, Norm: 1.0001
+Fx: 0.3644, Fy: -0.0000, Fz: 0.9314, Norm: 1.0001
+Fx: 0.3644, Fy: -0.0000, Fz: 0.9314, Norm: 1.0001
+Fx: 0.3644, Fy: -0.0000, Fz: 0.9314, Norm: 1.0001
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.1346, Fy: -0.0000, Fz: 2.6636, Norm: 2.8951
+Fx: 1.1346, Fy: -0.0000, Fz: 2.6636, Norm: 2.8951
+Fx: 1.1346, Fy: -0.0000, Fz: 2.6636, Norm: 2.8951
+Fx: 1.1346, Fy: -0.0000, Fz: 2.6636, Norm: 2.8951
+Fx: 1.1346, Fy: -0.0000, Fz: 2.6636, Norm: 2.8951
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.2525, Fy: -0.0000, Fz: 1.3591, Norm: 1.3824
+Fx: 0.2525, Fy: -0.0000, Fz: 1.3591, Norm: 1.3824
+Fx: 0.2525, Fy: -0.0000, Fz: 1.3591, Norm: 1.3824
+Fx: 0.2525, Fy: -0.0000, Fz: 1.3591, Norm: 1.3824
+Fx: 0.2525, Fy: -0.0000, Fz: 1.3591, Norm: 1.3824
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6154, Fy: -0.0000, Fz: 3.1645, Norm: 3.2238
+Fx: 0.6154, Fy: -0.0000, Fz: 3.1645, Norm: 3.2238
+Fx: 0.6154, Fy: -0.0000, Fz: 3.1645, Norm: 3.2238
+Fx: 0.6154, Fy: -0.0000, Fz: 3.1645, Norm: 3.2238
+Fx: 0.6154, Fy: -0.0000, Fz: 3.1645, Norm: 3.2238
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.0458, Fy: -0.0000, Fz: 4.3222, Norm: 4.4469
+Fx: 1.0458, Fy: -0.0000, Fz: 4.3222, Norm: 4.4469
+Fx: 1.0458, Fy: -0.0000, Fz: 4.3222, Norm: 4.4469
+Fx: 1.0458, Fy: -0.0000, Fz: 4.3222, Norm: 4.4469
+Fx: 1.0458, Fy: -0.0000, Fz: 4.3222, Norm: 4.4469
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.0437, Fy: -0.0000, Fz: 2.8701, Norm: 3.0540
+Fx: 1.0437, Fy: -0.0000, Fz: 2.8701, Norm: 3.0540
+Fx: 1.0437, Fy: -0.0000, Fz: 2.8701, Norm: 3.0540
+Fx: 1.0437, Fy: -0.0000, Fz: 2.8701, Norm: 3.0540
+Fx: 1.0437, Fy: -0.0000, Fz: 2.8701, Norm: 3.0540
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.1997, Fy: -0.0000, Fz: 3.0676, Norm: 3.2939
+Fx: 1.1997, Fy: -0.0000, Fz: 3.0676, Norm: 3.2939
+Fx: 1.1997, Fy: -0.0000, Fz: 3.0676, Norm: 3.2939
+Fx: 1.1997, Fy: -0.0000, Fz: 3.0676, Norm: 3.2939
+Fx: 1.1997, Fy: -0.0000, Fz: 3.0676, Norm: 3.2939
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.0491, Fy: -0.0000, Fz: 2.8507, Norm: 3.0376
+Fx: 1.0491, Fy: -0.0000, Fz: 2.8507, Norm: 3.0376
+Fx: 1.0491, Fy: -0.0000, Fz: 2.8507, Norm: 3.0376
+Fx: 1.0491, Fy: -0.0000, Fz: 2.8507, Norm: 3.0376
+Fx: 1.0491, Fy: -0.0000, Fz: 2.8507, Norm: 3.0376
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.1007, Fy: -0.0000, Fz: 3.2949, Norm: 3.4739
+Fx: 1.1007, Fy: -0.0000, Fz: 3.2949, Norm: 3.4739
+Fx: 1.1007, Fy: -0.0000, Fz: 3.2949, Norm: 3.4739
+Fx: 1.1007, Fy: -0.0000, Fz: 3.2949, Norm: 3.4739
+Fx: 1.1007, Fy: -0.0000, Fz: 3.2949, Norm: 3.4739
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 1.0608, Fy: -0.0000, Fz: 3.3903, Norm: 3.5524
+Fx: 1.0608, Fy: -0.0000, Fz: 3.3903, Norm: 3.5524
+Fx: 1.0608, Fy: -0.0000, Fz: 3.3903, Norm: 3.5524
+Fx: 1.0608, Fy: -0.0000, Fz: 3.3903, Norm: 3.5524
+Fx: 1.0608, Fy: -0.0000, Fz: 3.3903, Norm: 3.5524
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.8153, Fy: -0.0000, Fz: 2.7619, Norm: 2.8797
+Fx: 0.8153, Fy: -0.0000, Fz: 2.7619, Norm: 2.8797
+Fx: 0.8153, Fy: -0.0000, Fz: 2.7619, Norm: 2.8797
+Fx: 0.8153, Fy: -0.0000, Fz: 2.7619, Norm: 2.8797
+Fx: 0.8153, Fy: -0.0000, Fz: 2.7619, Norm: 2.8797
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.7124, Fy: -0.0000, Fz: 2.6444, Norm: 2.7387
+Fx: 0.7124, Fy: -0.0000, Fz: 2.6444, Norm: 2.7387
+Fx: 0.7124, Fy: -0.0000, Fz: 2.6444, Norm: 2.7387
+Fx: 0.7124, Fy: -0.0000, Fz: 2.6444, Norm: 2.7387
+Fx: 0.7124, Fy: -0.0000, Fz: 2.6444, Norm: 2.7387
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.9171, Fy: -0.0000, Fz: 3.2340, Norm: 3.3616
+Fx: 0.9171, Fy: -0.0000, Fz: 3.2340, Norm: 3.3616
+Fx: 0.9171, Fy: -0.0000, Fz: 3.2340, Norm: 3.3616
+Fx: 0.9171, Fy: -0.0000, Fz: 3.2340, Norm: 3.3616
+Fx: 0.9171, Fy: -0.0000, Fz: 3.2340, Norm: 3.3616
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.7199, Fy: -0.0000, Fz: 2.7660, Norm: 2.8581
+Fx: 0.7199, Fy: -0.0000, Fz: 2.7660, Norm: 2.8581
+Fx: 0.7199, Fy: -0.0000, Fz: 2.7660, Norm: 2.8581
+Fx: 0.7199, Fy: -0.0000, Fz: 2.7660, Norm: 2.8581
+Fx: 0.7199, Fy: -0.0000, Fz: 2.7660, Norm: 2.8581
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6854, Fy: -0.0000, Fz: 2.9112, Norm: 2.9907
+Fx: 0.6854, Fy: -0.0000, Fz: 2.9112, Norm: 2.9907
+Fx: 0.6854, Fy: -0.0000, Fz: 2.9112, Norm: 2.9907
+Fx: 0.6854, Fy: -0.0000, Fz: 2.9112, Norm: 2.9907
+Fx: 0.6854, Fy: -0.0000, Fz: 2.9112, Norm: 2.9907
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.9421, Fy: -0.0000, Fz: 2.5888, Norm: 2.7549
+Fx: 0.9421, Fy: -0.0000, Fz: 2.5888, Norm: 2.7549
+Fx: 0.9421, Fy: -0.0000, Fz: 2.5888, Norm: 2.7549
+Fx: 0.9421, Fy: -0.0000, Fz: 2.5888, Norm: 2.7549
+Fx: 0.9421, Fy: -0.0000, Fz: 2.5888, Norm: 2.7549
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6824, Fy: -0.0000, Fz: 2.1867, Norm: 2.2907
+Fx: 0.6824, Fy: -0.0000, Fz: 2.1867, Norm: 2.2907
+Fx: 0.6824, Fy: -0.0000, Fz: 2.1867, Norm: 2.2907
+Fx: 0.6824, Fy: -0.0000, Fz: 2.1867, Norm: 2.2907
+Fx: 0.6824, Fy: -0.0000, Fz: 2.1867, Norm: 2.2907
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.6608, Fy: -0.0000, Fz: 2.5649, Norm: 2.6486
+Fx: 0.6608, Fy: -0.0000, Fz: 2.5649, Norm: 2.6486
+Fx: 0.6608, Fy: -0.0000, Fz: 2.5649, Norm: 2.6486
+Fx: 0.6608, Fy: -0.0000, Fz: 2.5649, Norm: 2.6486
+Fx: 0.6608, Fy: -0.0000, Fz: 2.5649, Norm: 2.6486
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.5648, Fy: -0.0000, Fz: 2.4678, Norm: 2.5316
+Fx: 0.5648, Fy: -0.0000, Fz: 2.4678, Norm: 2.5316
+Fx: 0.5648, Fy: -0.0000, Fz: 2.4678, Norm: 2.5316
+Fx: 0.5648, Fy: -0.0000, Fz: 2.4678, Norm: 2.5316
+Fx: 0.5648, Fy: -0.0000, Fz: 2.4678, Norm: 2.5316
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.5010, Fy: -0.0000, Fz: 2.4278, Norm: 2.4789
+Fx: 0.5010, Fy: -0.0000, Fz: 2.4278, Norm: 2.4789
+Fx: 0.5010, Fy: -0.0000, Fz: 2.4278, Norm: 2.4789
+Fx: 0.5010, Fy: -0.0000, Fz: 2.4278, Norm: 2.4789
+Fx: 0.5010, Fy: -0.0000, Fz: 2.4278, Norm: 2.4789
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.5016, Fy: -0.0000, Fz: 2.4344, Norm: 2.4855
+Fx: 0.5016, Fy: -0.0000, Fz: 2.4344, Norm: 2.4855
+Fx: 0.5016, Fy: -0.0000, Fz: 2.4344, Norm: 2.4855
+Fx: 0.5016, Fy: -0.0000, Fz: 2.4344, Norm: 2.4855
+Fx: 0.5016, Fy: -0.0000, Fz: 2.4344, Norm: 2.4855
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.3714, Fy: -0.0000, Fz: 2.0323, Norm: 2.0660
+Fx: 0.3714, Fy: -0.0000, Fz: 2.0323, Norm: 2.0660
+Fx: 0.3714, Fy: -0.0000, Fz: 2.0323, Norm: 2.0660
+Fx: 0.3714, Fy: -0.0000, Fz: 2.0323, Norm: 2.0660
+Fx: 0.3714, Fy: -0.0000, Fz: 2.0323, Norm: 2.0660
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4460, Fy: -0.0000, Fz: 2.4933, Norm: 2.5329
+Fx: 0.4460, Fy: -0.0000, Fz: 2.4933, Norm: 2.5329
+Fx: 0.4460, Fy: -0.0000, Fz: 2.4933, Norm: 2.5329
+Fx: 0.4460, Fy: -0.0000, Fz: 2.4933, Norm: 2.5329
+Fx: 0.4460, Fy: -0.0000, Fz: 2.4933, Norm: 2.5329
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4435, Fy: -0.0000, Fz: 2.4005, Norm: 2.4411
+Fx: 0.4435, Fy: -0.0000, Fz: 2.4005, Norm: 2.4411
+Fx: 0.4435, Fy: -0.0000, Fz: 2.4005, Norm: 2.4411
+Fx: 0.4435, Fy: -0.0000, Fz: 2.4005, Norm: 2.4411
+Fx: 0.4435, Fy: -0.0000, Fz: 2.4005, Norm: 2.4411
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4456, Fy: -0.0000, Fz: 2.3467, Norm: 2.3886
+Fx: 0.4456, Fy: -0.0000, Fz: 2.3467, Norm: 2.3886
+Fx: 0.4456, Fy: -0.0000, Fz: 2.3467, Norm: 2.3886
+Fx: 0.4456, Fy: -0.0000, Fz: 2.3467, Norm: 2.3886
+Fx: 0.4456, Fy: -0.0000, Fz: 2.3467, Norm: 2.3886
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4390, Fy: -0.0000, Fz: 2.2940, Norm: 2.3356
+Fx: 0.4390, Fy: -0.0000, Fz: 2.2940, Norm: 2.3356
+Fx: 0.4390, Fy: -0.0000, Fz: 2.2940, Norm: 2.3356
+Fx: 0.4390, Fy: -0.0000, Fz: 2.2940, Norm: 2.3356
+Fx: 0.4390, Fy: -0.0000, Fz: 2.2940, Norm: 2.3356
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.4073, Fy: -0.0000, Fz: 2.3716, Norm: 2.4063
+Fx: 0.4073, Fy: -0.0000, Fz: 2.3716, Norm: 2.4063
+Fx: 0.4073, Fy: -0.0000, Fz: 2.3716, Norm: 2.4063
+Fx: 0.4073, Fy: -0.0000, Fz: 2.3716, Norm: 2.4063
+Fx: 0.4073, Fy: -0.0000, Fz: 2.3716, Norm: 2.4063
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.0220, Fy: -0.0000, Fz: 2.6734, Norm: 2.6735
+Fx: 0.0220, Fy: -0.0000, Fz: 2.6734, Norm: 2.6735
+Fx: 0.0220, Fy: -0.0000, Fz: 2.6734, Norm: 2.6735
+Fx: 0.0220, Fy: -0.0000, Fz: 2.6734, Norm: 2.6735
+Fx: 0.0220, Fy: -0.0000, Fz: 2.6734, Norm: 2.6735
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: -0.0000, Fy: -0.0000, Fz: 2.8373, Norm: 2.8373
+Fx: -0.0000, Fy: -0.0000, Fz: 2.8373, Norm: 2.8373
+Fx: -0.0000, Fy: -0.0000, Fz: 2.8373, Norm: 2.8373
+Fx: -0.0000, Fy: -0.0000, Fz: 2.8373, Norm: 2.8373
+Fx: -0.0000, Fy: -0.0000, Fz: 2.8373, Norm: 2.8373
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 9, 'total_episodes': 10}
+Fx: 0.3474, Fy: -0.0000, Fz: 2.3359, Norm: 2.3616
+Fx: 0.3474, Fy: -0.0000, Fz: 2.3359, Norm: 2.3616
+Fx: 0.3474, Fy: -0.0000, Fz: 2.3359, Norm: 2.3616
+Fx: 0.3474, Fy: -0.0000, Fz: 2.3359, Norm: 2.3616
+Fx: 0.3474, Fy: -0.0000, Fz: 2.3359, Norm: 2.3616
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+[演示] 环境0本轮累计转笔圈数: 0.06
+Fx: 0.3128, Fy: -0.0000, Fz: 1.8520, Norm: 1.8783
+Fx: 0.3128, Fy: -0.0000, Fz: 1.8520, Norm: 1.8783
+Fx: 0.3128, Fy: -0.0000, Fz: 1.8520, Norm: 1.8783
+Fx: 0.3128, Fy: -0.0000, Fz: 1.8520, Norm: 1.8783
+Fx: 0.3128, Fy: -0.0000, Fz: 1.8520, Norm: 1.8783
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1383, Norm: 0.1383
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1383, Norm: 0.1383
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1383, Norm: 0.1383
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1383, Norm: 0.1383
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1383, Norm: 0.1383
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0738, Norm: 0.0738
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0738, Norm: 0.0738
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0738, Norm: 0.0738
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0738, Norm: 0.0738
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0738, Norm: 0.0738
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.0728, Fy: -0.0000, Fz: 0.4063, Norm: 0.4128
+Fx: 0.0728, Fy: -0.0000, Fz: 0.4063, Norm: 0.4128
+Fx: 0.0728, Fy: -0.0000, Fz: 0.4063, Norm: 0.4128
+Fx: 0.0728, Fy: -0.0000, Fz: 0.4063, Norm: 0.4128
+Fx: 0.0728, Fy: -0.0000, Fz: 0.4063, Norm: 0.4128
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3032, Fy: -0.0000, Fz: 1.0834, Norm: 1.1250
+Fx: 0.3032, Fy: -0.0000, Fz: 1.0834, Norm: 1.1250
+Fx: 0.3032, Fy: -0.0000, Fz: 1.0834, Norm: 1.1250
+Fx: 0.3032, Fy: -0.0000, Fz: 1.0834, Norm: 1.1250
+Fx: 0.3032, Fy: -0.0000, Fz: 1.0834, Norm: 1.1250
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.2609, Fy: -0.0000, Fz: 1.1461, Norm: 1.1754
+Fx: 0.2609, Fy: -0.0000, Fz: 1.1461, Norm: 1.1754
+Fx: 0.2609, Fy: -0.0000, Fz: 1.1461, Norm: 1.1754
+Fx: 0.2609, Fy: -0.0000, Fz: 1.1461, Norm: 1.1754
+Fx: 0.2609, Fy: -0.0000, Fz: 1.1461, Norm: 1.1754
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3159, Fy: -0.0000, Fz: 0.9726, Norm: 1.0227
+Fx: 0.3159, Fy: -0.0000, Fz: 0.9726, Norm: 1.0227
+Fx: 0.3159, Fy: -0.0000, Fz: 0.9726, Norm: 1.0227
+Fx: 0.3159, Fy: -0.0000, Fz: 0.9726, Norm: 1.0227
+Fx: 0.3159, Fy: -0.0000, Fz: 0.9726, Norm: 1.0227
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.6800, Fy: -0.0000, Fz: 1.7572, Norm: 1.8842
+Fx: 0.6800, Fy: -0.0000, Fz: 1.7572, Norm: 1.8842
+Fx: 0.6800, Fy: -0.0000, Fz: 1.7572, Norm: 1.8842
+Fx: 0.6800, Fy: -0.0000, Fz: 1.7572, Norm: 1.8842
+Fx: 0.6800, Fy: -0.0000, Fz: 1.7572, Norm: 1.8842
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8333, Fy: -0.0000, Fz: 2.2623, Norm: 2.4109
+Fx: 0.8333, Fy: -0.0000, Fz: 2.2623, Norm: 2.4109
+Fx: 0.8333, Fy: -0.0000, Fz: 2.2623, Norm: 2.4109
+Fx: 0.8333, Fy: -0.0000, Fz: 2.2623, Norm: 2.4109
+Fx: 0.8333, Fy: -0.0000, Fz: 2.2623, Norm: 2.4109
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7367, Fy: -0.0000, Fz: 1.9448, Norm: 2.0797
+Fx: 0.7367, Fy: -0.0000, Fz: 1.9448, Norm: 2.0797
+Fx: 0.7367, Fy: -0.0000, Fz: 1.9448, Norm: 2.0797
+Fx: 0.7367, Fy: -0.0000, Fz: 1.9448, Norm: 2.0797
+Fx: 0.7367, Fy: -0.0000, Fz: 1.9448, Norm: 2.0797
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1771, Fy: -0.0000, Fz: 2.6041, Norm: 2.8578
+Fx: 1.1771, Fy: -0.0000, Fz: 2.6041, Norm: 2.8578
+Fx: 1.1771, Fy: -0.0000, Fz: 2.6041, Norm: 2.8578
+Fx: 1.1771, Fy: -0.0000, Fz: 2.6041, Norm: 2.8578
+Fx: 1.1771, Fy: -0.0000, Fz: 2.6041, Norm: 2.8578
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.5245, Fy: -0.0000, Fz: 3.1176, Norm: 3.4704
+Fx: 1.5245, Fy: -0.0000, Fz: 3.1176, Norm: 3.4704
+Fx: 1.5245, Fy: -0.0000, Fz: 3.1176, Norm: 3.4704
+Fx: 1.5245, Fy: -0.0000, Fz: 3.1176, Norm: 3.4704
+Fx: 1.5245, Fy: -0.0000, Fz: 3.1176, Norm: 3.4704
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.6361, Fy: -0.0000, Fz: 3.3999, Norm: 3.7730
+Fx: 1.6361, Fy: -0.0000, Fz: 3.3999, Norm: 3.7730
+Fx: 1.6361, Fy: -0.0000, Fz: 3.3999, Norm: 3.7730
+Fx: 1.6361, Fy: -0.0000, Fz: 3.3999, Norm: 3.7730
+Fx: 1.6361, Fy: -0.0000, Fz: 3.3999, Norm: 3.7730
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1151, Fy: -0.0000, Fz: 2.7853, Norm: 3.0002
+Fx: 1.1151, Fy: -0.0000, Fz: 2.7853, Norm: 3.0002
+Fx: 1.1151, Fy: -0.0000, Fz: 2.7853, Norm: 3.0002
+Fx: 1.1151, Fy: -0.0000, Fz: 2.7853, Norm: 3.0002
+Fx: 1.1151, Fy: -0.0000, Fz: 2.7853, Norm: 3.0002
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1899, Fy: -0.0000, Fz: 3.5660, Norm: 3.7593
+Fx: 1.1899, Fy: -0.0000, Fz: 3.5660, Norm: 3.7593
+Fx: 1.1899, Fy: -0.0000, Fz: 3.5660, Norm: 3.7593
+Fx: 1.1899, Fy: -0.0000, Fz: 3.5660, Norm: 3.7593
+Fx: 1.1899, Fy: -0.0000, Fz: 3.5660, Norm: 3.7593
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.3509, Fy: -0.0000, Fz: 3.6957, Norm: 3.9349
+Fx: 1.3509, Fy: -0.0000, Fz: 3.6957, Norm: 3.9349
+Fx: 1.3509, Fy: -0.0000, Fz: 3.6957, Norm: 3.9349
+Fx: 1.3509, Fy: -0.0000, Fz: 3.6957, Norm: 3.9349
+Fx: 1.3509, Fy: -0.0000, Fz: 3.6957, Norm: 3.9349
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.9975, Fy: -0.0000, Fz: 3.1441, Norm: 3.2986
+Fx: 0.9975, Fy: -0.0000, Fz: 3.1441, Norm: 3.2986
+Fx: 0.9975, Fy: -0.0000, Fz: 3.1441, Norm: 3.2986
+Fx: 0.9975, Fy: -0.0000, Fz: 3.1441, Norm: 3.2986
+Fx: 0.9975, Fy: -0.0000, Fz: 3.1441, Norm: 3.2986
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.9397, Fy: -0.0000, Fz: 2.4789, Norm: 2.6510
+Fx: 0.9397, Fy: -0.0000, Fz: 2.4789, Norm: 2.6510
+Fx: 0.9397, Fy: -0.0000, Fz: 2.4789, Norm: 2.6510
+Fx: 0.9397, Fy: -0.0000, Fz: 2.4789, Norm: 2.6510
+Fx: 0.9397, Fy: -0.0000, Fz: 2.4789, Norm: 2.6510
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1445, Fy: -0.0000, Fz: 2.8092, Norm: 3.0334
+Fx: 1.1445, Fy: -0.0000, Fz: 2.8092, Norm: 3.0334
+Fx: 1.1445, Fy: -0.0000, Fz: 2.8092, Norm: 3.0334
+Fx: 1.1445, Fy: -0.0000, Fz: 2.8092, Norm: 3.0334
+Fx: 1.1445, Fy: -0.0000, Fz: 2.8092, Norm: 3.0334
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.0302, Fy: -0.0000, Fz: 2.3556, Norm: 2.5710
+Fx: 1.0302, Fy: -0.0000, Fz: 2.3556, Norm: 2.5710
+Fx: 1.0302, Fy: -0.0000, Fz: 2.3556, Norm: 2.5710
+Fx: 1.0302, Fy: -0.0000, Fz: 2.3556, Norm: 2.5710
+Fx: 1.0302, Fy: -0.0000, Fz: 2.3556, Norm: 2.5710
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.0816, Fy: -0.0000, Fz: 2.5553, Norm: 2.7748
+Fx: 1.0816, Fy: -0.0000, Fz: 2.5553, Norm: 2.7748
+Fx: 1.0816, Fy: -0.0000, Fz: 2.5553, Norm: 2.7748
+Fx: 1.0816, Fy: -0.0000, Fz: 2.5553, Norm: 2.7748
+Fx: 1.0816, Fy: -0.0000, Fz: 2.5553, Norm: 2.7748
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7556, Fy: -0.0000, Fz: 1.8996, Norm: 2.0444
+Fx: 0.7556, Fy: -0.0000, Fz: 1.8996, Norm: 2.0444
+Fx: 0.7556, Fy: -0.0000, Fz: 1.8996, Norm: 2.0444
+Fx: 0.7556, Fy: -0.0000, Fz: 1.8996, Norm: 2.0444
+Fx: 0.7556, Fy: -0.0000, Fz: 1.8996, Norm: 2.0444
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8573, Fy: -0.0000, Fz: 2.1509, Norm: 2.3154
+Fx: 0.8573, Fy: -0.0000, Fz: 2.1509, Norm: 2.3154
+Fx: 0.8573, Fy: -0.0000, Fz: 2.1509, Norm: 2.3154
+Fx: 0.8573, Fy: -0.0000, Fz: 2.1509, Norm: 2.3154
+Fx: 0.8573, Fy: -0.0000, Fz: 2.1509, Norm: 2.3154
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8673, Fy: -0.0000, Fz: 2.0318, Norm: 2.2091
+Fx: 0.8673, Fy: -0.0000, Fz: 2.0318, Norm: 2.2091
+Fx: 0.8673, Fy: -0.0000, Fz: 2.0318, Norm: 2.2091
+Fx: 0.8673, Fy: -0.0000, Fz: 2.0318, Norm: 2.2091
+Fx: 0.8673, Fy: -0.0000, Fz: 2.0318, Norm: 2.2091
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8640, Fy: -0.0000, Fz: 1.9754, Norm: 2.1561
+Fx: 0.8640, Fy: -0.0000, Fz: 1.9754, Norm: 2.1561
+Fx: 0.8640, Fy: -0.0000, Fz: 1.9754, Norm: 2.1561
+Fx: 0.8640, Fy: -0.0000, Fz: 1.9754, Norm: 2.1561
+Fx: 0.8640, Fy: -0.0000, Fz: 1.9754, Norm: 2.1561
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7875, Fy: -0.0000, Fz: 1.7248, Norm: 1.8961
+Fx: 0.7875, Fy: -0.0000, Fz: 1.7248, Norm: 1.8961
+Fx: 0.7875, Fy: -0.0000, Fz: 1.7248, Norm: 1.8961
+Fx: 0.7875, Fy: -0.0000, Fz: 1.7248, Norm: 1.8961
+Fx: 0.7875, Fy: -0.0000, Fz: 1.7248, Norm: 1.8961
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5484, Fy: -0.0000, Fz: 1.5091, Norm: 1.6057
+Fx: 0.5484, Fy: -0.0000, Fz: 1.5091, Norm: 1.6057
+Fx: 0.5484, Fy: -0.0000, Fz: 1.5091, Norm: 1.6057
+Fx: 0.5484, Fy: -0.0000, Fz: 1.5091, Norm: 1.6057
+Fx: 0.5484, Fy: -0.0000, Fz: 1.5091, Norm: 1.6057
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8404, Fy: -0.0000, Fz: 1.7115, Norm: 1.9067
+Fx: 0.8404, Fy: -0.0000, Fz: 1.7115, Norm: 1.9067
+Fx: 0.8404, Fy: -0.0000, Fz: 1.7115, Norm: 1.9067
+Fx: 0.8404, Fy: -0.0000, Fz: 1.7115, Norm: 1.9067
+Fx: 0.8404, Fy: -0.0000, Fz: 1.7115, Norm: 1.9067
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4185, Fy: -0.0000, Fz: 1.0399, Norm: 1.1209
+Fx: 0.4185, Fy: -0.0000, Fz: 1.0399, Norm: 1.1209
+Fx: 0.4185, Fy: -0.0000, Fz: 1.0399, Norm: 1.1209
+Fx: 0.4185, Fy: -0.0000, Fz: 1.0399, Norm: 1.1209
+Fx: 0.4185, Fy: -0.0000, Fz: 1.0399, Norm: 1.1209
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8353, Fy: -0.0000, Fz: 1.7332, Norm: 1.9240
+Fx: 0.8353, Fy: -0.0000, Fz: 1.7332, Norm: 1.9240
+Fx: 0.8353, Fy: -0.0000, Fz: 1.7332, Norm: 1.9240
+Fx: 0.8353, Fy: -0.0000, Fz: 1.7332, Norm: 1.9240
+Fx: 0.8353, Fy: -0.0000, Fz: 1.7332, Norm: 1.9240
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8425, Fy: -0.0000, Fz: 2.0238, Norm: 2.1922
+Fx: 0.8425, Fy: -0.0000, Fz: 2.0238, Norm: 2.1922
+Fx: 0.8425, Fy: -0.0000, Fz: 2.0238, Norm: 2.1922
+Fx: 0.8425, Fy: -0.0000, Fz: 2.0238, Norm: 2.1922
+Fx: 0.8425, Fy: -0.0000, Fz: 2.0238, Norm: 2.1922
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4670, Fy: -0.0000, Fz: 1.7123, Norm: 1.7748
+Fx: 0.4670, Fy: -0.0000, Fz: 1.7123, Norm: 1.7748
+Fx: 0.4670, Fy: -0.0000, Fz: 1.7123, Norm: 1.7748
+Fx: 0.4670, Fy: -0.0000, Fz: 1.7123, Norm: 1.7748
+Fx: 0.4670, Fy: -0.0000, Fz: 1.7123, Norm: 1.7748
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5707, Fy: -0.0000, Fz: 2.2241, Norm: 2.2962
+Fx: 0.5707, Fy: -0.0000, Fz: 2.2241, Norm: 2.2962
+Fx: 0.5707, Fy: -0.0000, Fz: 2.2241, Norm: 2.2962
+Fx: 0.5707, Fy: -0.0000, Fz: 2.2241, Norm: 2.2962
+Fx: 0.5707, Fy: -0.0000, Fz: 2.2241, Norm: 2.2962
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3359, Fy: -0.0000, Fz: 1.4059, Norm: 1.4455
+Fx: 0.3359, Fy: -0.0000, Fz: 1.4059, Norm: 1.4455
+Fx: 0.3359, Fy: -0.0000, Fz: 1.4059, Norm: 1.4455
+Fx: 0.3359, Fy: -0.0000, Fz: 1.4059, Norm: 1.4455
+Fx: 0.3359, Fy: -0.0000, Fz: 1.4059, Norm: 1.4455
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5153, Fy: -0.0000, Fz: 1.8945, Norm: 1.9634
+Fx: 0.5153, Fy: -0.0000, Fz: 1.8945, Norm: 1.9634
+Fx: 0.5153, Fy: -0.0000, Fz: 1.8945, Norm: 1.9634
+Fx: 0.5153, Fy: -0.0000, Fz: 1.8945, Norm: 1.9634
+Fx: 0.5153, Fy: -0.0000, Fz: 1.8945, Norm: 1.9634
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.6146, Fy: -0.0000, Fz: 2.0265, Norm: 2.1177
+Fx: 0.6146, Fy: -0.0000, Fz: 2.0265, Norm: 2.1177
+Fx: 0.6146, Fy: -0.0000, Fz: 2.0265, Norm: 2.1177
+Fx: 0.6146, Fy: -0.0000, Fz: 2.0265, Norm: 2.1177
+Fx: 0.6146, Fy: -0.0000, Fz: 2.0265, Norm: 2.1177
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4785, Fy: -0.0000, Fz: 1.7424, Norm: 1.8069
+Fx: 0.4785, Fy: -0.0000, Fz: 1.7424, Norm: 1.8069
+Fx: 0.4785, Fy: -0.0000, Fz: 1.7424, Norm: 1.8069
+Fx: 0.4785, Fy: -0.0000, Fz: 1.7424, Norm: 1.8069
+Fx: 0.4785, Fy: -0.0000, Fz: 1.7424, Norm: 1.8069
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3397, Fy: -0.0000, Fz: 1.4366, Norm: 1.4762
+Fx: 0.3397, Fy: -0.0000, Fz: 1.4366, Norm: 1.4762
+Fx: 0.3397, Fy: -0.0000, Fz: 1.4366, Norm: 1.4762
+Fx: 0.3397, Fy: -0.0000, Fz: 1.4366, Norm: 1.4762
+Fx: 0.3397, Fy: -0.0000, Fz: 1.4366, Norm: 1.4762
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4481, Fy: 0.0000, Fz: 1.7356, Norm: 1.7925
+Fx: 0.4481, Fy: 0.0000, Fz: 1.7356, Norm: 1.7925
+Fx: 0.4481, Fy: 0.0000, Fz: 1.7356, Norm: 1.7925
+Fx: 0.4481, Fy: 0.0000, Fz: 1.7356, Norm: 1.7925
+Fx: 0.4481, Fy: 0.0000, Fz: 1.7356, Norm: 1.7925
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4003, Fy: -0.0000, Fz: 1.5446, Norm: 1.5956
+Fx: 0.4003, Fy: -0.0000, Fz: 1.5446, Norm: 1.5956
+Fx: 0.4003, Fy: -0.0000, Fz: 1.5446, Norm: 1.5956
+Fx: 0.4003, Fy: -0.0000, Fz: 1.5446, Norm: 1.5956
+Fx: 0.4003, Fy: -0.0000, Fz: 1.5446, Norm: 1.5956
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7768, Fy: 0.0770, Fz: 1.8437, Norm: 2.0022
+Fx: 0.7768, Fy: 0.0770, Fz: 1.8437, Norm: 2.0022
+Fx: 0.7768, Fy: 0.0770, Fz: 1.8437, Norm: 2.0022
+Fx: 0.7768, Fy: 0.0770, Fz: 1.8437, Norm: 2.0022
+Fx: 0.7768, Fy: 0.0770, Fz: 1.8437, Norm: 2.0022
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8948, Fy: 0.0760, Fz: 1.9474, Norm: 2.1444
+Fx: 0.8948, Fy: 0.0760, Fz: 1.9474, Norm: 2.1444
+Fx: 0.8948, Fy: 0.0760, Fz: 1.9474, Norm: 2.1444
+Fx: 0.8948, Fy: 0.0760, Fz: 1.9474, Norm: 2.1444
+Fx: 0.8948, Fy: 0.0760, Fz: 1.9474, Norm: 2.1444
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.6243, Fy: 0.0541, Fz: 1.3867, Norm: 1.5217
+Fx: 0.6243, Fy: 0.0541, Fz: 1.3867, Norm: 1.5217
+Fx: 0.6243, Fy: 0.0541, Fz: 1.3867, Norm: 1.5217
+Fx: 0.6243, Fy: 0.0541, Fz: 1.3867, Norm: 1.5217
+Fx: 0.6243, Fy: 0.0541, Fz: 1.3867, Norm: 1.5217
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4666, Fy: 0.0399, Fz: 1.0854, Norm: 1.1822
+Fx: 0.4666, Fy: 0.0399, Fz: 1.0854, Norm: 1.1822
+Fx: 0.4666, Fy: 0.0399, Fz: 1.0854, Norm: 1.1822
+Fx: 0.4666, Fy: 0.0399, Fz: 1.0854, Norm: 1.1822
+Fx: 0.4666, Fy: 0.0399, Fz: 1.0854, Norm: 1.1822
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.4213, Fy: 0.0351, Fz: 1.0839, Norm: 1.1634
+Fx: 0.4213, Fy: 0.0351, Fz: 1.0839, Norm: 1.1634
+Fx: 0.4213, Fy: 0.0351, Fz: 1.0839, Norm: 1.1634
+Fx: 0.4213, Fy: 0.0351, Fz: 1.0839, Norm: 1.1634
+Fx: 0.4213, Fy: 0.0351, Fz: 1.0839, Norm: 1.1634
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5324, Fy: 0.0899, Fz: 1.1440, Norm: 1.2650
+Fx: 0.5324, Fy: 0.0899, Fz: 1.1440, Norm: 1.2650
+Fx: 0.5324, Fy: 0.0899, Fz: 1.1440, Norm: 1.2650
+Fx: 0.5324, Fy: 0.0899, Fz: 1.1440, Norm: 1.2650
+Fx: 0.5324, Fy: 0.0899, Fz: 1.1440, Norm: 1.2650
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.6022, Fy: 0.0994, Fz: 1.1989, Norm: 1.3453
+Fx: 0.6022, Fy: 0.0994, Fz: 1.1989, Norm: 1.3453
+Fx: 0.6022, Fy: 0.0994, Fz: 1.1989, Norm: 1.3453
+Fx: 0.6022, Fy: 0.0994, Fz: 1.1989, Norm: 1.3453
+Fx: 0.6022, Fy: 0.0994, Fz: 1.1989, Norm: 1.3453
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.6520, Fy: 0.1107, Fz: 1.3066, Norm: 1.4644
+Fx: 0.6520, Fy: 0.1107, Fz: 1.3066, Norm: 1.4644
+Fx: 0.6520, Fy: 0.1107, Fz: 1.3066, Norm: 1.4644
+Fx: 0.6520, Fy: 0.1107, Fz: 1.3066, Norm: 1.4644
+Fx: 0.6520, Fy: 0.1107, Fz: 1.3066, Norm: 1.4644
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5039, Fy: 0.0732, Fz: 1.0526, Norm: 1.1692
+Fx: 0.5039, Fy: 0.0732, Fz: 1.0526, Norm: 1.1692
+Fx: 0.5039, Fy: 0.0732, Fz: 1.0526, Norm: 1.1692
+Fx: 0.5039, Fy: 0.0732, Fz: 1.0526, Norm: 1.1692
+Fx: 0.5039, Fy: 0.0732, Fz: 1.0526, Norm: 1.1692
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3418, Fy: 0.0400, Fz: 0.4553, Norm: 0.5708
+Fx: 0.3418, Fy: 0.0400, Fz: 0.4553, Norm: 0.5708
+Fx: 0.3418, Fy: 0.0400, Fz: 0.4553, Norm: 0.5708
+Fx: 0.3418, Fy: 0.0400, Fz: 0.4553, Norm: 0.5708
+Fx: 0.3418, Fy: 0.0400, Fz: 0.4553, Norm: 0.5708
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0805, Norm: 0.0805
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0805, Norm: 0.0805
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0805, Norm: 0.0805
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0805, Norm: 0.0805
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0805, Norm: 0.0805
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.1525, Fy: 0.0252, Fz: 0.2472, Norm: 0.2915
+Fx: 0.1525, Fy: 0.0252, Fz: 0.2472, Norm: 0.2915
+Fx: 0.1525, Fy: 0.0252, Fz: 0.2472, Norm: 0.2915
+Fx: 0.1525, Fy: 0.0252, Fz: 0.2472, Norm: 0.2915
+Fx: 0.1525, Fy: 0.0252, Fz: 0.2472, Norm: 0.2915
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.1804, Fy: 0.0553, Fz: 0.5293, Norm: 0.5619
+Fx: 0.1804, Fy: 0.0553, Fz: 0.5293, Norm: 0.5619
+Fx: 0.1804, Fy: 0.0553, Fz: 0.5293, Norm: 0.5619
+Fx: 0.1804, Fy: 0.0553, Fz: 0.5293, Norm: 0.5619
+Fx: 0.1804, Fy: 0.0553, Fz: 0.5293, Norm: 0.5619
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3541, Fy: 0.1007, Fz: 0.6950, Norm: 0.7865
+Fx: 0.3541, Fy: 0.1007, Fz: 0.6950, Norm: 0.7865
+Fx: 0.3541, Fy: 0.1007, Fz: 0.6950, Norm: 0.7865
+Fx: 0.3541, Fy: 0.1007, Fz: 0.6950, Norm: 0.7865
+Fx: 0.3541, Fy: 0.1007, Fz: 0.6950, Norm: 0.7865
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.0980, Fy: 0.0562, Fz: 0.3380, Norm: 0.3564
+Fx: 0.0980, Fy: 0.0562, Fz: 0.3380, Norm: 0.3564
+Fx: 0.0980, Fy: 0.0562, Fz: 0.3380, Norm: 0.3564
+Fx: 0.0980, Fy: 0.0562, Fz: 0.3380, Norm: 0.3564
+Fx: 0.0980, Fy: 0.0562, Fz: 0.3380, Norm: 0.3564
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1492, Norm: 0.1492
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1492, Norm: 0.1492
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1492, Norm: 0.1492
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1492, Norm: 0.1492
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1492, Norm: 0.1492
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1062, Norm: 0.1062
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1062, Norm: 0.1062
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1062, Norm: 0.1062
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1062, Norm: 0.1062
+Fx: -0.0000, Fy: 0.0000, Fz: 0.1062, Norm: 0.1062
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0584, Norm: 0.0584
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0584, Norm: 0.0584
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0584, Norm: 0.0584
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0584, Norm: 0.0584
+Fx: 0.0000, Fy: 0.0000, Fz: 0.0584, Norm: 0.0584
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1547, Norm: 0.1547
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1547, Norm: 0.1547
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1547, Norm: 0.1547
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1547, Norm: 0.1547
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1547, Norm: 0.1547
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1881, Norm: 0.1881
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1881, Norm: 0.1881
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1881, Norm: 0.1881
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1881, Norm: 0.1881
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1881, Norm: 0.1881
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2241, Norm: 0.2241
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2241, Norm: 0.2241
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2241, Norm: 0.2241
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2241, Norm: 0.2241
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2241, Norm: 0.2241
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1618, Norm: 0.1618
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1618, Norm: 0.1618
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1618, Norm: 0.1618
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1618, Norm: 0.1618
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1618, Norm: 0.1618
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1169, Norm: 0.1169
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1169, Norm: 0.1169
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1169, Norm: 0.1169
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1169, Norm: 0.1169
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1169, Norm: 0.1169
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.0288, Fy: -0.0000, Fz: 0.1783, Norm: 0.1806
+Fx: 0.0288, Fy: -0.0000, Fz: 0.1783, Norm: 0.1806
+Fx: 0.0288, Fy: -0.0000, Fz: 0.1783, Norm: 0.1806
+Fx: 0.0288, Fy: -0.0000, Fz: 0.1783, Norm: 0.1806
+Fx: 0.0288, Fy: -0.0000, Fz: 0.1783, Norm: 0.1806
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.1384, Fy: -0.0000, Fz: 0.2378, Norm: 0.2751
+Fx: 0.1384, Fy: -0.0000, Fz: 0.2378, Norm: 0.2751
+Fx: 0.1384, Fy: -0.0000, Fz: 0.2378, Norm: 0.2751
+Fx: 0.1384, Fy: -0.0000, Fz: 0.2378, Norm: 0.2751
+Fx: 0.1384, Fy: -0.0000, Fz: 0.2378, Norm: 0.2751
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.4977, Fy: 0.0663, Fz: 1.7414, Norm: 2.2978
+Fx: 1.4977, Fy: 0.0663, Fz: 1.7414, Norm: 2.2978
+Fx: 1.4977, Fy: 0.0663, Fz: 1.7414, Norm: 2.2978
+Fx: 1.4977, Fy: 0.0663, Fz: 1.7414, Norm: 2.2978
+Fx: 1.4977, Fy: 0.0663, Fz: 1.7414, Norm: 2.2978
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2243, Norm: 0.2243
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2243, Norm: 0.2243
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2243, Norm: 0.2243
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2243, Norm: 0.2243
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2243, Norm: 0.2243
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.3840, Fy: -0.0000, Fz: 0.5696, Norm: 0.6869
+Fx: 0.3840, Fy: -0.0000, Fz: 0.5696, Norm: 0.6869
+Fx: 0.3840, Fy: -0.0000, Fz: 0.5696, Norm: 0.6869
+Fx: 0.3840, Fy: -0.0000, Fz: 0.5696, Norm: 0.6869
+Fx: 0.3840, Fy: -0.0000, Fz: 0.5696, Norm: 0.6869
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.2207, Fy: -0.0000, Fz: 0.3595, Norm: 0.4218
+Fx: 0.2207, Fy: -0.0000, Fz: 0.3595, Norm: 0.4218
+Fx: 0.2207, Fy: -0.0000, Fz: 0.3595, Norm: 0.4218
+Fx: 0.2207, Fy: -0.0000, Fz: 0.3595, Norm: 0.4218
+Fx: 0.2207, Fy: -0.0000, Fz: 0.3595, Norm: 0.4218
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.1538, Fy: 0.0000, Fz: 0.4049, Norm: 0.4332
+Fx: 0.1538, Fy: 0.0000, Fz: 0.4049, Norm: 0.4332
+Fx: 0.1538, Fy: 0.0000, Fz: 0.4049, Norm: 0.4332
+Fx: 0.1538, Fy: 0.0000, Fz: 0.4049, Norm: 0.4332
+Fx: 0.1538, Fy: 0.0000, Fz: 0.4049, Norm: 0.4332
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.0942, Fy: 0.0432, Fz: 0.9682, Norm: 1.4617
+Fx: 1.0942, Fy: 0.0432, Fz: 0.9682, Norm: 1.4617
+Fx: 1.0942, Fy: 0.0432, Fz: 0.9682, Norm: 1.4617
+Fx: 1.0942, Fy: 0.0432, Fz: 0.9682, Norm: 1.4617
+Fx: 1.0942, Fy: 0.0432, Fz: 0.9682, Norm: 1.4617
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.8496, Fy: 0.0478, Fz: 1.0977, Norm: 1.3889
+Fx: 0.8496, Fy: 0.0478, Fz: 1.0977, Norm: 1.3889
+Fx: 0.8496, Fy: 0.0478, Fz: 1.0977, Norm: 1.3889
+Fx: 0.8496, Fy: 0.0478, Fz: 1.0977, Norm: 1.3889
+Fx: 0.8496, Fy: 0.0478, Fz: 1.0977, Norm: 1.3889
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.2126, Fy: 0.0000, Fz: 0.4634, Norm: 0.5099
+Fx: 0.2126, Fy: 0.0000, Fz: 0.4634, Norm: 0.5099
+Fx: 0.2126, Fy: 0.0000, Fz: 0.4634, Norm: 0.5099
+Fx: 0.2126, Fy: 0.0000, Fz: 0.4634, Norm: 0.5099
+Fx: 0.2126, Fy: 0.0000, Fz: 0.4634, Norm: 0.5099
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.5598, Fy: 0.0315, Fz: 0.7861, Norm: 0.9655
+Fx: 0.5598, Fy: 0.0315, Fz: 0.7861, Norm: 0.9655
+Fx: 0.5598, Fy: 0.0315, Fz: 0.7861, Norm: 0.9655
+Fx: 0.5598, Fy: 0.0315, Fz: 0.7861, Norm: 0.9655
+Fx: 0.5598, Fy: 0.0315, Fz: 0.7861, Norm: 0.9655
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.2315, Fy: -0.0000, Fz: 0.5046, Norm: 0.5552
+Fx: 0.2315, Fy: -0.0000, Fz: 0.5046, Norm: 0.5552
+Fx: 0.2315, Fy: -0.0000, Fz: 0.5046, Norm: 0.5552
+Fx: 0.2315, Fy: -0.0000, Fz: 0.5046, Norm: 0.5552
+Fx: 0.2315, Fy: -0.0000, Fz: 0.5046, Norm: 0.5552
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7134, Fy: -0.0000, Fz: 1.1214, Norm: 1.3291
+Fx: 0.7134, Fy: -0.0000, Fz: 1.1214, Norm: 1.3291
+Fx: 0.7134, Fy: -0.0000, Fz: 1.1214, Norm: 1.3291
+Fx: 0.7134, Fy: -0.0000, Fz: 1.1214, Norm: 1.3291
+Fx: 0.7134, Fy: -0.0000, Fz: 1.1214, Norm: 1.3291
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.2245, Fy: -0.0000, Fz: 0.3622, Norm: 0.4261
+Fx: 0.2245, Fy: -0.0000, Fz: 0.3622, Norm: 0.4261
+Fx: 0.2245, Fy: -0.0000, Fz: 0.3622, Norm: 0.4261
+Fx: 0.2245, Fy: -0.0000, Fz: 0.3622, Norm: 0.4261
+Fx: 0.2245, Fy: -0.0000, Fz: 0.3622, Norm: 0.4261
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.7594, Fy: -0.0000, Fz: 0.9995, Norm: 1.2553
+Fx: 0.7594, Fy: -0.0000, Fz: 0.9995, Norm: 1.2553
+Fx: 0.7594, Fy: -0.0000, Fz: 0.9995, Norm: 1.2553
+Fx: 0.7594, Fy: -0.0000, Fz: 0.9995, Norm: 1.2553
+Fx: 0.7594, Fy: -0.0000, Fz: 0.9995, Norm: 1.2553
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 0.1740, Fy: -0.0000, Fz: 0.3341, Norm: 0.3767
+Fx: 0.1740, Fy: -0.0000, Fz: 0.3341, Norm: 0.3767
+Fx: 0.1740, Fy: -0.0000, Fz: 0.3341, Norm: 0.3767
+Fx: 0.1740, Fy: -0.0000, Fz: 0.3341, Norm: 0.3767
+Fx: 0.1740, Fy: -0.0000, Fz: 0.3341, Norm: 0.3767
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1849, Fy: -0.0000, Fz: 1.2423, Norm: 1.7168
+Fx: 1.1849, Fy: -0.0000, Fz: 1.2423, Norm: 1.7168
+Fx: 1.1849, Fy: -0.0000, Fz: 1.2423, Norm: 1.7168
+Fx: 1.1849, Fy: -0.0000, Fz: 1.2423, Norm: 1.7168
+Fx: 1.1849, Fy: -0.0000, Fz: 1.2423, Norm: 1.7168
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.0928, Fy: -0.0000, Fz: 1.1087, Norm: 1.5568
+Fx: 1.0928, Fy: -0.0000, Fz: 1.1087, Norm: 1.5568
+Fx: 1.0928, Fy: -0.0000, Fz: 1.1087, Norm: 1.5568
+Fx: 1.0928, Fy: -0.0000, Fz: 1.1087, Norm: 1.5568
+Fx: 1.0928, Fy: -0.0000, Fz: 1.1087, Norm: 1.5568
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.7198, Fy: -0.0000, Fz: 1.5375, Norm: 2.3069
+Fx: 1.7198, Fy: -0.0000, Fz: 1.5375, Norm: 2.3069
+Fx: 1.7198, Fy: -0.0000, Fz: 1.5375, Norm: 2.3069
+Fx: 1.7198, Fy: -0.0000, Fz: 1.5375, Norm: 2.3069
+Fx: 1.7198, Fy: -0.0000, Fz: 1.5375, Norm: 2.3069
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.9291, Fy: -0.0000, Fz: 1.6883, Norm: 2.5636
+Fx: 1.9291, Fy: -0.0000, Fz: 1.6883, Norm: 2.5636
+Fx: 1.9291, Fy: -0.0000, Fz: 1.6883, Norm: 2.5636
+Fx: 1.9291, Fy: -0.0000, Fz: 1.6883, Norm: 2.5636
+Fx: 1.9291, Fy: -0.0000, Fz: 1.6883, Norm: 2.5636
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.6343, Fy: -0.0000, Fz: 1.5028, Norm: 2.2202
+Fx: 1.6343, Fy: -0.0000, Fz: 1.5028, Norm: 2.2202
+Fx: 1.6343, Fy: -0.0000, Fz: 1.5028, Norm: 2.2202
+Fx: 1.6343, Fy: -0.0000, Fz: 1.5028, Norm: 2.2202
+Fx: 1.6343, Fy: -0.0000, Fz: 1.5028, Norm: 2.2202
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.7073, Fy: -0.0000, Fz: 1.6029, Norm: 2.3418
+Fx: 1.7073, Fy: -0.0000, Fz: 1.6029, Norm: 2.3418
+Fx: 1.7073, Fy: -0.0000, Fz: 1.6029, Norm: 2.3418
+Fx: 1.7073, Fy: -0.0000, Fz: 1.6029, Norm: 2.3418
+Fx: 1.7073, Fy: -0.0000, Fz: 1.6029, Norm: 2.3418
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.9394, Fy: -0.0000, Fz: 1.8377, Norm: 2.6718
+Fx: 1.9394, Fy: -0.0000, Fz: 1.8377, Norm: 2.6718
+Fx: 1.9394, Fy: -0.0000, Fz: 1.8377, Norm: 2.6718
+Fx: 1.9394, Fy: -0.0000, Fz: 1.8377, Norm: 2.6718
+Fx: 1.9394, Fy: -0.0000, Fz: 1.8377, Norm: 2.6718
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.7598, Fy: -0.0000, Fz: 1.8930, Norm: 2.5846
+Fx: 1.7598, Fy: -0.0000, Fz: 1.8930, Norm: 2.5846
+Fx: 1.7598, Fy: -0.0000, Fz: 1.8930, Norm: 2.5846
+Fx: 1.7598, Fy: -0.0000, Fz: 1.8930, Norm: 2.5846
+Fx: 1.7598, Fy: -0.0000, Fz: 1.8930, Norm: 2.5846
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.9286, Fy: -0.0000, Fz: 2.0519, Norm: 2.8160
+Fx: 1.9286, Fy: -0.0000, Fz: 2.0519, Norm: 2.8160
+Fx: 1.9286, Fy: -0.0000, Fz: 2.0519, Norm: 2.8160
+Fx: 1.9286, Fy: -0.0000, Fz: 2.0519, Norm: 2.8160
+Fx: 1.9286, Fy: -0.0000, Fz: 2.0519, Norm: 2.8160
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.8270, Fy: -0.0000, Fz: 2.0945, Norm: 2.7794
+Fx: 1.8270, Fy: -0.0000, Fz: 2.0945, Norm: 2.7794
+Fx: 1.8270, Fy: -0.0000, Fz: 2.0945, Norm: 2.7794
+Fx: 1.8270, Fy: -0.0000, Fz: 2.0945, Norm: 2.7794
+Fx: 1.8270, Fy: -0.0000, Fz: 2.0945, Norm: 2.7794
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.8804, Fy: -0.0000, Fz: 2.2100, Norm: 2.9017
+Fx: 1.8804, Fy: -0.0000, Fz: 2.2100, Norm: 2.9017
+Fx: 1.8804, Fy: -0.0000, Fz: 2.2100, Norm: 2.9017
+Fx: 1.8804, Fy: -0.0000, Fz: 2.2100, Norm: 2.9017
+Fx: 1.8804, Fy: -0.0000, Fz: 2.2100, Norm: 2.9017
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.6922, Fy: -0.0000, Fz: 2.1336, Norm: 2.7232
+Fx: 1.6922, Fy: -0.0000, Fz: 2.1336, Norm: 2.7232
+Fx: 1.6922, Fy: -0.0000, Fz: 2.1336, Norm: 2.7232
+Fx: 1.6922, Fy: -0.0000, Fz: 2.1336, Norm: 2.7232
+Fx: 1.6922, Fy: -0.0000, Fz: 2.1336, Norm: 2.7232
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.8904, Fy: -0.0000, Fz: 2.4903, Norm: 3.1265
+Fx: 1.8904, Fy: -0.0000, Fz: 2.4903, Norm: 3.1265
+Fx: 1.8904, Fy: -0.0000, Fz: 2.4903, Norm: 3.1265
+Fx: 1.8904, Fy: -0.0000, Fz: 2.4903, Norm: 3.1265
+Fx: 1.8904, Fy: -0.0000, Fz: 2.4903, Norm: 3.1265
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.7052, Fy: -0.0000, Fz: 2.3740, Norm: 2.9230
+Fx: 1.7052, Fy: -0.0000, Fz: 2.3740, Norm: 2.9230
+Fx: 1.7052, Fy: -0.0000, Fz: 2.3740, Norm: 2.9230
+Fx: 1.7052, Fy: -0.0000, Fz: 2.3740, Norm: 2.9230
+Fx: 1.7052, Fy: -0.0000, Fz: 2.3740, Norm: 2.9230
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.5223, Fy: -0.0000, Fz: 2.1677, Norm: 2.6488
+Fx: 1.5223, Fy: -0.0000, Fz: 2.1677, Norm: 2.6488
+Fx: 1.5223, Fy: -0.0000, Fz: 2.1677, Norm: 2.6488
+Fx: 1.5223, Fy: -0.0000, Fz: 2.1677, Norm: 2.6488
+Fx: 1.5223, Fy: -0.0000, Fz: 2.1677, Norm: 2.6488
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.5611, Fy: -0.0000, Fz: 2.3388, Norm: 2.8120
+Fx: 1.5611, Fy: -0.0000, Fz: 2.3388, Norm: 2.8120
+Fx: 1.5611, Fy: -0.0000, Fz: 2.3388, Norm: 2.8120
+Fx: 1.5611, Fy: -0.0000, Fz: 2.3388, Norm: 2.8120
+Fx: 1.5611, Fy: -0.0000, Fz: 2.3388, Norm: 2.8120
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.4466, Fy: -0.0000, Fz: 2.1614, Norm: 2.6008
+Fx: 1.4466, Fy: -0.0000, Fz: 2.1614, Norm: 2.6008
+Fx: 1.4466, Fy: -0.0000, Fz: 2.1614, Norm: 2.6008
+Fx: 1.4466, Fy: -0.0000, Fz: 2.1614, Norm: 2.6008
+Fx: 1.4466, Fy: -0.0000, Fz: 2.1614, Norm: 2.6008
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.2646, Fy: -0.0000, Fz: 1.9094, Norm: 2.2902
+Fx: 1.2646, Fy: -0.0000, Fz: 1.9094, Norm: 2.2902
+Fx: 1.2646, Fy: -0.0000, Fz: 1.9094, Norm: 2.2902
+Fx: 1.2646, Fy: -0.0000, Fz: 1.9094, Norm: 2.2902
+Fx: 1.2646, Fy: -0.0000, Fz: 1.9094, Norm: 2.2902
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.2025, Fy: -0.0000, Fz: 1.8717, Norm: 2.2247
+Fx: 1.2025, Fy: -0.0000, Fz: 1.8717, Norm: 2.2247
+Fx: 1.2025, Fy: -0.0000, Fz: 1.8717, Norm: 2.2247
+Fx: 1.2025, Fy: -0.0000, Fz: 1.8717, Norm: 2.2247
+Fx: 1.2025, Fy: -0.0000, Fz: 1.8717, Norm: 2.2247
+{'max_episode_length': 0, 'object_below_threshold': 1, 'pencil_fall': 10, 'total_episodes': 11}
+Fx: 1.1135, Fy: -0.0000, Fz: 1.7387, Norm: 2.0647
+Fx: 1.1135, Fy: -0.0000, Fz: 1.7387, Norm: 2.0647
+Fx: 1.1135, Fy: -0.0000, Fz: 1.7387, Norm: 2.0647
+Fx: 1.1135, Fy: -0.0000, Fz: 1.7387, Norm: 2.0647
+Fx: 1.1135, Fy: -0.0000, Fz: 1.7387, Norm: 2.0647
