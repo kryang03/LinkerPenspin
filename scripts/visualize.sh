@@ -25,7 +25,7 @@ EXTRA_ARGS=${array[@]:1:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 python train.py task=LinkerHandHora headless=False \
-task.env.numEnvs=1 test=True checkpoint=outputs/LinkerHandHora/"${CACHE}"/stage1_nn/best*.pth \
+task.env.numEnvs=4 test=True checkpoint=outputs/LinkerHandHora/"${CACHE}"/stage1_nn/best*.pth \
 task.env.object.type=cylinder_pencil-5-7 \
 task.env.episodeLength=4000 \
 task.env.randomForceProbScalar=0.25 train.algo=PPO \
