@@ -27,6 +27,7 @@ ppo:
   gamma: 0.99
   tau: 0.95
   learning_rate: 5e-3
+  weight_decay: 1e-4
   kl_threshold: 0.02
   # PPO batch collection
   is_demon: False              # Student不是demon模式

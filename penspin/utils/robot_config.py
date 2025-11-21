@@ -99,19 +99,18 @@ OBS_WITH_CONTACT_FINGERTIP_DIM = PROPRIO_DIM + CONTACT_DIM + FINGERTIP_POS_DIM  
 # ============================================================
 
 FINGERTIP_LINK_NAMES = [
-    'thumb_1_2',
-    'index_1_3',
-    'middle_1_3',
-    'ring_1_3',
-    'pinky_1_3',
+    "little_joint3",
+    "ring_joint3",
+    "middle_joint3",
+    "index_joint3",
+    "thumb_joint4"
 ]
-
 CONTACT_LINK_NAMES = [
-    'thumb_1_2',
-    'index_1_3',
-    'middle_1_3',
-    'ring_1_3',
-    'pinky_1_3',
+    "little_joint3",
+    "ring_joint3",
+    "middle_joint3",
+    "index_joint3",
+    "thumb_joint4",
 ]
 
 # ============================================================

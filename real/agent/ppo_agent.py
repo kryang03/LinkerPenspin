@@ -67,8 +67,8 @@ class FinetunePPO(object):
         ]
         self.lr = args['lr']
         self.weight_decay = args['weight_decay']
-        #self.optimizer = torch.optim.Adam(self.param_dicts, self.lr, weight_decay=self.weight_decay)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr, weight_decay=self.weight_decay)
+        #self.optimizer = torch.optim.AdamW(self.param_dicts, self.lr, weight_decay=self.weight_decay)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), self.lr, weight_decay=self.weight_decay)
 
     def set_eval(self):
         self.model.eval()

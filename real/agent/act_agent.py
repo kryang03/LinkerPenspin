@@ -116,7 +116,7 @@ def build_ACT_model_and_optimizer(args_override):
             "lr": args.lr_backbone,
         },
     ]
-    optimizer = torch.optim.AdamW(param_dicts, lr=args.lr,
+    optimizer = torch.optim.AdamWW(param_dicts, lr=args.lr,
                                   weight_decay=args.weight_decay)
 
     return model, optimizer
@@ -235,7 +235,7 @@ def build_CNNMLP_model_and_optimizer(args_override):
             "lr": args.lr_backbone,
         },
     ]
-    optimizer = torch.optim.AdamW(param_dicts, lr=args.lr,
+    optimizer = torch.optim.AdamWW(param_dicts, lr=args.lr,
                                   weight_decay=args.weight_decay)
 
     return model, optimizer

@@ -33,12 +33,6 @@ checkpoint: ''
 # disables rendering
 headless: False
 
-wandb_activate: False
-wandb_group: ''
-wandb_name: ${experiment}
-wandb_entity: ''
-wandb_project: 'dexpen'
-
 # set default task and default training config based on task
 defaults:
   - _self_

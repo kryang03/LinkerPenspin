@@ -1,0 +1,984 @@
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+ninja: no work to do.
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: True
+checkpoint: /home/user/Code/LinkerPenspin/outputs/LinkerHandHora/optuna_trial_0029/teacher_nn/best_reward_70.01.pth
+headless: False
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 4
+        numObservations: 126
+        numActions: 21
+        envSpacing: 0.5
+        episodeLength: 4000
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 3
+            dgain: 0.1
+            action_scale: 0.04167
+            torque_limit: 0.7
+        rotation_axis: +z
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        reset_height_threshold: 0.14
+        grasp_cache_name: 3pose
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThres: 1.0
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            waypoint_sparse_reward_scale: 1.0
+            torque_penalty_scale: -0.1
+            hand_pose_consistency_penalty_scale: -1.0
+            rotate_penalty_scale: -0.3
+            pencil_z_dist_penalty_scale: -1.0
+            position_penalty_scale: -0.1
+            action_penalty_scale: 0.0
+        baseObjScale: 0.3
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.01
+            randomizeMassUpper: 0.02
+            randomizeCOM: True
+            randomizeCOMLower: -0.001
+            randomizeCOMUpper: 0.001
+            randomizeFriction: True
+            randomizeFrictionLower: 0.3
+            randomizeFrictionUpper: 3.0
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [0.3]
+            randomizeScaleLower: 0.25
+            randomizeScaleUpper: 0.3
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjScale: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            contact_form: gpu_contact
+            contact_input: binary
+            enable_obj_orientation: True
+            enable_obj_linvel: False
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_ft_orientation: False
+            enable_ft_linvel: False
+            enable_ft_angvel: False
+        object: 
+            type: cylinder_pencil-5-7
+            evalObjectType: None
+            sampleProb: [1.0]
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf.urdf
+        enableCameraSensors: False
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPOTeacher
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: /home/user/Code/LinkerPenspin/outputs/LinkerHandHora/optuna_trial_0029/teacher_nn/best_reward_70.01.pth
+    demon_path: None
+    ppo: 
+        output_name: debug
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 4
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        weight_decay: 0.0001
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 12
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 50000000
+        save_frequency: 500
+        max_agent_steps: 300000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+---- Primitive List ----
+['cylinder_pencil-5-7']
+---- Object List ----
+using 1 training objects
+[PrivInfo Verify, 不是priv总维度，是7类中每类priv信息的dim最大值] OK: priv_info_dim=25, slices=7
+loading /home/user/Code/LinkerPenspin/penspin/tasks/../../assets/cylinder/pencil-5-7/0000.npy radius 0.04 length 0.4 BEFORE scale
+0 / 4 num_envs1 / 4 num_envs2 / 4 num_envs3 / 4 num_envsContact Tensor Dimension [1, numRigidBody, 3] torch.Size([4, 23, 3])
+3pose/pencil/s03_50k
+3pose/pencil/s03_50k
+RunningMeanStd:  (126,)
+RunningMeanStd:  25
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+[演示] 环境1本轮累计转笔圈数: 0.33, 终止原因: 角速度过大(阈值=10.00rad/s, 实际=41.71rad/s)
+[演示] 环境2本轮累计转笔圈数: 0.32, 终止原因: 角速度过大(阈值=10.00rad/s, 实际=39.84rad/s)
+[演示] 环境3本轮累计转笔圈数: 0.45, 终止原因: 角速度过大(阈值=10.00rad/s, 实际=56.80rad/s)
+Fx: -0.0000, Fy: 0.3688, Fz: -0.0000, Norm: 0.3688
+Fx: -0.0000, Fy: 0.0238, Fz: -0.0000, Norm: 0.0238
+Fx: -0.0000, Fy: 0.5393, Fz: -0.0000, Norm: 0.5393
+Fx: 0.1764, Fy: -0.0000, Fz: -0.0000, Norm: 0.1764
+Fx: -0.0000, Fy: 0.0605, Fz: -0.0000, Norm: 0.0605
+Fx: 0.2465, Fy: -0.0000, Fz: -0.0000, Norm: 0.2465
+Fx: -0.0000, Fy: -0.0000, Fz: 0.6460, Norm: 0.6460
+Fx: 4.5807, Fy: 0.8765, Fz: -0.0000, Norm: 4.6638
+Fx: -0.0000, Fy: 0.1365, Fz: -0.0000, Norm: 0.1365
+Fx: 0.2012, Fy: 0.0000, Fz: -0.0000, Norm: 0.2012
+[演示] 环境0本轮累计转笔圈数: 0.04, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.085m)
+Fx: -0.0000, Fy: 0.3036, Fz: -0.0000, Norm: 0.3036
+Fx: 0.0349, Fy: -0.0000, Fz: -0.0000, Norm: 0.0349
+Fx: -0.0000, Fy: 0.0469, Fz: -0.0000, Norm: 0.0469
+Fx: -0.0000, Fy: 0.1302, Fz: -0.0000, Norm: 0.1302
+Fx: 0.1753, Fy: 0.0000, Fz: -0.0000, Norm: 0.1753
+Fx: 0.0378, Fy: 0.0000, Fz: -0.0000, Norm: 0.0378
+Fx: 0.0257, Fy: 0.0000, Fz: -0.0000, Norm: 0.0257
+Fx: 0.0232, Fy: 0.0000, Fz: -0.0000, Norm: 0.0232
+Fx: 0.0442, Fy: 0.0000, Fz: -0.0000, Norm: 0.0442
+Fx: 0.0399, Fy: -0.0000, Fz: -0.0000, Norm: 0.0399
+Fx: 0.8883, Fy: -0.0000, Fz: -0.0000, Norm: 0.8883
+Fx: -0.0000, Fy: 0.2744, Fz: -0.0000, Norm: 0.2744
+Fx: 0.0320, Fy: -0.0000, Fz: -0.0000, Norm: 0.0320
+Fx: 0.1848, Fy: -0.0000, Fz: -0.0000, Norm: 0.1848
+Fx: -0.0000, Fy: 0.0906, Fz: -0.0000, Norm: 0.0906
+Fx: 0.4907, Fy: -0.0000, Fz: -0.0000, Norm: 0.4907
+Fx: 0.0337, Fy: -0.0000, Fz: -0.0000, Norm: 0.0337
+Fx: 1.3586, Fy: -0.0000, Fz: -0.0000, Norm: 1.3586
+Fx: -0.0000, Fy: 0.3155, Fz: -0.0000, Norm: 0.3155
+Fx: 1.3471, Fy: -0.0000, Fz: -0.0000, Norm: 1.3471
+Fx: -0.0000, Fy: 1.0085, Fz: -0.0000, Norm: 1.0085
+Fx: 0.9094, Fy: -0.0000, Fz: -0.0000, Norm: 0.9094
+Fx: -0.0000, Fy: 0.2766, Fz: -0.0000, Norm: 0.2766
+Fx: 0.2916, Fy: -0.0000, Fz: -0.0000, Norm: 0.2916
+Fx: 0.6895, Fy: -0.0000, Fz: -0.0000, Norm: 0.6895
+Fx: -0.0000, Fy: 0.6359, Fz: 0.0353, Norm: 0.6368
+Fx: 0.0890, Fy: 0.0262, Fz: -0.0000, Norm: 0.0927
+Fx: 0.9745, Fy: -0.0000, Fz: -0.0000, Norm: 0.9745
+Fx: -0.0000, Fy: 0.2443, Fz: -0.0000, Norm: 0.2443
+Fx: 1.4562, Fy: -0.0000, Fz: -0.0000, Norm: 1.4562
+Fx: -0.0000, Fy: 1.1297, Fz: -0.0000, Norm: 1.1297
+Fx: 0.1300, Fy: -0.0000, Fz: -0.0000, Norm: 0.1300
+Fx: -0.0000, Fy: 0.0403, Fz: -0.0000, Norm: 0.0403
+Fx: 0.6543, Fy: -0.0000, Fz: -0.0000, Norm: 0.6543
+Fx: -0.0000, Fy: 0.2112, Fz: -0.0000, Norm: 0.2112
+Fx: 1.9760, Fy: -0.0000, Fz: -0.0000, Norm: 1.9760
+Fx: -0.0000, Fy: 1.1095, Fz: -0.0000, Norm: 1.1095
+Fx: 1.7429, Fy: -0.0000, Fz: -0.0000, Norm: 1.7429
+Fx: -0.0000, Fy: 0.5103, Fz: -0.0000, Norm: 0.5103
+Fx: 0.0282, Fy: -0.0000, Fz: -0.0000, Norm: 0.0282
+Fx: 1.0759, Fy: -0.0000, Fz: -0.0000, Norm: 1.0759
+Fx: -0.0000, Fy: 0.3232, Fz: -0.0000, Norm: 0.3232
+Fx: 1.0271, Fy: -0.0000, Fz: -0.0000, Norm: 1.0271
+Fx: -0.0000, Fy: 0.4407, Fz: -0.0000, Norm: 0.4407
+Fx: 1.5835, Fy: -0.0000, Fz: -0.0000, Norm: 1.5835
+Fx: -0.0000, Fy: 0.3529, Fz: -0.0000, Norm: 0.3529
+Fx: 0.9181, Fy: -0.0000, Fz: -0.0000, Norm: 0.9181
+Fx: -0.0000, Fy: 0.6675, Fz: -0.0000, Norm: 0.6675
+Fx: -0.0000, Fy: 0.0227, Fz: -0.0000, Norm: 0.0227
+Fx: 0.6191, Fy: -0.0000, Fz: -0.0000, Norm: 0.6191
+Fx: -0.0000, Fy: 0.1915, Fz: -0.0000, Norm: 0.1915
+Fx: 2.1924, Fy: -0.0000, Fz: -0.0000, Norm: 2.1924
+Fx: -0.0000, Fy: 0.9073, Fz: -0.0000, Norm: 0.9073
+Fx: 0.0313, Fy: -0.0000, Fz: -0.0000, Norm: 0.0313
+Fx: 1.3651, Fy: -0.0000, Fz: -0.0000, Norm: 1.3651
+Fx: -0.0000, Fy: 0.9829, Fz: -0.0000, Norm: 0.9829
+Fx: -0.0000, Fy: 0.0803, Fz: -0.0000, Norm: 0.0803
+Fx: 0.3252, Fy: -0.0000, Fz: -0.0000, Norm: 0.3252
+Fx: -0.0000, Fy: 0.7573, Fz: -0.0000, Norm: 0.7573
+Fx: 1.5509, Fy: 3.0438, Fz: -0.0000, Norm: 3.4162
+Fx: 0.9263, Fy: -0.0000, Fz: -0.0000, Norm: 0.9263
+Fx: -0.0000, Fy: 0.3988, Fz: -0.0000, Norm: 0.3988
+Fx: -0.0000, Fy: 0.3196, Fz: -0.0000, Norm: 0.3196
+Fx: 4.4971, Fy: -0.0000, Fz: -0.0000, Norm: 4.4971
+Fx: 1.5101, Fy: -0.0000, Fz: -0.0000, Norm: 1.5101
+Fx: -0.0000, Fy: 1.3451, Fz: 0.0230, Norm: 1.3452
+Fx: -0.0000, Fy: 0.0674, Fz: -0.0000, Norm: 0.0674
+Fx: -0.0000, Fy: 0.5911, Fz: -0.0000, Norm: 0.5911
+Fx: 1.3111, Fy: 2.5874, Fz: -0.0000, Norm: 2.9006
+Fx: 1.4852, Fy: -0.0000, Fz: -0.0000, Norm: 1.4852
+Fx: -0.0000, Fy: 0.6996, Fz: -0.0000, Norm: 0.6996
+Fx: -0.0000, Fy: 0.2808, Fz: -0.0000, Norm: 0.2808
+Fx: 3.8960, Fy: -0.0000, Fz: -0.0000, Norm: 3.8960
+Fx: 1.9650, Fy: -0.0000, Fz: -0.0000, Norm: 1.9650
+Fx: -0.0000, Fy: 1.6206, Fz: 0.0000, Norm: 1.6206
+Fx: -0.0000, Fy: 0.0933, Fz: -0.0000, Norm: 0.0933
+Fx: -0.0000, Fy: 1.1554, Fz: -0.0000, Norm: 1.1554
+Fx: 4.1207, Fy: -0.0000, Fz: -0.0000, Norm: 4.1207
+Fx: 0.7138, Fy: -0.0000, Fz: -0.0000, Norm: 0.7138
+Fx: -0.0000, Fy: 0.3687, Fz: -0.0000, Norm: 0.3687
+Fx: -0.0000, Fy: 0.1574, Fz: -0.0000, Norm: 0.1574
+Fx: 3.2592, Fy: -0.0000, Fz: -0.0000, Norm: 3.2592
+Fx: 1.5969, Fy: -0.0000, Fz: -0.0000, Norm: 1.5969
+Fx: -0.0000, Fy: 1.2374, Fz: -0.0000, Norm: 1.2374
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2313, Norm: 0.2313
+Fx: -0.0000, Fy: 0.6597, Fz: -0.0000, Norm: 0.6597
+Fx: 3.0735, Fy: 0.4364, Fz: -0.0000, Norm: 3.1043
+Fx: -0.0000, Fy: 0.3623, Fz: -0.0000, Norm: 0.3623
+Fx: 1.1581, Fy: 0.2903, Fz: -0.0000, Norm: 1.1939
+Fx: 0.2670, Fy: -0.0000, Fz: 1.3718, Norm: 1.3975
+Fx: 2.7819, Fy: -0.0000, Fz: -0.0000, Norm: 2.7819
+Fx: 1.4640, Fy: -0.0000, Fz: -0.0000, Norm: 1.4640
+Fx: -0.0000, Fy: 0.8860, Fz: 0.0000, Norm: 0.8860
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3402, Norm: 0.3402
+Fx: -0.0000, Fy: 0.3355, Fz: -0.0000, Norm: 0.3355
+Fx: 2.8624, Fy: 0.9879, Fz: -0.0000, Norm: 3.0281
+Fx: -0.0000, Fy: 0.8288, Fz: -0.0000, Norm: 0.8288
+Fx: 2.9671, Fy: 0.3349, Fz: -0.0000, Norm: 2.9860
+Fx: 2.2888, Fy: -0.0000, Fz: -0.0000, Norm: 2.2888
+Fx: 1.2343, Fy: -0.0000, Fz: -0.0000, Norm: 1.2343
+Fx: -0.0000, Fy: 0.7467, Fz: 0.0000, Norm: 0.7467
+Fx: -0.0000, Fy: 0.2932, Fz: -0.0000, Norm: 0.2932
+Fx: 3.2997, Fy: -0.0000, Fz: -0.0000, Norm: 3.2997
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7198, Norm: 0.7198
+Fx: -0.0000, Fy: 0.9349, Fz: -0.0000, Norm: 0.9349
+Fx: 4.2101, Fy: 2.1881, Fz: -0.0000, Norm: 4.7447
+Fx: 2.9093, Fy: 0.4587, Fz: -0.0000, Norm: 2.9452
+Fx: 1.0592, Fy: -0.0000, Fz: -0.0000, Norm: 1.0592
+Fx: -0.0000, Fy: 0.6742, Fz: 0.0616, Norm: 0.6770
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0555, Norm: 0.0555
+Fx: -0.0000, Fy: 0.2562, Fz: -0.0000, Norm: 0.2562
+Fx: 3.3484, Fy: 0.0965, Fz: -0.0000, Norm: 3.3498
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5360, Norm: 0.5360
+Fx: -0.0000, Fy: 0.8939, Fz: -0.0000, Norm: 0.8939
+Fx: 4.1916, Fy: 1.1611, Fz: -0.0000, Norm: 4.3494
+Fx: 2.8526, Fy: 0.7062, Fz: -0.0000, Norm: 2.9387
+Fx: 4.3795, Fy: -0.0000, Fz: -0.0000, Norm: 4.3795
+Fx: -0.0000, Fy: 2.9319, Fz: 0.8623, Norm: 3.0561
+Fx: -0.0000, Fy: -0.0000, Fz: 2.1278, Norm: 2.1278
+Fx: 3.9192, Fy: -0.0000, Fz: -0.0000, Norm: 3.9192
+Fx: -0.0000, Fy: -0.0000, Fz: 0.6707, Norm: 0.6707
+Fx: -0.0000, Fy: 0.7723, Fz: -0.0000, Norm: 0.7723
+Fx: 3.9442, Fy: 1.6500, Fz: -0.0000, Norm: 4.2754
+Fx: 3.0515, Fy: 0.7706, Fz: -0.0000, Norm: 3.1473
+Fx: 1.2726, Fy: -0.0000, Fz: -0.0000, Norm: 1.2726
+Fx: -0.0000, Fy: 2.1167, Fz: 0.4528, Norm: 2.1646
+Fx: 2.8147, Fy: -0.0000, Fz: -0.0000, Norm: 2.8147
+Fx: -0.0000, Fy: -0.0000, Fz: 1.6040, Norm: 1.6040
+Fx: 3.3731, Fy: 0.8464, Fz: -0.0000, Norm: 3.4776
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3991, Norm: 0.3991
+Fx: -0.0000, Fy: 0.4319, Fz: -0.0000, Norm: 0.4319
+Fx: 3.3019, Fy: 1.3941, Fz: -0.0000, Norm: 3.5841
+Fx: 4.0881, Fy: 1.0481, Fz: -0.0000, Norm: 4.2203
+Fx: -0.0000, Fy: 0.9785, Fz: 0.0589, Norm: 0.9803
+Fx: 2.3101, Fy: -0.0000, Fz: -0.0000, Norm: 2.3101
+Fx: -0.0000, Fy: -0.0000, Fz: 1.8157, Norm: 1.8157
+Fx: 3.0335, Fy: 0.8062, Fz: -0.0000, Norm: 3.1388
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4941, Norm: 0.4941
+Fx: -0.0000, Fy: 0.2999, Fz: -0.0000, Norm: 0.2999
+Fx: 2.7404, Fy: 1.8815, Fz: -0.0000, Norm: 3.3241
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0325, Norm: 0.0325
+Fx: 3.4440, Fy: 0.8984, Fz: -0.0000, Norm: 3.5593
+Fx: -0.0000, Fy: 0.9184, Fz: -0.0000, Norm: 0.9184
+Fx: 2.3146, Fy: -0.0000, Fz: -0.0000, Norm: 2.3146
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0442, Norm: 0.0442
+Fx: 2.1816, Fy: 0.6204, Fz: -0.0000, Norm: 2.2681
+Fx: 1.8056, Fy: -0.0000, Fz: -0.0000, Norm: 1.8056
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1474, Norm: 0.1474
+Fx: 2.7922, Fy: 0.8815, Fz: -0.0000, Norm: 2.9280
+Fx: -0.0000, Fy: 0.7064, Fz: -0.0000, Norm: 0.7064
+Fx: 3.4960, Fy: -0.0000, Fz: -0.0000, Norm: 3.4960
+Fx: 2.5549, Fy: 0.7265, Fz: -0.0000, Norm: 2.6562
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5043, Norm: 0.5043
+Fx: 3.0152, Fy: -0.0000, Fz: -0.0000, Norm: 3.0152
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2206, Norm: 0.2206
+Fx: 2.5343, Fy: 0.8468, Fz: -0.0000, Norm: 2.6721
+Fx: -0.0000, Fy: 0.6027, Fz: -0.0000, Norm: 0.6027
+Fx: 3.8018, Fy: -0.0000, Fz: -0.0000, Norm: 3.8018
+Fx: 2.2139, Fy: 0.6011, Fz: -0.0000, Norm: 2.2941
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7967, Norm: 0.7967
+Fx: 2.0859, Fy: -0.0000, Fz: -0.0000, Norm: 2.0859
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2192, Norm: 0.2192
+Fx: 2.0382, Fy: 0.7059, Fz: -0.0000, Norm: 2.1570
+Fx: -0.0000, Fy: 0.3114, Fz: -0.0000, Norm: 0.3114
+Fx: 3.8342, Fy: -0.0000, Fz: -0.0000, Norm: 3.8342
+Fx: 1.7195, Fy: 0.4918, Fz: -0.0000, Norm: 1.7884
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2968, Norm: 0.2968
+Fx: 2.0489, Fy: 0.3543, Fz: -0.0000, Norm: 2.0793
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3219, Norm: 0.3219
+Fx: 2.6695, Fy: 0.9242, Fz: -0.0000, Norm: 2.8249
+Fx: 0.4313, Fy: -0.0000, Fz: -0.0000, Norm: 0.4313
+Fx: -0.0000, Fy: 0.0954, Fz: -0.0000, Norm: 0.0954
+Fx: 3.4547, Fy: -0.0000, Fz: -0.0000, Norm: 3.4547
+Fx: 1.1565, Fy: 0.9226, Fz: -0.0000, Norm: 1.4794
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3189, Norm: 0.3189
+Fx: 1.3228, Fy: 0.2251, Fz: -0.0000, Norm: 1.3418
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2628, Norm: 0.2628
+Fx: 2.1049, Fy: 0.7543, Fz: -0.0000, Norm: 2.2360
+Fx: 4.8776, Fy: -0.0000, Fz: -0.0000, Norm: 4.8776
+Fx: 1.1407, Fy: 1.0358, Fz: -0.0000, Norm: 1.5408
+Fx: 1.6595, Fy: 0.2765, Fz: -0.0000, Norm: 1.6823
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2307, Norm: 0.2307
+Fx: 1.8665, Fy: 0.7039, Fz: -0.0000, Norm: 1.9948
+Fx: 3.7252, Fy: -0.0000, Fz: -0.0000, Norm: 3.7252
+Fx: 0.8309, Fy: 1.0708, Fz: -0.0000, Norm: 1.3554
+Fx: 1.5722, Fy: 0.2787, Fz: -0.0000, Norm: 1.5967
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2492, Norm: 0.2492
+Fx: 2.0172, Fy: 0.8000, Fz: -0.0000, Norm: 2.1700
+Fx: 2.6622, Fy: 0.0578, Fz: -0.0000, Norm: 2.6628
+Fx: 1.0730, Fy: 1.7589, Fz: -0.0000, Norm: 2.0604
+Fx: 1.6638, Fy: 0.3259, Fz: -0.0000, Norm: 1.6955
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2587, Norm: 0.2587
+Fx: 1.4280, Fy: 1.5695, Fz: -0.0000, Norm: 2.1219
+Fx: 2.2630, Fy: 0.0874, Fz: -0.0000, Norm: 2.2647
+Fx: 0.8672, Fy: 1.6722, Fz: -0.0000, Norm: 1.8837
+Fx: 1.2752, Fy: 0.2765, Fz: -0.0000, Norm: 1.3049
+Fx: 1.2402, Fy: 1.5915, Fz: -0.0000, Norm: 2.0177
+Fx: 1.8899, Fy: 0.0991, Fz: -0.0000, Norm: 1.8925
+Fx: 0.8567, Fy: 1.9275, Fz: -0.0000, Norm: 2.1094
+Fx: 1.3844, Fy: 0.9100, Fz: -0.0000, Norm: 1.6567
+Fx: 1.2504, Fy: 1.6087, Fz: -0.0000, Norm: 2.0375
+Fx: 1.6679, Fy: 0.0878, Fz: -0.0000, Norm: 1.6703
+Fx: 0.5718, Fy: 1.3446, Fz: -0.0000, Norm: 1.4612
+Fx: 1.4451, Fy: 1.0947, Fz: -0.0000, Norm: 1.8129
+Fx: 1.2416, Fy: 1.6081, Fz: -0.0000, Norm: 2.0317
+Fx: 1.4515, Fy: 0.0812, Fz: -0.0000, Norm: 1.4538
+Fx: 0.6589, Fy: 1.6180, Fz: -0.0000, Norm: 1.7470
+Fx: 0.7139, Fy: 0.6729, Fz: -0.0000, Norm: 0.9811
+Fx: 1.0201, Fy: 1.3299, Fz: -0.0000, Norm: 1.6761
+Fx: 1.1338, Fy: 0.6980, Fz: -0.0000, Norm: 1.3314
+Fx: 0.9383, Fy: 2.4277, Fz: -0.0000, Norm: 2.6027
+Fx: 1.3498, Fy: 1.2990, Fz: -0.0000, Norm: 1.8733
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0737, Norm: 0.0737
+Fx: 1.0563, Fy: 1.5021, Fz: -0.0000, Norm: 1.8363
+Fx: 0.9797, Fy: 0.6433, Fz: -0.0000, Norm: 1.1720
+Fx: 0.6986, Fy: 1.9883, Fz: -0.0000, Norm: 2.1075
+Fx: 0.8676, Fy: 0.9189, Fz: -0.0000, Norm: 1.2638
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0658, Norm: 0.0658
+Fx: 1.0757, Fy: 1.6275, Fz: -0.0000, Norm: 1.9509
+Fx: 1.4516, Fy: 1.0238, Fz: -0.0000, Norm: 1.7763
+Fx: -0.0000, Fy: 2.9582, Fz: -0.0000, Norm: 2.9582
+Fx: 0.8948, Fy: 0.9479, Fz: -0.0000, Norm: 1.3035
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0442, Norm: 0.0442
+Fx: 0.9287, Fy: 1.8576, Fz: -0.0000, Norm: 2.0768
+Fx: 1.1289, Fy: 0.8234, Fz: -0.0000, Norm: 1.3973
+Fx: 0.3398, Fy: -0.0000, Fz: -0.0000, Norm: 0.3398
+Fx: -0.0000, Fy: 1.6144, Fz: -0.0000, Norm: 1.6144
+Fx: 0.9214, Fy: 0.9733, Fz: -0.0000, Norm: 1.3402
+Fx: 0.0312, Fy: 0.0661, Fz: -0.0000, Norm: 0.0731
+Fx: 1.1792, Fy: 0.8981, Fz: -0.0000, Norm: 1.4823
+Fx: 0.4080, Fy: -0.0000, Fz: -0.0000, Norm: 0.4080
+Fx: -0.0000, Fy: 1.4281, Fz: -0.0000, Norm: 1.4281
+Fx: 0.7796, Fy: 1.2454, Fz: -0.0000, Norm: 1.4693
+Fx: 0.2752, Fy: -0.0000, Fz: -0.0000, Norm: 0.2752
+Fx: -0.0000, Fy: 1.4923, Fz: -0.0000, Norm: 1.4923
+Fx: 0.9306, Fy: 0.8193, Fz: -0.0000, Norm: 1.2399
+Fx: 0.3045, Fy: -0.0000, Fz: -0.0000, Norm: 0.3045
+Fx: -0.0000, Fy: 0.8096, Fz: -0.0000, Norm: 0.8096
+Fx: 0.7350, Fy: 1.2977, Fz: -0.0000, Norm: 1.4914
+Fx: 0.1981, Fy: -0.0000, Fz: -0.0000, Norm: 0.1981
+Fx: -0.0000, Fy: 0.6819, Fz: -0.0000, Norm: 0.6819
+Fx: 0.8459, Fy: 0.9288, Fz: -0.0000, Norm: 1.2563
+Fx: 0.8485, Fy: -0.0000, Fz: -0.0000, Norm: 0.8485
+Fx: -0.0000, Fy: 1.8145, Fz: -0.0000, Norm: 1.8145
+Fx: 0.5999, Fy: 1.9169, Fz: -0.0000, Norm: 2.0086
+Fx: 0.1751, Fy: -0.0000, Fz: -0.0000, Norm: 0.1751
+Fx: -0.0000, Fy: 0.6809, Fz: -0.0000, Norm: 0.6809
+Fx: 1.0997, Fy: 1.2253, Fz: -0.0000, Norm: 1.6464
+Fx: -0.0000, Fy: 0.0476, Fz: -0.0000, Norm: 0.0476
+Fx: 0.6300, Fy: 2.0501, Fz: -0.0000, Norm: 2.1447
+Fx: 0.0549, Fy: -0.0000, Fz: -0.0000, Norm: 0.0549
+Fx: -0.0000, Fy: 0.0881, Fz: -0.0000, Norm: 0.0881
+Fx: 0.9507, Fy: 1.6215, Fz: -0.0000, Norm: 1.8797
+Fx: -0.0000, Fy: 0.0486, Fz: -0.0000, Norm: 0.0486
+[演示] 环境1本轮累计转笔圈数: 0.48, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.082m)
+Fx: 0.0910, Fy: -0.0000, Fz: -0.0000, Norm: 0.0910
+Fx: 0.0992, Fy: 1.8157, Fz: -0.0000, Norm: 1.8184
+Fx: 0.8661, Fy: 1.5693, Fz: -0.0000, Norm: 1.7925
+Fx: 0.0246, Fy: -0.0000, Fz: -0.0000, Norm: 0.0246
+Fx: 0.0818, Fy: -0.0000, Fz: -0.0000, Norm: 0.0818
+Fx: -0.0000, Fy: 0.0638, Fz: -0.0000, Norm: 0.0638
+Fx: 1.5868, Fy: -0.0000, Fz: -0.0000, Norm: 1.5868
+Fx: -0.0000, Fy: 4.3558, Fz: -0.0000, Norm: 4.3558
+Fx: 0.0437, Fy: -0.0000, Fz: -0.0000, Norm: 0.0437
+Fx: 0.8183, Fy: 1.6394, Fz: -0.0000, Norm: 1.8323
+Fx: 0.1025, Fy: -0.0000, Fz: -0.0000, Norm: 0.1025
+Fx: -0.0000, Fy: 0.1059, Fz: -0.0000, Norm: 0.1059
+Fx: 1.3942, Fy: -0.0000, Fz: -0.0000, Norm: 1.3942
+Fx: -0.0000, Fy: 3.1731, Fz: -0.0000, Norm: 3.1731
+Fx: 0.1518, Fy: -0.0000, Fz: -0.0000, Norm: 0.1518
+Fx: -0.0000, Fy: 0.2051, Fz: -0.0000, Norm: 0.2051
+Fx: 0.2470, Fy: -0.0000, Fz: -0.0000, Norm: 0.2470
+Fx: 0.7221, Fy: 2.0713, Fz: -0.0000, Norm: 2.1935
+Fx: 0.0723, Fy: -0.0000, Fz: -0.0000, Norm: 0.0723
+[演示] 环境3本轮累计转笔圈数: 0.51, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.083m)
+Fx: 1.1843, Fy: -0.0000, Fz: -0.0000, Norm: 1.1843
+Fx: -0.0000, Fy: 2.5708, Fz: -0.0000, Norm: 2.5708
+Fx: 0.3078, Fy: -0.0000, Fz: -0.0000, Norm: 0.3078
+Fx: -0.0000, Fy: 0.1976, Fz: -0.0000, Norm: 0.1976
+Fx: 0.1927, Fy: -0.0000, Fz: -0.0000, Norm: 0.1927
+Fx: 0.3728, Fy: -0.0000, Fz: -0.0000, Norm: 0.3728
+Fx: 0.6567, Fy: 2.2547, Fz: -0.0000, Norm: 2.3484
+Fx: 0.5637, Fy: 2.3061, Fz: -0.0000, Norm: 2.3740
+Fx: 0.5355, Fy: -0.0000, Fz: -0.0000, Norm: 0.5355
+Fx: -0.0000, Fy: 0.7870, Fz: -0.0000, Norm: 0.7870
+Fx: 0.4587, Fy: -0.0000, Fz: -0.0000, Norm: 0.4587
+Fx: -0.0000, Fy: 0.1824, Fz: -0.0000, Norm: 0.1824
+Fx: 0.0825, Fy: -0.0000, Fz: -0.0000, Norm: 0.0825
+Fx: -0.0000, Fy: 0.6399, Fz: -0.0000, Norm: 0.6399
+Fx: 0.8508, Fy: -0.0000, Fz: -0.0000, Norm: 0.8508
+Fx: -0.0000, Fy: 0.5929, Fz: -0.0000, Norm: 0.5929
+Fx: 0.1385, Fy: -0.0000, Fz: -0.0000, Norm: 0.1385
+Fx: -0.0000, Fy: 0.1844, Fz: -0.0000, Norm: 0.1844
+Fx: 0.6008, Fy: -0.0000, Fz: -0.0000, Norm: 0.6008
+Fx: -0.0000, Fy: 0.1893, Fz: -0.0000, Norm: 0.1893
+Fx: 0.0508, Fy: -0.0000, Fz: -0.0000, Norm: 0.0508
+Fx: -0.0000, Fy: 0.3643, Fz: -0.0000, Norm: 0.3643
+Fx: 0.8127, Fy: -0.0000, Fz: -0.0000, Norm: 0.8127
+Fx: -0.0000, Fy: 0.6136, Fz: -0.0000, Norm: 0.6136
+[演示] 环境0本轮累计转笔圈数: 0.51, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.082m)
+Fx: 0.0412, Fy: -0.0000, Fz: -0.0000, Norm: 0.0412
+Fx: 0.2379, Fy: -0.0000, Fz: -0.0000, Norm: 0.2379
+Fx: -0.0000, Fy: 0.0259, Fz: -0.0000, Norm: 0.0259
+Fx: -0.0000, Fy: 0.0427, Fz: -0.0000, Norm: 0.0427
+Fx: 1.5043, Fy: -0.0000, Fz: -0.0000, Norm: 1.5043
+Fx: -0.0000, Fy: 1.0126, Fz: -0.0000, Norm: 1.0126
+[演示] 环境2本轮累计转笔圈数: 0.60, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.093m)
+Fx: -0.0000, Fy: 0.0479, Fz: -0.0000, Norm: 0.0479
+Fx: 0.0650, Fy: -0.0000, Fz: -0.0000, Norm: 0.0650
+Fx: 1.8197, Fy: -0.0000, Fz: -0.0000, Norm: 1.8197
+Fx: -0.0000, Fy: 1.0842, Fz: -0.0000, Norm: 1.0842
+Fx: 1.1801, Fy: -0.0000, Fz: -0.0000, Norm: 1.1801
+Fx: -0.0000, Fy: 0.2245, Fz: -0.0000, Norm: 0.2245
+Fx: 0.7028, Fy: -0.0000, Fz: -0.0000, Norm: 0.7028
+Fx: -0.0000, Fy: 0.5637, Fz: -0.0000, Norm: 0.5637
+Fx: 2.1477, Fy: -0.0000, Fz: -0.0000, Norm: 2.1477
+Fx: 2.4221, Fy: -0.0000, Fz: -0.0000, Norm: 2.4221
+Fx: -0.0000, Fy: 1.3028, Fz: -0.0000, Norm: 1.3028
+Fx: 0.5300, Fy: -0.0000, Fz: -0.0000, Norm: 0.5300
+Fx: -0.0000, Fy: 0.1172, Fz: -0.0000, Norm: 0.1172
+Fx: 0.6095, Fy: -0.0000, Fz: -0.0000, Norm: 0.6095
+Fx: -0.0000, Fy: 0.4253, Fz: -0.0000, Norm: 0.4253
+Fx: 0.8774, Fy: -0.0000, Fz: -0.0000, Norm: 0.8774
+Fx: 2.0683, Fy: -0.0000, Fz: -0.0000, Norm: 2.0683
+Fx: -0.0000, Fy: 1.0939, Fz: -0.0000, Norm: 1.0939
+[演示] 环境0本轮累计转笔圈数: 0.25, 终止原因: 角速度过大(阈值=10.00rad/s, 实际=10.98rad/s)
+Fx: 0.6036, Fy: -0.0000, Fz: -0.0000, Norm: 0.6036
+Fx: -0.0000, Fy: 0.1477, Fz: -0.0000, Norm: 0.1477
+Fx: 0.0810, Fy: -0.0000, Fz: -0.0000, Norm: 0.0810
+Fx: -0.0000, Fy: 0.0208, Fz: -0.0000, Norm: 0.0208
+Fx: 2.1321, Fy: -0.0000, Fz: -0.0000, Norm: 2.1321
+Fx: -0.0000, Fy: 1.0775, Fz: -0.0000, Norm: 1.0775
+Fx: 0.0491, Fy: -0.0000, Fz: -0.0000, Norm: 0.0491
+Fx: -0.0000, Fy: 0.3172, Fz: -0.0000, Norm: 0.3172
+Fx: -0.0000, Fy: 0.0437, Fz: -0.0000, Norm: 0.0437
+Fx: 0.6589, Fy: -0.0000, Fz: -0.0000, Norm: 0.6589
+Fx: -0.0000, Fy: 0.1713, Fz: -0.0000, Norm: 0.1713
+Fx: 1.1128, Fy: -0.0000, Fz: -0.0000, Norm: 1.1128
+Fx: -0.0000, Fy: 0.1946, Fz: -0.0000, Norm: 0.1946
+Fx: 2.8825, Fy: -0.0000, Fz: -0.0000, Norm: 2.8825
+Fx: -0.0000, Fy: 1.4352, Fz: -0.0000, Norm: 1.4352
+Fx: 0.0645, Fy: -0.0000, Fz: -0.0000, Norm: 0.0645
+Fx: -0.0000, Fy: 0.3370, Fz: -0.0000, Norm: 0.3370
+Fx: -0.0000, Fy: 0.0843, Fz: -0.0000, Norm: 0.0843
+Fx: 0.7224, Fy: -0.0000, Fz: -0.0000, Norm: 0.7224
+Fx: -0.0000, Fy: 0.1740, Fz: -0.0000, Norm: 0.1740
+Fx: 1.0955, Fy: -0.0000, Fz: -0.0000, Norm: 1.0955
+Fx: -0.0000, Fy: 0.0529, Fz: -0.0000, Norm: 0.0529
+Fx: 0.0327, Fy: -0.0000, Fz: -0.0000, Norm: 0.0327
+Fx: 2.0070, Fy: -0.0000, Fz: -0.0000, Norm: 2.0070
+Fx: -0.0000, Fy: 1.0553, Fz: -0.0000, Norm: 1.0553
+Fx: 0.1136, Fy: -0.0000, Fz: -0.0000, Norm: 0.1136
+Fx: -0.0000, Fy: 0.4206, Fz: -0.0000, Norm: 0.4206
+Fx: 0.6628, Fy: -0.0000, Fz: -0.0000, Norm: 0.6628
+Fx: -0.0000, Fy: 0.1713, Fz: -0.0000, Norm: 0.1713
+Fx: 1.8881, Fy: -0.0000, Fz: -0.0000, Norm: 1.8881
+Fx: -0.0000, Fy: 0.1212, Fz: -0.0000, Norm: 0.1212
+Fx: 1.8945, Fy: -0.0000, Fz: -0.0000, Norm: 1.8945
+Fx: -0.0000, Fy: 1.0662, Fz: -0.0000, Norm: 1.0662
+Fx: 0.1035, Fy: -0.0000, Fz: -0.0000, Norm: 0.1035
+Fx: -0.0000, Fy: 0.3328, Fz: -0.0000, Norm: 0.3328
+Fx: 1.9540, Fy: -0.0000, Fz: -0.0000, Norm: 1.9540
+Fx: -0.0000, Fy: 0.1241, Fz: -0.0000, Norm: 0.1241
+Fx: 1.2311, Fy: -0.0000, Fz: -0.0000, Norm: 1.2311
+Fx: -0.0000, Fy: 0.7461, Fz: -0.0000, Norm: 0.7461
+Fx: 0.1326, Fy: -0.0000, Fz: -0.0000, Norm: 0.1326
+Fx: -0.0000, Fy: 0.3312, Fz: -0.0000, Norm: 0.3312
+Fx: -0.0000, Fy: 0.4803, Fz: 0.0287, Norm: 0.4812
+Fx: 2.7700, Fy: -0.0000, Fz: -0.0000, Norm: 2.7700
+Fx: 1.9109, Fy: -0.0000, Fz: -0.0000, Norm: 1.9109
+Fx: -0.0000, Fy: 0.2852, Fz: 0.0000, Norm: 0.2852
+Fx: 2.0422, Fy: -0.0000, Fz: -0.0000, Norm: 2.0422
+Fx: -0.0000, Fy: 1.6683, Fz: -0.0000, Norm: 1.6683
+Fx: 3.0344, Fy: 1.2493, Fz: -0.0000, Norm: 3.2815
+Fx: 0.0735, Fy: -0.0000, Fz: -0.0000, Norm: 0.0735
+Fx: -0.0000, Fy: 0.3720, Fz: -0.0000, Norm: 0.3720
+Fx: 2.2381, Fy: -0.0000, Fz: -0.0000, Norm: 2.2381
+Fx: 2.1799, Fy: -0.0000, Fz: -0.0000, Norm: 2.1799
+Fx: -0.0000, Fy: 0.1647, Fz: 0.0385, Norm: 0.1691
+Fx: -0.0000, Fy: 2.3438, Fz: -0.0000, Norm: 2.3438
+Fx: 4.1193, Fy: 1.6923, Fz: -0.0000, Norm: 4.4534
+Fx: 0.3015, Fy: -0.0000, Fz: -0.0000, Norm: 0.3015
+Fx: -0.0000, Fy: 0.2419, Fz: -0.0000, Norm: 0.2419
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0285, Norm: 0.0285
+Fx: -0.0000, Fy: 0.4888, Fz: -0.0000, Norm: 0.4888
+Fx: 3.2506, Fy: -0.0000, Fz: -0.0000, Norm: 3.2506
+Fx: 1.6311, Fy: -0.0000, Fz: -0.0000, Norm: 1.6311
+Fx: -0.0000, Fy: 0.2200, Fz: 0.0899, Norm: 0.2377
+Fx: 2.5067, Fy: -0.0000, Fz: -0.0000, Norm: 2.5067
+Fx: -0.0000, Fy: 2.4590, Fz: -0.0000, Norm: 2.4590
+Fx: 5.5361, Fy: 2.3023, Fz: -0.0000, Norm: 5.9958
+Fx: 0.1042, Fy: -0.0000, Fz: -0.0000, Norm: 0.1042
+Fx: -0.0000, Fy: 0.0421, Fz: -0.0000, Norm: 0.0421
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0359, Norm: 0.0359
+Fx: -0.0000, Fy: 0.5223, Fz: -0.0000, Norm: 0.5223
+Fx: 3.6871, Fy: -0.0000, Fz: -0.0000, Norm: 3.6871
+Fx: -0.0000, Fy: 0.1455, Fz: 0.0580, Norm: 0.1566
+Fx: 3.5581, Fy: -0.0000, Fz: -0.0000, Norm: 3.5581
+Fx: -0.0000, Fy: 2.7620, Fz: -0.0000, Norm: 2.7620
+Fx: 5.9380, Fy: 2.4829, Fz: -0.0000, Norm: 6.4362
+Fx: 0.1565, Fy: -0.0000, Fz: -0.0000, Norm: 0.1565
+Fx: -0.0000, Fy: 0.4417, Fz: -0.0000, Norm: 0.4417
+Fx: 3.1338, Fy: -0.0000, Fz: -0.0000, Norm: 3.1338
+Fx: -0.0000, Fy: 0.1334, Fz: -0.0000, Norm: 0.1334
+Fx: 3.2840, Fy: -0.0000, Fz: -0.0000, Norm: 3.2840
+Fx: -0.0000, Fy: 2.9118, Fz: -0.0000, Norm: 2.9118
+Fx: 6.2843, Fy: 2.6482, Fz: -0.0000, Norm: 6.8195
+Fx: 0.0904, Fy: -0.0000, Fz: -0.0000, Norm: 0.0904
+Fx: -0.0000, Fy: 0.3906, Fz: -0.0000, Norm: 0.3906
+Fx: 3.0754, Fy: -0.0000, Fz: -0.0000, Norm: 3.0754
+Fx: -0.0000, Fy: 0.0933, Fz: -0.0000, Norm: 0.0933
+Fx: 3.2402, Fy: -0.0000, Fz: -0.0000, Norm: 3.2402
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1777, Norm: 0.1777
+Fx: -0.0000, Fy: 2.3371, Fz: -0.0000, Norm: 2.3371
+Fx: 6.0312, Fy: 0.0000, Fz: -0.0000, Norm: 6.0312
+Fx: 0.3018, Fy: -0.0000, Fz: -0.0000, Norm: 0.3018
+Fx: -0.0000, Fy: 0.3932, Fz: -0.0000, Norm: 0.3932
+Fx: -0.0000, Fy: 0.3175, Fz: -0.0000, Norm: 0.3175
+Fx: 2.8761, Fy: -0.0000, Fz: -0.0000, Norm: 2.8761
+Fx: -0.0000, Fy: 0.0623, Fz: -0.0000, Norm: 0.0623
+Fx: 2.8352, Fy: -0.0000, Fz: -0.0000, Norm: 2.8352
+Fx: -0.0000, Fy: -0.0000, Fz: 0.1728, Norm: 0.1728
+Fx: -0.0000, Fy: 1.8371, Fz: -0.0000, Norm: 1.8371
+Fx: 4.6709, Fy: -0.0000, Fz: -0.0000, Norm: 4.6709
+Fx: 0.7525, Fy: -0.0000, Fz: -0.0000, Norm: 0.7525
+Fx: -0.0000, Fy: 0.4947, Fz: -0.0000, Norm: 0.4947
+Fx: -0.0000, Fy: 0.0372, Fz: -0.0000, Norm: 0.0372
+Fx: -0.0000, Fy: 0.2531, Fz: -0.0000, Norm: 0.2531
+Fx: 2.8451, Fy: -0.0000, Fz: -0.0000, Norm: 2.8451
+Fx: -0.0000, Fy: 0.0476, Fz: -0.0000, Norm: 0.0476
+Fx: 2.2085, Fy: -0.0000, Fz: -0.0000, Norm: 2.2085
+Fx: -0.0000, Fy: 1.8840, Fz: -0.0000, Norm: 1.8840
+Fx: 2.9397, Fy: -0.0000, Fz: -0.0000, Norm: 2.9397
+Fx: 0.7059, Fy: -0.0000, Fz: -0.0000, Norm: 0.7059
+Fx: -0.0000, Fy: 0.4991, Fz: -0.0000, Norm: 0.4991
+Fx: -0.0000, Fy: 0.0314, Fz: -0.0000, Norm: 0.0314
+Fx: -0.0000, Fy: 0.1194, Fz: -0.0000, Norm: 0.1194
+Fx: 1.7480, Fy: -0.0000, Fz: -0.0000, Norm: 1.7480
+Fx: 2.7261, Fy: -0.0000, Fz: -0.0000, Norm: 2.7261
+Fx: -0.0000, Fy: -0.0000, Fz: 0.0888, Norm: 0.0888
+Fx: -0.0000, Fy: 1.3317, Fz: -0.0000, Norm: 1.3317
+Fx: 3.8588, Fy: 0.4921, Fz: -0.0000, Norm: 3.8900
+Fx: 1.3289, Fy: -0.0000, Fz: -0.0000, Norm: 1.3289
+Fx: -0.0000, Fy: 0.9398, Fz: -0.0000, Norm: 0.9398
+Fx: -0.0000, Fy: 0.0663, Fz: -0.0000, Norm: 0.0663
+Fx: 1.8644, Fy: 0.0000, Fz: -0.0000, Norm: 1.8644
+Fx: 2.7422, Fy: -0.0000, Fz: -0.0000, Norm: 2.7422
+Fx: -0.0000, Fy: 1.2854, Fz: -0.0000, Norm: 1.2854
+Fx: 3.5907, Fy: 0.1024, Fz: -0.0000, Norm: 3.5921
+Fx: 1.4047, Fy: -0.0000, Fz: -0.0000, Norm: 1.4047
+Fx: -0.0000, Fy: 1.0113, Fz: -0.0000, Norm: 1.0113
+Fx: 1.4093, Fy: 0.0000, Fz: -0.0000, Norm: 1.4093
+Fx: 2.6736, Fy: 0.0504, Fz: -0.0000, Norm: 2.6740
+Fx: -0.0000, Fy: -0.0000, Fz: 1.0096, Norm: 1.0096
+Fx: -0.0000, Fy: 1.0872, Fz: -0.0000, Norm: 1.0872
+Fx: 4.4169, Fy: 3.8949, Fz: -0.0000, Norm: 5.8889
+Fx: 1.6392, Fy: -0.0000, Fz: -0.0000, Norm: 1.6392
+Fx: -0.0000, Fy: 1.2177, Fz: -0.0000, Norm: 1.2177
+Fx: 1.5455, Fy: 0.0254, Fz: -0.0000, Norm: 1.5457
+Fx: 2.6976, Fy: 0.1185, Fz: -0.0000, Norm: 2.7002
+Fx: -0.0000, Fy: 1.2845, Fz: -0.0000, Norm: 1.2845
+Fx: 4.1043, Fy: -0.0000, Fz: -0.0000, Norm: 4.1043
+Fx: 1.4035, Fy: -0.0000, Fz: -0.0000, Norm: 1.4035
+Fx: -0.0000, Fy: 1.1063, Fz: -0.0000, Norm: 1.1063
+Fx: 0.7957, Fy: 0.0274, Fz: -0.0000, Norm: 0.7962
+Fx: 2.6710, Fy: 0.2739, Fz: -0.0000, Norm: 2.6850
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2621, Norm: 0.2621
+Fx: -0.0000, Fy: 0.7276, Fz: -0.0000, Norm: 0.7276
+Fx: 2.2825, Fy: 0.3488, Fz: -0.0000, Norm: 2.3090
+Fx: 1.2524, Fy: -0.0000, Fz: -0.0000, Norm: 1.2524
+Fx: -0.0000, Fy: 0.9806, Fz: -0.0000, Norm: 0.9806
+Fx: 1.6304, Fy: 0.0861, Fz: -0.0000, Norm: 1.6327
+Fx: 2.1519, Fy: 0.2196, Fz: -0.0000, Norm: 2.1631
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4150, Norm: 0.4150
+Fx: -0.0000, Fy: 0.8776, Fz: -0.0000, Norm: 0.8776
+Fx: 2.9708, Fy: 0.5177, Fz: -0.0000, Norm: 3.0156
+Fx: 1.0607, Fy: -0.0000, Fz: -0.0000, Norm: 1.0607
+Fx: -0.0000, Fy: 0.8376, Fz: -0.0000, Norm: 0.8376
+Fx: 1.2924, Fy: 0.8646, Fz: -0.0000, Norm: 1.5550
+Fx: 2.0521, Fy: 0.2357, Fz: -0.0000, Norm: 2.0656
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2842, Norm: 0.2842
+Fx: 2.0341, Fy: 0.5407, Fz: -0.0000, Norm: 2.1048
+Fx: 1.5906, Fy: -0.0000, Fz: -0.0000, Norm: 1.5906
+Fx: -0.0000, Fy: 1.2788, Fz: -0.0000, Norm: 1.2788
+Fx: 1.3698, Fy: 1.1513, Fz: -0.0000, Norm: 1.7893
+Fx: 1.9602, Fy: 0.2666, Fz: -0.0000, Norm: 1.9783
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3516, Norm: 0.3516
+Fx: 0.1679, Fy: -0.0000, Fz: -0.0000, Norm: 0.1679
+Fx: -0.0000, Fy: 0.7335, Fz: -0.0000, Norm: 0.7335
+Fx: 1.0214, Fy: -0.0000, Fz: -0.0000, Norm: 1.0214
+Fx: 1.0896, Fy: 0.9631, Fz: -0.0000, Norm: 1.4543
+Fx: 1.8649, Fy: 0.2960, Fz: -0.0000, Norm: 1.8882
+Fx: 1.8729, Fy: 1.1808, Fz: -0.0000, Norm: 2.2141
+Fx: 0.3302, Fy: -0.0000, Fz: -0.0000, Norm: 0.3302
+Fx: -0.0000, Fy: 0.7881, Fz: -0.0000, Norm: 0.7881
+Fx: 0.8618, Fy: -0.0000, Fz: -0.0000, Norm: 0.8618
+Fx: 1.3429, Fy: 1.3641, Fz: -0.0000, Norm: 1.9142
+Fx: 1.7308, Fy: 0.3070, Fz: -0.0000, Norm: 1.7578
+Fx: 1.9476, Fy: 1.2730, Fz: -0.0000, Norm: 2.3267
+Fx: 0.5160, Fy: -0.0000, Fz: -0.0000, Norm: 0.5160
+Fx: -0.0000, Fy: 1.2720, Fz: -0.0000, Norm: 1.2720
+Fx: 2.2352, Fy: -0.0000, Fz: -0.0000, Norm: 2.2352
+Fx: 1.0551, Fy: 1.1214, Fz: -0.0000, Norm: 1.5398
+Fx: 1.6381, Fy: 0.3115, Fz: -0.0000, Norm: 1.6675
+Fx: 2.6236, Fy: 1.7887, Fz: -0.0000, Norm: 3.1753
+Fx: 0.5697, Fy: -0.0000, Fz: -0.0000, Norm: 0.5697
+Fx: -0.0000, Fy: 1.1551, Fz: -0.0000, Norm: 1.1551
+Fx: 1.9248, Fy: -0.0000, Fz: -0.0000, Norm: 1.9248
+Fx: 0.8707, Fy: 1.1533, Fz: -0.0000, Norm: 1.4451
+Fx: 1.1992, Fy: 0.6310, Fz: -0.0000, Norm: 1.3551
+Fx: 1.9614, Fy: 1.4025, Fz: -0.0000, Norm: 2.4112
+Fx: -0.0000, Fy: 0.7060, Fz: -0.0000, Norm: 0.7060
+Fx: 2.8019, Fy: -0.0000, Fz: -0.0000, Norm: 2.8019
+Fx: 1.2646, Fy: 1.6765, Fz: -0.0000, Norm: 2.1000
+Fx: 1.2019, Fy: 1.0817, Fz: -0.0000, Norm: 1.6170
+Fx: 1.9562, Fy: 1.4951, Fz: -0.0000, Norm: 2.4622
+Fx: 0.1778, Fy: -0.0000, Fz: -0.0000, Norm: 0.1778
+Fx: -0.0000, Fy: 0.4961, Fz: -0.0000, Norm: 0.4961
+Fx: 3.5691, Fy: -0.0000, Fz: -0.0000, Norm: 3.5691
+Fx: 0.8546, Fy: 1.1335, Fz: -0.0000, Norm: 1.4196
+Fx: 1.1232, Fy: 1.3612, Fz: -0.0000, Norm: 1.7648
+Fx: 0.6161, Fy: 1.2282, Fz: -0.0000, Norm: 1.3741
+Fx: 0.0492, Fy: -0.0000, Fz: -0.0000, Norm: 0.0492
+Fx: -0.0000, Fy: 0.2440, Fz: -0.0000, Norm: 0.2440
+Fx: 3.2849, Fy: -0.0000, Fz: -0.0000, Norm: 3.2849
+Fx: 1.3414, Fy: 1.7780, Fz: -0.0000, Norm: 2.2273
+Fx: 0.7423, Fy: 0.8932, Fz: -0.0000, Norm: 1.1614
+Fx: 0.8169, Fy: 1.6986, Fz: -0.0000, Norm: 1.8849
+Fx: 4.1075, Fy: -0.0000, Fz: -0.0000, Norm: 4.1075
+Fx: 1.5178, Fy: 2.0074, Fz: -0.0000, Norm: 2.5166
+Fx: 1.2670, Fy: 1.6110, Fz: -0.0000, Norm: 2.0495
+Fx: 0.9294, Fy: 1.9322, Fz: -0.0000, Norm: 2.1441
+Fx: 3.3111, Fy: -0.0000, Fz: -0.0000, Norm: 3.3111
+Fx: 1.5112, Fy: 1.9905, Fz: -0.0000, Norm: 2.4992
+Fx: 1.1329, Fy: 1.4618, Fz: -0.0000, Norm: 1.8494
+Fx: 0.7692, Fy: 2.0901, Fz: -0.0000, Norm: 2.2271
+Fx: 2.6940, Fy: -0.0000, Fz: -0.0000, Norm: 2.6940
+Fx: -0.0000, Fy: 2.0174, Fz: -0.0000, Norm: 2.0174
+Fx: 1.5353, Fy: 1.9753, Fz: -0.0000, Norm: 2.5018
+Fx: -0.0000, Fy: 2.5013, Fz: -0.0000, Norm: 2.5013
+Fx: 2.6918, Fy: -0.0000, Fz: -0.0000, Norm: 2.6918
+Fx: 0.0546, Fy: -0.0000, Fz: -0.0000, Norm: 0.0546
+Fx: -0.0000, Fy: 1.2563, Fz: -0.0000, Norm: 1.2563
+Fx: 0.6583, Fy: 3.3458, Fz: -0.0000, Norm: 3.4100
+Fx: -0.0000, Fy: 1.1992, Fz: -0.0000, Norm: 1.1992
+Fx: 1.7593, Fy: -0.0000, Fz: -0.0000, Norm: 1.7593
+Fx: 0.2099, Fy: -0.0000, Fz: -0.0000, Norm: 0.2099
+Fx: -0.0000, Fy: 1.2797, Fz: -0.0000, Norm: 1.2797
+Fx: 0.3299, Fy: 2.7165, Fz: -0.0000, Norm: 2.7364
+Fx: -0.0000, Fy: 2.4191, Fz: -0.0000, Norm: 2.4191
+Fx: 1.9648, Fy: 0.6137, Fz: -0.0000, Norm: 2.0584
+Fx: 0.0366, Fy: -0.0000, Fz: -0.0000, Norm: 0.0366
+Fx: -0.0000, Fy: 0.1658, Fz: -0.0000, Norm: 0.1658
+Fx: -0.0000, Fy: 0.1139, Fz: -0.0000, Norm: 0.1139
+Fx: -0.0000, Fy: 1.2233, Fz: -0.0000, Norm: 1.2233
+Fx: 1.9066, Fy: 0.6227, Fz: -0.0000, Norm: 2.0057
+Fx: -0.0000, Fy: 0.0651, Fz: -0.0000, Norm: 0.0651
+Fx: 0.2195, Fy: -0.0000, Fz: -0.0000, Norm: 0.2195
+Fx: -0.0000, Fy: 0.7939, Fz: -0.0000, Norm: 0.7939
+Fx: -0.0000, Fy: 0.6463, Fz: -0.0000, Norm: 0.6463
+Fx: 1.8294, Fy: 0.6256, Fz: -0.0000, Norm: 1.9334
+Fx: -0.0000, Fy: 0.0413, Fz: -0.0000, Norm: 0.0413
+Fx: -0.0000, Fy: 0.0254, Fz: -0.0000, Norm: 0.0254
+Fx: -0.0000, Fy: 0.8973, Fz: -0.0000, Norm: 0.8973
+[演示] 环境1本轮累计转笔圈数: 0.51, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.081m)
+[演示] 环境2本轮累计转笔圈数: 0.47, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.092m)
+Fx: 1.8059, Fy: 0.7329, Fz: -0.0000, Norm: 1.9489
+Fx: -0.0000, Fy: 0.2965, Fz: -0.0000, Norm: 0.2965
+[演示] 环境3本轮累计转笔圈数: 0.53, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.081m)
+Fx: 0.5128, Fy: 0.2965, Fz: -0.0000, Norm: 0.5923
+Fx: 0.0251, Fy: 0.0000, Fz: -0.0000, Norm: 0.0251
+Fx: 0.0725, Fy: -0.0000, Fz: -0.0000, Norm: 0.0725
+Fx: -0.0000, Fy: 0.0235, Fz: -0.0000, Norm: 0.0235
+Fx: -0.0000, Fy: 0.1394, Fz: -0.0000, Norm: 0.1394
+Fx: 1.6199, Fy: 0.9930, Fz: -0.0000, Norm: 1.9000
+Fx: 0.1724, Fy: -0.0000, Fz: -0.0000, Norm: 0.1724
+Fx: -0.0000, Fy: 0.0681, Fz: -0.0000, Norm: 0.0681
+Fx: 0.1933, Fy: -0.0000, Fz: -0.0000, Norm: 0.1933
+Fx: 1.3829, Fy: -0.0000, Fz: -0.0000, Norm: 1.3829
+Fx: -0.0000, Fy: 0.8514, Fz: -0.0000, Norm: 0.8514
+Fx: 1.0076, Fy: -0.0000, Fz: 0.3247, Norm: 1.0586
+Fx: 0.1076, Fy: 0.0000, Fz: -0.0000, Norm: 0.1076
+Fx: -0.0000, Fy: 0.1590, Fz: -0.0000, Norm: 0.1590
+Fx: 0.4958, Fy: 0.0000, Fz: -0.0000, Norm: 0.4958
+Fx: 1.8222, Fy: 1.4123, Fz: -0.0000, Norm: 2.3054
+Fx: 0.0210, Fy: -0.0000, Fz: -0.0000, Norm: 0.0210
+Fx: 1.2068, Fy: -0.0000, Fz: -0.0000, Norm: 1.2068
+Fx: -0.0000, Fy: 0.6750, Fz: -0.0000, Norm: 0.6750
+Fx: 1.5055, Fy: -0.0000, Fz: 0.5185, Norm: 1.5923
+Fx: 0.5775, Fy: -0.0000, Fz: -0.0000, Norm: 0.5775
+Fx: -0.0000, Fy: 0.2458, Fz: -0.0000, Norm: 0.2458
+Fx: 0.2125, Fy: 0.0000, Fz: -0.0000, Norm: 0.2125
+[演示] 环境2本轮累计转笔圈数: 0.07, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.084m)
+Fx: 1.3462, Fy: 1.1455, Fz: -0.0000, Norm: 1.7676
+Fx: 0.1488, Fy: -0.0000, Fz: -0.0000, Norm: 0.1488
+Fx: 0.9519, Fy: -0.0000, Fz: -0.0000, Norm: 0.9519
+Fx: -0.0000, Fy: 0.2270, Fz: -0.0000, Norm: 0.2270
+Fx: 0.8470, Fy: 0.1226, Fz: 0.2035, Norm: 0.8797
+Fx: 0.2114, Fy: -0.0000, Fz: -0.0000, Norm: 0.2114
+Fx: -0.0000, Fy: 0.0792, Fz: -0.0000, Norm: 0.0792
+Fx: 1.0878, Fy: 1.1906, Fz: -0.0000, Norm: 1.6127
+Fx: 0.2961, Fy: -0.0000, Fz: -0.0000, Norm: 0.2961
+Fx: 0.0221, Fy: 0.0000, Fz: -0.0000, Norm: 0.0221
+Fx: 0.0281, Fy: -0.0000, Fz: -0.0000, Norm: 0.0281
+Fx: 0.8569, Fy: 1.6066, Fz: -0.0000, Norm: 1.8208
+Fx: 1.9259, Fy: -0.0000, Fz: -0.0000, Norm: 1.9259
+Fx: 0.0201, Fy: 0.0000, Fz: -0.0000, Norm: 0.0201
+Fx: 0.0310, Fy: 0.0000, Fz: -0.0000, Norm: 0.0310
+Fx: 0.9501, Fy: -0.0000, Fz: -0.0000, Norm: 0.9501
+Fx: -0.0000, Fy: 0.1944, Fz: -0.0000, Norm: 0.1944
+Fx: 0.7196, Fy: 2.1712, Fz: -0.0000, Norm: 2.2873
+Fx: 1.2745, Fy: -0.0000, Fz: -0.0000, Norm: 1.2745
+Fx: 0.1959, Fy: -0.0000, Fz: -0.0000, Norm: 0.1959
+Fx: 0.2880, Fy: 0.0000, Fz: -0.0000, Norm: 0.2880
+Fx: 0.9550, Fy: -0.0000, Fz: -0.0000, Norm: 0.9550
+Fx: -0.0000, Fy: 0.1076, Fz: -0.0000, Norm: 0.1076
+Fx: 0.5493, Fy: 1.7284, Fz: -0.0000, Norm: 1.8135
+Fx: 1.4373, Fy: -0.0000, Fz: -0.0000, Norm: 1.4373
+Fx: 0.1419, Fy: -0.0000, Fz: -0.0000, Norm: 0.1419
+Fx: 0.9244, Fy: -0.0000, Fz: -0.0000, Norm: 0.9244
+Fx: 0.9348, Fy: -0.0000, Fz: -0.0000, Norm: 0.9348
+Fx: -0.0000, Fy: 0.0779, Fz: -0.0000, Norm: 0.0779
+Fx: 0.6277, Fy: 2.0008, Fz: -0.0000, Norm: 2.0970
+Fx: 1.3581, Fy: -0.0000, Fz: -0.0000, Norm: 1.3581
+Fx: -0.0000, Fy: 0.1001, Fz: -0.0000, Norm: 0.1001
+Fx: 0.1350, Fy: -0.0000, Fz: -0.0000, Norm: 0.1350
+Fx: 1.0345, Fy: -0.0000, Fz: -0.0000, Norm: 1.0345
+Fx: -0.0000, Fy: 0.0248, Fz: -0.0000, Norm: 0.0248
+Fx: 0.2558, Fy: -0.0000, Fz: -0.0000, Norm: 0.2558
+Fx: -0.0000, Fy: 0.0800, Fz: -0.0000, Norm: 0.0800
+Fx: 0.6260, Fy: 1.9640, Fz: -0.0000, Norm: 2.0614
+Fx: 0.6869, Fy: 2.9503, Fz: -0.0000, Norm: 3.0293
+Fx: 1.3433, Fy: -0.0000, Fz: -0.0000, Norm: 1.3433
+Fx: -0.0000, Fy: 0.3731, Fz: -0.0000, Norm: 0.3731
+Fx: 0.8434, Fy: -0.0000, Fz: -0.0000, Norm: 0.8434
+Fx: 1.3894, Fy: -0.0000, Fz: -0.0000, Norm: 1.3894
+Fx: -0.0000, Fy: 0.0601, Fz: -0.0000, Norm: 0.0601
+Fx: 0.2718, Fy: -0.0000, Fz: -0.0000, Norm: 0.2718
+Fx: -0.0000, Fy: 0.1959, Fz: -0.0000, Norm: 0.1959
+Fx: 2.7309, Fy: 0.5564, Fz: -0.0000, Norm: 2.7870
+Fx: 0.5152, Fy: 2.5609, Fz: -0.0000, Norm: 2.6122
+Fx: 1.6106, Fy: -0.0000, Fz: -0.0000, Norm: 1.6106
+Fx: -0.0000, Fy: 0.5860, Fz: -0.0000, Norm: 0.5860
+Fx: 1.8161, Fy: -0.0000, Fz: -0.0000, Norm: 1.8161
+Fx: -0.0000, Fy: 0.1795, Fz: -0.0000, Norm: 0.1795
+Fx: 2.5829, Fy: -0.0000, Fz: -0.0000, Norm: 2.5829
+Fx: -0.0000, Fy: -0.0000, Fz: 0.5142, Norm: 0.5142
+Fx: -0.0000, Fy: 0.1301, Fz: -0.0000, Norm: 0.1301
+Fx: 2.3749, Fy: 1.6056, Fz: -0.0000, Norm: 2.8667
+Fx: 0.0636, Fy: 1.8993, Fz: -0.0000, Norm: 1.9004
+Fx: -0.0000, Fy: 0.1786, Fz: -0.0000, Norm: 0.1786
+Fx: 1.4001, Fy: -0.0000, Fz: -0.0000, Norm: 1.4001
+Fx: -0.0000, Fy: 0.0916, Fz: -0.0000, Norm: 0.0916
+Fx: 1.5236, Fy: -0.0000, Fz: -0.0000, Norm: 1.5236
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7550, Norm: 0.7550
+Fx: -0.0000, Fy: 0.1501, Fz: -0.0000, Norm: 0.1501
+Fx: 3.6181, Fy: 2.3192, Fz: -0.0000, Norm: 4.2976
+Fx: -0.0000, Fy: 1.0021, Fz: -0.0000, Norm: 1.0021
+Fx: -0.0000, Fy: 0.1575, Fz: -0.0000, Norm: 0.1575
+Fx: 2.3468, Fy: -0.0000, Fz: -0.0000, Norm: 2.3468
+Fx: -0.0000, Fy: 0.0610, Fz: -0.0000, Norm: 0.0610
+Fx: 1.1528, Fy: -0.0000, Fz: -0.0000, Norm: 1.1528
+Fx: -0.0000, Fy: -0.0000, Fz: 0.7055, Norm: 0.7055
+Fx: -0.0000, Fy: 0.1083, Fz: -0.0000, Norm: 0.1083
+Fx: 3.9754, Fy: 2.4481, Fz: -0.0000, Norm: 4.6687
+Fx: 0.0841, Fy: -0.0000, Fz: -0.0000, Norm: 0.0841
+Fx: -0.0000, Fy: 0.7434, Fz: -0.0000, Norm: 0.7434
+Fx: -0.0000, Fy: 0.0315, Fz: -0.0000, Norm: 0.0315
+Fx: 1.1244, Fy: -0.0000, Fz: -0.0000, Norm: 1.1244
+Fx: -0.0000, Fy: 0.0455, Fz: -0.0000, Norm: 0.0455
+Fx: 0.6324, Fy: -0.0000, Fz: -0.0000, Norm: 0.6324
+Fx: -0.0000, Fy: -0.0000, Fz: 0.3022, Norm: 0.3022
+Fx: 2.6937, Fy: 1.5841, Fz: -0.0000, Norm: 3.1250
+Fx: 0.0649, Fy: -0.0000, Fz: -0.0000, Norm: 0.0649
+Fx: -0.0000, Fy: 0.2246, Fz: -0.0000, Norm: 0.2246
+Fx: 1.6326, Fy: -0.0000, Fz: -0.0000, Norm: 1.6326
+Fx: -0.0000, Fy: 0.0235, Fz: -0.0000, Norm: 0.0235
+Fx: 0.8350, Fy: -0.0000, Fz: -0.0000, Norm: 0.8350
+Fx: -0.0000, Fy: -0.0000, Fz: 0.4188, Norm: 0.4188
+Fx: 1.8457, Fy: 2.0711, Fz: -0.0000, Norm: 2.7742
+Fx: 0.0429, Fy: -0.0000, Fz: -0.0000, Norm: 0.0429
+Fx: -0.0000, Fy: 0.0878, Fz: -0.0000, Norm: 0.0878
+Fx: 1.0227, Fy: -0.0000, Fz: -0.0000, Norm: 1.0227
+Fx: 0.7671, Fy: -0.0000, Fz: -0.0000, Norm: 0.7671
+Fx: 1.4321, Fy: -0.0000, Fz: -0.0000, Norm: 1.4321
+[演示] 环境0本轮累计转笔圈数: 0.69, 终止原因: 铅笔倾倒(高度差阈值=0.08m, 实际=0.094m)
+Fx: 0.9344, Fy: -0.0000, Fz: -0.0000, Norm: 0.9344
+Fx: 1.6537, Fy: 0.0787, Fz: -0.0000, Norm: 1.6556
+Fx: 1.5562, Fy: -0.0000, Fz: -0.0000, Norm: 1.5562
+Fx: 0.0655, Fy: 0.0000, Fz: -0.0000, Norm: 0.0655
+Fx: 0.0217, Fy: 0.0000, Fz: -0.0000, Norm: 0.0217
+Fx: 1.1710, Fy: -0.0000, Fz: -0.0000, Norm: 1.1710
+Fx: 1.9251, Fy: 0.1232, Fz: -0.0000, Norm: 1.9291
+Fx: -0.0000, Fy: -0.0000, Fz: 1.6590, Norm: 1.6590
+Fx: 4.2906, Fy: 0.2355, Fz: -0.0000, Norm: 4.2971
+Fx: 0.0506, Fy: 0.0000, Fz: -0.0000, Norm: 0.0506
+Fx: 1.2287, Fy: 0.2672, Fz: -0.0000, Norm: 1.2575
+Fx: 1.5670, Fy: 0.1412, Fz: -0.0000, Norm: 1.5733
+Fx: -0.0000, Fy: -0.0000, Fz: 0.9791, Norm: 0.9791
+Fx: 3.1766, Fy: 0.2170, Fz: -0.0000, Norm: 3.1840
+Fx: 0.0641, Fy: -0.0000, Fz: -0.0000, Norm: 0.0641
+Fx: 1.0384, Fy: 0.2343, Fz: -0.0000, Norm: 1.0645
+Fx: 1.9020, Fy: 0.3810, Fz: -0.0000, Norm: 1.9398
+Fx: -0.0000, Fy: -0.0000, Fz: 0.2513, Norm: 0.2513
+Fx: 3.0872, Fy: 0.6013, Fz: -0.0000, Norm: 3.1453
+Fx: 0.1073, Fy: -0.0000, Fz: -0.0000, Norm: 0.1073
+Fx: 1.0955, Fy: 0.2615, Fz: -0.0000, Norm: 1.1262
+Fx: 1.1337, Fy: 0.2367, Fz: -0.0000, Norm: 1.1582
+Fx: 2.5528, Fy: 0.5240, Fz: -0.0000, Norm: 2.6061
+Fx: 0.8174, Fy: -0.0000, Fz: -0.0000, Norm: 0.8174
+Fx: -0.0000, Fy: 0.1789, Fz: -0.0000, Norm: 0.1789
+Fx: 0.8413, Fy: 0.3153, Fz: -0.0000, Norm: 0.8984
+Fx: 1.4626, Fy: 0.7997, Fz: -0.0000, Norm: 1.6670
+Fx: 1.3989, Fy: 0.2828, Fz: -0.0000, Norm: 1.4272
+Fx: 1.3142, Fy: -0.0000, Fz: -0.0000, Norm: 1.3142
+Fx: -0.0000, Fy: 0.2351, Fz: -0.0000, Norm: 0.2351
+Fx: 1.0654, Fy: 0.4289, Fz: -0.0000, Norm: 1.1485
+Fx: 1.2829, Fy: 0.7345, Fz: -0.0000, Norm: 1.4782
+Fx: 1.2967, Fy: 0.8383, Fz: -0.0000, Norm: 1.5440
+Fx: 1.3933, Fy: -0.0000, Fz: -0.0000, Norm: 1.3933
+Fx: -0.0000, Fy: 0.2401, Fz: -0.0000, Norm: 0.2401
+Fx: 0.5598, Fy: 0.2412, Fz: -0.0000, Norm: 0.6096
+Fx: 0.8506, Fy: 0.5169, Fz: -0.0000, Norm: 0.9954
+Fx: 0.8239, Fy: 0.5750, Fz: -0.0000, Norm: 1.0047
+Fx: 1.3970, Fy: -0.0000, Fz: -0.0000, Norm: 1.3970
+Fx: -0.0000, Fy: 0.2563, Fz: -0.0000, Norm: 0.2563
+Fx: 0.6022, Fy: 0.6252, Fz: -0.0000, Norm: 0.8680
+Fx: 1.4987, Fy: 0.9708, Fz: -0.0000, Norm: 1.7857
+Fx: 0.0532, Fy: 0.0380, Fz: -0.0000, Norm: 0.0653
+Fx: 1.3241, Fy: -0.0000, Fz: -0.0000, Norm: 1.3241
+Fx: -0.0000, Fy: 0.1969, Fz: -0.0000, Norm: 0.1969
+Fx: 0.3382, Fy: 0.3944, Fz: -0.0000, Norm: 0.5196
+Fx: 1.0073, Fy: 0.6820, Fz: -0.0000, Norm: 1.2165
+Fx: 1.1102, Fy: 0.9484, Fz: -0.0000, Norm: 1.4601

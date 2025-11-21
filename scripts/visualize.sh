@@ -5,7 +5,7 @@
 # scripts/visualize.sh pose3_50k_cfg7_200_3 > contacts/pose3_50k_cfg7_200_3.txt
 # scripts/visualize.sh pose3_50k_cfg9 > contacts/pose3_50k_cfg9.txt
 # scripts/visualize.sh pose3_3k_cfg_c > contacts/pose3_3k_cfg_c.txt
-
+# scripts/visualize.sh optuna_trial_0029 > tmp_debug.txt
 #best:
 # scripts/visualize.sh pose3_50k_cfg2 > contacts/pose3_50k_cfg2.txt
 # CHECKLIST
@@ -23,21 +23,11 @@ array=( $@ )
 len=${#array[@]}
 EXTRA_ARGS=${array[@]:1:$len}
 EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
-
 python train.py task=LinkerHandHora headless=False \
-task.env.numEnvs=4 test=True checkpoint=outputs/LinkerHandHora/"${CACHE}"/stage1_nn/best*.pth \
-task.env.object.type=cylinder_pencil-5-7 \
+train.algo=PPOTeacher \
+task.env.numEnvs=4 test=True checkpoint=outputs/LinkerHandHora/"${CACHE}"/teacher_nn/best*.pth \
 task.env.episodeLength=4000 \
-task.env.randomForceProbScalar=0.25 train.algo=PPO \
-task.env.rotation_axis=+z \
-task.env.genGraspCategory=pencil task.env.privInfo.enable_obj_orientation=True \
-task.env.privInfo.enable_ft_pos=True task.env.privInfo.enable_obj_angvel=True \
-task.env.randomization.randomizeScaleList=[0.3] task.env.grasp_cache_name=3pose \
-task.env.asset.handAsset=assets/linker_hand/L25_dof_urdf.urdf \
-task.env.privInfo.enable_tactile=True train.ppo.priv_info=True task.env.hora.point_cloud_sampled_dim=100 \
-task.env.numObservations=126 task.env.initPoseMode=low task.env.reset_height_threshold=0.14 \
-task.env.reward.angvelClipMax=0.5 task.env.forceScale=2.0 \
-task.env.reward.angvelPenaltyThres=1.0 \
-task.env.enable_obj_ends=True \
-wandb_activate=False \
+task.env.grasp_cache_name=3pose \
+task.env.initPoseMode=low \
+task.env.reset_height_threshold=0.14 \
 ${EXTRA_ARGS}

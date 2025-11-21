@@ -10,9 +10,8 @@ env:
   numObservations: 126 # 这个参数在vec_tast用到 21*2*3
   numActions: 21 # modified
   envSpacing: 0.5
-  obs_with_binary_contact: False  # 这个参数没有用到
 
-  episodeLength: 400
+  episodeLength: 400  # 训练时使用400, 测试时使用4000
   enableDebugVis: False
   aggregateMode: 1
 
@@ -24,9 +23,9 @@ env:
     action_scale: 0.04167
     torque_limit: 0.7
 
-  rotation_axis: '-z'
+  rotation_axis: '+z'
   genGrasps: False
-  genGraspCategory: 'hora'
+  genGraspCategory: 'pencil'
 
   clipObservations: 5.0
   clipActions: 1.0
@@ -36,29 +35,29 @@ env:
   grasp_cache_name: 'internal_linker'
 
   # Random forces applied to the object
-  forceScale: 0.0
-  randomForceProbScalar: 0.0
+  forceScale: 2.0
+  randomForceProbScalar: 0.25
   forceDecay: 0.9
   forceDecayInterval: 0.08
-  enable_obj_ends: False
+  enable_obj_ends: True # Teacher默认开启物体末端信息
 
   hora:
     propHistoryLen: 30
     critic_obs_dim: 100
-    point_cloud_sampled_dim: 0
+    point_cloud_sampled_dim: 100
     render_slowness: 1
 
   reward:
     angvelClipMin: -0.5
     angvelClipMax: 0.5
-    angvelPenaltyThres: 1.0
+    angvelPenaltyThresHigh: 1.0
+    angvelPenaltyThresLow: -0.5
     # reward scale: [init scale, final scale, curriculum start, curriculum end]
     # single scalar means no curriculum
     rotate_reward_scale: 1.0
     obj_linvel_penalty_scale: -0.3
     waypoint_sparse_reward_scale: 1.0
     torque_penalty_scale: -0.1
-    work_penalty_scale: -1.0
     hand_pose_consistency_penalty_scale: -1.0
     rotate_penalty_scale: -0.3
     pencil_z_dist_penalty_scale: -1.0
@@ -112,11 +111,8 @@ env:
     enableObjFriction: True
     enable_obj_restitution: True
     enable_tactile: True         # Teacher默认开启触觉信息
-    enableNetContactF: False # 这个参数没有用到
-    contact_input_dim: 4  # 这个参数没有用到
     contact_form: 'gpu_contact'
     contact_input: 'binary'
-    contact_binarize_threshold: 0.1
     enable_obj_orientation: True  # Teacher默认开启物体姿态信息
     enable_obj_linvel: False
     enable_obj_angvel: True      # Teacher默认开启物体角速度信息
@@ -124,11 +120,10 @@ env:
     enable_ft_orientation: False
     enable_ft_linvel: False
     enable_ft_angvel: False
-    enable_hand_scale: False
 
   object:
-    type: 'cylinder_pencil-5-7' # can be block, egg or pen
-    evalObjectType: null # set to a string object name to evaluate on only one object
+    type: 'cylinder_pencil-5-7'
+    evalObjectType: null
     sampleProb: [1.0]
 
   asset:

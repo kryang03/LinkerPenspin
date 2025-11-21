@@ -15,6 +15,7 @@ import time
 import torch
 import torch.distributed as dist
 import numpy as np
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from penspin.algo.ppo.experience import ExperienceBuffer
 from penspin.algo.models.models import TeacherActorCritic, StudentActorCritic, create_actor_critic
@@ -115,7 +116,15 @@ class DemonTrain(object):
         # ---- Optim ----
         self.last_lr = float(self.ppo_config['learning_rate'])
         self.weight_decay = self.ppo_config.get('weight_decay', 0.0)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), self.last_lr, weight_decay=self.weight_decay)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), self.last_lr, weight_decay=self.weight_decay)
+        
+        # ---- Global Learning Rate Scheduler ----
+        self.max_steps = self.ppo_config['max_agent_steps']
+        # 估算总共的 epoch 数量
+        total_epochs = self.max_steps // (self.ppo_config['horizon_length'] * self.ppo_config['num_actors'])
+        # 使用余弦退火调度器，让学习率在整个训练过程中平滑下降
+        self.global_scheduler = CosineAnnealingLR(self.optimizer, T_max=total_epochs, eta_min=1e-6)
+        
         # ---- PPO Train Param ----
         self.e_clip = self.ppo_config['e_clip']
         self.clip_value = self.ppo_config['clip_value']
@@ -142,7 +151,7 @@ class DemonTrain(object):
         assert self.batch_size % self.minibatch_size == 0 or full_config.test
         # ---- scheduler ----
         self.kl_threshold = self.ppo_config['kl_threshold']
-        self.scheduler = AdaptiveScheduler(self.kl_threshold)
+        self.scheduler = AdaptiveScheduler(self.kl_threshold, min_lr=1e-6, max_lr=self.last_lr)
         # ---- Snapshot
         self.save_freq = self.ppo_config['save_frequency']
         self.save_best_after = self.ppo_config['save_best_after']
@@ -445,6 +454,18 @@ class DemonTrain(object):
 
                 self.storage.update_mu_sigma(mu.detach(), sigma.detach())
 
+        # 更新全局学习率（余弦退火）
+        self.global_scheduler.step()
+        global_lr = self.global_scheduler.get_last_lr()[0]
+        
+        # 更新 AdaptiveScheduler 的 max_lr，使其受全局调度器约束
+        self.scheduler.max_lr = global_lr
+        
+        # 更新最终学习率，确保不超过全局上限
+        self.last_lr = min(self.last_lr, global_lr)
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = self.last_lr
+
         self.rl_train_time += (time.time() - _t)
         return losses, grad_norms, latent_losses
 
@@ -525,10 +546,10 @@ def policy_kl(p0_mu, p0_sigma, p1_mu, p1_sigma):
 
 # from https://github.com/leggedrobotics/rsl_rl/blob/master/rsl_rl/algorithms/ppo.py
 class AdaptiveScheduler(object):
-    def __init__(self, kl_threshold=0.008):
+    def __init__(self, kl_threshold=0.008, min_lr=1e-6, max_lr=1e-2):
         super().__init__()
-        self.min_lr = 1e-6
-        self.max_lr = 1e-2
+        self.min_lr = min_lr
+        self.max_lr = max_lr  # 可动态更新的最大学习率
         self.kl_threshold = kl_threshold
 
     def update(self, current_lr, kl_dist):
@@ -536,5 +557,5 @@ class AdaptiveScheduler(object):
         if kl_dist > (2.0 * self.kl_threshold):
             lr = max(current_lr / 1.5, self.min_lr)
         if kl_dist < (0.5 * self.kl_threshold):
-            lr = min(current_lr * 1.5, self.max_lr)
+            lr = min(current_lr * 1.5, self.max_lr)  # 使用动态的 self.max_lr
         return lr

@@ -100,7 +100,7 @@ class ExperienceBuffer(Dataset):
         else:
             self.storage_dict[name][index, :] = val
 
-    def computer_return(self, last_values, gamma, tau):
+    def compute_return(self, last_values, gamma, tau):
         last_gae_lam = 0
         mb_advs = torch.zeros_like(self.storage_dict['rewards'])
         for t in reversed(range(self.transitions_per_env)):

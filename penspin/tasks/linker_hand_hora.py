@@ -59,16 +59,17 @@ ORIENTATION_SIMILARITY_THRESHOLD = 0.9
 CONTACT_THRESH = 0.02
 TACTILE_FORCE_MAX = 4.0
 # Reward 缩放比例
+# hand_pose_consistency_penalty 是为了鼓励手部姿态的一致性，防止手部在抓握过程中发生过大的变化
+# 也就是原先的 pose_diff_penalty的条件性，仅当物体旋转角度处于 180°-360° (π 到 2π) 之间时，才计算当前手部姿态与初始姿态的差异并施加惩罚。
 REWARD_SCALE_DICT = {
     'obj_linvel_penalty': 1.0,
-    'rotate_reward': 0.7,
-    'waypoint_sparse_reward': 100,
+    'rotate_reward': 1.0,
+    'waypoint_sparse_reward': 0,
     'torque_penalty': 0.1,
-    'work_penalty': 0.05,
-    'pencil_z_dist_penalty': 3.0,
-    'position_penalty': 20000.0,
-    'rotate_penalty': 4.0,
-    'hand_pose_consistency_penalty': 80.0
+    'pencil_z_dist_penalty': 1.5,
+    'position_penalty': 1,
+    'rotate_penalty': 0,
+    'hand_pose_consistency_penalty': 0.05
 }
 #    由于Python 3.7+ dict 保持插入顺序，.values() 返回的视图中的值顺序将与定义时一致
 REWARD_SCALE = list(REWARD_SCALE_DICT.values())
@@ -86,8 +87,6 @@ class LinkerHandHora(VecTask):
         # 4. setup rewards
         self._setup_reward_config(config['env']['reward'])
 
-        # 这个参数暂未使用
-        self.obs_with_binary_contact = config['env']['obs_with_binary_contact']
         self.base_obj_scale = config['env']['baseObjScale']
         # print("缩放比例", self.base_obj_scale)
 
@@ -230,6 +229,7 @@ class LinkerHandHora(VecTask):
         self.z_unit_tensor = to_torch([0, 0, 1], dtype=torch.float, device=self.device).repeat((self.num_envs, 1))
 
         self.total_rot_angle = torch.zeros(self.num_envs, device=self.device)  # 累计旋转角度
+        self.current_angvel = torch.zeros(self.num_envs, device=self.device)  # 当前角速度（用于early termination）
 
         # 初始化为全0，表示所有环境开始时都没有达成任何参考帧
         self.waypoint_achievement_mask = torch.zeros(
@@ -240,13 +240,17 @@ class LinkerHandHora(VecTask):
         self.termination_counts = {
             'max_episode_length': 0,
             'object_below_threshold': 0,
+            'angular_velocity_too_high': 0,
             'pencil_fall': 0,
             'total_episodes': 0
         }
         
         # 为每个环境记录当前episode的终止原因
         self.current_termination_reason = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
-        # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_fall
+        # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_fall, 4: angular_velocity_too_high
+        
+        # 为每个环境记录终止时的实际值（用于调试输出）
+        self.termination_actual_values = torch.zeros(self.num_envs, device=self.device)
 
     def _create_envs(self, num_envs, spacing, num_per_row):
         self._create_ground_plane()
@@ -675,10 +679,10 @@ class LinkerHandHora(VecTask):
             self.tactile_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, PROPRIO_DIM:PROPRIO_DIM + CONTACT_DIM]
 
         # --------------------------------------------------------------
-        # 7. 更新私有信息缓冲区 (Update Privileged Information Buffer)
+        # 7. 更新特权信息缓冲区 (Update Privileged Information Buffer)
         # --------------------------------------------------------------
-        # 私有信息是只有训练时可用的“地面真值”信息，不包含噪声和延迟，用于辅助训练
-        # _update_priv_buf 是一个辅助方法，用于更新私有信息字典或缓冲区
+        # 特权信息是只有训练时可用的“地面真值”信息，不包含噪声和延迟，用于辅助训练
+        # _update_priv_buf 是一个辅助方法，用于更新特权信息字典或缓冲区
         self._update_priv_buf(env_id=range(self.num_envs), name='obj_position', value=self.object_pos.clone()) # 物体真实位置
         self._update_priv_buf(env_id=range(self.num_envs), name='obj_orientation', value=self.object_rot.clone()) # 物体真实姿态
         self._update_priv_buf(env_id=range(self.num_envs), name='obj_linvel', value=self.obj_linvel_at_cf.clone()) # 物体在接触时的真实线速度
@@ -696,7 +700,7 @@ class LinkerHandHora(VecTask):
         # --------------------------------------------------------------
         # Critic 网络可能需要额外的、更全面的信息来评估当前状态的价值
         # note: the critic will receive normal observation, privileged info, and critic info
-        # Critic的完整输入通常是：agent的观测 + 私有信息 + critic特有的信息
+        # Critic的完整输入通常是：agent的观测 + 特权信息 + critic特有的信息
         # deprecated - 这行注释可能表示下面的 critic_info_buf 构建方式是旧的或即将废弃
         self.critic_info_buf[:, 0:4] = self.object_rot # 物体真实姿态（四元数）
         self.critic_info_buf[:, 4:7] = self.obj_linvel_at_cf # 物体在接触时的真实线速度
@@ -899,20 +903,23 @@ class LinkerHandHora(VecTask):
     def compute_reward(self, actions):
         # 计算waypoint稀疏奖励
         waypoint_sparse_reward = torch.zeros(self.num_envs, device=self.device)
-        # work and torque penalty
+        # torque penalty
         torque_penalty = (self.torques[:, -1] ** 2).sum(-1)
-        work_penalty = (((torch.abs(self.torques[:, -1]) * torch.abs(self.dof_vel_finite_diff[:, -1])).sum(-1)) ** 2)
         # Compute offset in radians. Radians -> radians / sec
         angdiff = quat_to_axis_angle(quat_mul(self.object_rot, quat_conjugate(self.object_rot_prev)))
         object_angvel = angdiff / (self.control_freq_inv * self.dt)
         # vec_dot > 0 表示与期望方向一致的旋转
         # vec_dot < 0 表示与期望方向相反的旋转 (逆向旋转)   
         vec_dot = (object_angvel * self.rot_axis_buf).sum(-1)
+        
+        # 保存当前角速度用于early termination判断
+        self.current_angvel = vec_dot.clone()
+        
         # 奖励只针对与期望方向一致的旋转，且不超过设定的最大速度
-        rotate_reward = torch.clip(vec_dot, max=self.angvel_clip_max, min=0.0)
-        # vec_dot 的值低于 self.angvel_clip_min或高于self.angvel_penalty_threshold时，才会开始施加惩罚
-        penalty_overspeed = torch.relu(vec_dot - self.angvel_penalty_threshold)
-        penalty_reverse_rotation = torch.relu(self.angvel_clip_min-vec_dot)
+        rotate_reward = torch.clip(vec_dot, max=self.angvel_clip_max, min=self.angvel_clip_min)
+        # vec_dot 的值低于 angvel_penalty_threshold_low或高于angvel_penalty_threshold_high时，才会开始施加惩罚
+        penalty_overspeed = torch.relu(vec_dot - self.angvel_penalty_threshold_high)
+        penalty_reverse_rotation = torch.relu(self.angvel_penalty_threshold_low-vec_dot)
         rotate_penalty = penalty_overspeed + penalty_reverse_rotation
         # 累计旋转角度（用于统计圈数）
         rot_angle = torch.abs(vec_dot) * self.dt * self.control_freq_inv # 当前时间步旋转角度
@@ -950,11 +957,10 @@ class LinkerHandHora(VecTask):
             rotate_reward, self._get_reward_scale_by_name('rotate_reward')*REWARD_SCALE[1],
             waypoint_sparse_reward, self._get_reward_scale_by_name('waypoint_sparse_reward')*REWARD_SCALE[2],
             torque_penalty, self._get_reward_scale_by_name('torque_penalty')*REWARD_SCALE[3],
-            work_penalty, self._get_reward_scale_by_name('work_penalty')*REWARD_SCALE[4],
-            z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty')*REWARD_SCALE[5],
-            position_penalty, self._get_reward_scale_by_name('position_penalty')*REWARD_SCALE[6],
-            rotate_penalty, self._get_reward_scale_by_name('rotate_penalty')*REWARD_SCALE[7],
-            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty')*REWARD_SCALE[8]
+            z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty')*REWARD_SCALE[4],
+            position_penalty, self._get_reward_scale_by_name('position_penalty')*REWARD_SCALE[5],
+            rotate_penalty, self._get_reward_scale_by_name('rotate_penalty')*REWARD_SCALE[6],
+            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty')*REWARD_SCALE[7]
         )
         self.reset_buf[:] = self.check_termination(self.object_pos)
         
@@ -968,11 +974,10 @@ class LinkerHandHora(VecTask):
         self.extras['penalty/object_linvel_penalty'] = (object_linvel_penalty * self._get_reward_scale_by_name('obj_linvel_penalty') * REWARD_SCALE[0]).mean()
         self.extras['rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward') * REWARD_SCALE[1]).mean()
         self.extras['penalty/torques'] = (torque_penalty * self._get_reward_scale_by_name('torque_penalty') * REWARD_SCALE[3]).mean()
-        self.extras['penalty/work_done'] = (work_penalty * self._get_reward_scale_by_name('work_penalty') * REWARD_SCALE[4]).mean()
-        self.extras['penalty/z_dist_penalty'] = (z_dist_penalty * self._get_reward_scale_by_name('pencil_z_dist_penalty') * REWARD_SCALE[5]).mean()
-        self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty') * REWARD_SCALE[6]).mean()
-        self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty') * REWARD_SCALE[7]).mean()
-        self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty') * REWARD_SCALE[8]).mean()
+        self.extras['penalty/z_dist_penalty'] = (z_dist_penalty * self._get_reward_scale_by_name('pencil_z_dist_penalty') * REWARD_SCALE[4]).mean()
+        self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty') * REWARD_SCALE[5]).mean()
+        self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty') * REWARD_SCALE[6]).mean()
+        self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty') * REWARD_SCALE[7]).mean()
         self.extras['finger_obj_penalty(NOT USED)'] = finger_obj_penalty.mean()
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
         self.extras['vel/pitch_angvel'] = torch.abs(object_angvel[:, 1]).mean()
@@ -987,6 +992,7 @@ class LinkerHandHora(VecTask):
         self.extras['termination/max_episode_length_count'] = self.termination_counts['max_episode_length']
         self.extras['termination/object_below_threshold_count'] = self.termination_counts['object_below_threshold']
         self.extras['termination/pencil_fall_count'] = self.termination_counts['pencil_fall']
+        self.extras['termination/angular_velocity_too_high_count'] = self.termination_counts['angular_velocity_too_high']
 
         if self.evaluate:
             for i in range(len(self.object_type_list)):
@@ -1054,11 +1060,26 @@ class LinkerHandHora(VecTask):
         #这里的env_ids是指当前处于重置状态的环境实例的索引
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         if len(env_ids) > 0: # 对于处于重置状态的环境实例
-            # 在演示状态下输出圈数
+            # 在演示状态下输出圈数和终止原因
             if self.viewer:
                 for eid in env_ids:
                     turns = float(self.total_rot_angle[eid].item()) / (2 * math.pi)
-                    print(f"[演示] 环境{eid}本轮累计转笔圈数: {turns:.2f}")
+                    reason_code = int(self.current_termination_reason[eid].item())
+                    actual_value = float(self.termination_actual_values[eid].item())
+                    
+                    if reason_code == 1:
+                        reason_text = f"达到最大步数(阈值={self.max_episode_length}步, 实际={int(actual_value)}步)"
+                    elif reason_code == 2:
+                        reason_text = f"物体低于阈值(阈值={self.reset_z_threshold:.3f}m, 实际={actual_value:.3f}m)"
+                    elif reason_code == 3:
+                        reason_text = f"铅笔倾倒(高度差阈值=0.08m, 实际={actual_value:.3f}m)"
+                    elif reason_code == 4:
+                        threshold = 10.0 * self.angvel_penalty_threshold_high
+                        reason_text = f"角速度过大(阈值={threshold:.2f}rad/s, 实际={abs(actual_value):.2f}rad/s)"
+                    else:
+                        reason_text = f"未知原因({reason_code})"
+                    
+                    print(f"[演示] 环境{eid}本轮累计转笔圈数: {turns:.2f}, 终止原因: {reason_text}")
             self.total_rot_angle[env_ids] = 0.0
             self.reset_idx(env_ids)
         self.compute_observations()
@@ -1217,20 +1238,35 @@ class LinkerHandHora(VecTask):
         term_by_max_eps = torch.greater_equal(self.progress_buf, self.max_episode_length)
         # default option
         reset_z = torch.less(object_pos[:, -1], self.reset_z_threshold)
+        
+        # 新增：角速度过大的early termination（超过最高转速阈值的10倍）
+        # 用于过滤初始化时发生碰撞导致的异常高速旋转
+        angvel_too_high = torch.greater(torch.abs(self.current_angvel), 10.0 * self.angvel_penalty_threshold_high)
+        
         resets = reset_z
         
         # 重置终止原因记录
         self.current_termination_reason.fill_(0)
+        self.termination_actual_values.fill_(0)
         
         # 记录各种终止原因
         term_by_max_eps_envs = torch.where(term_by_max_eps)[0]
         reset_z_envs = torch.where(reset_z)[0]
+        angvel_too_high_envs = torch.where(angvel_too_high)[0]
         
-        # 设置终止原因 (优先级: 物体低于阈值 > 达到最大长度)
+        # 设置终止原因 (优先级: 角速度过大 > 物体低于阈值 > 达到最大长度)
+        # 同时记录实际值用于调试
         self.current_termination_reason[reset_z_envs] = 2  # object_below_threshold
+        self.termination_actual_values[reset_z_envs] = object_pos[reset_z_envs, -1]
+        
         self.current_termination_reason[term_by_max_eps_envs] = 1  # max_episode_length
+        self.termination_actual_values[term_by_max_eps_envs] = self.progress_buf[term_by_max_eps_envs].float()
+        
+        self.current_termination_reason[angvel_too_high_envs] = 4  # angular_velocity_too_high
+        self.termination_actual_values[angvel_too_high_envs] = self.current_angvel[angvel_too_high_envs]
         
         resets = torch.logical_or(resets, term_by_max_eps)
+        resets = torch.logical_or(resets, angvel_too_high)
 
         if self.canonical_pose_category == 'pencil':
             pencil_ends = [
@@ -1242,11 +1278,14 @@ class LinkerHandHora(VecTask):
             pencil_z_min = torch.min(pencil_end_1, pencil_end_2)[:, -1]
             pencil_z_max = torch.max(pencil_end_1, pencil_end_2)[:, -1]
             # Modified
-            pencil_fall = torch.greater(pencil_z_max - pencil_z_min, 0.05)
+            pencil_fall = torch.greater(pencil_z_max - pencil_z_min, 0.08)  # pencil fall threshold 0.08m
 
-            # 记录铅笔掉落的环境 (最高优先级)
+            # 记录铅笔倾倒的环境 (最高优先级)
             pencil_fall_envs = torch.where(pencil_fall)[0]
             self.current_termination_reason[pencil_fall_envs] = 3  # pencil_fall
+            # 记录实际的高度差值
+            pencil_height_diff = pencil_z_max - pencil_z_min
+            self.termination_actual_values[pencil_fall_envs] = pencil_height_diff[pencil_fall_envs]
             
             resets = torch.logical_or(resets, pencil_fall)
 
@@ -1260,8 +1299,10 @@ class LinkerHandHora(VecTask):
                 self.termination_counts['object_below_threshold'] += 1
             elif reason == 3:
                 self.termination_counts['pencil_fall'] += 1
+            elif reason == 4:
+                self.termination_counts['angular_velocity_too_high'] += 1
             self.termination_counts['total_episodes'] += 1
-        print(self.termination_counts)
+        
         return resets
 
     def _refresh_gym(self):
@@ -1317,23 +1358,6 @@ class LinkerHandHora(VecTask):
         self.latency = 0.2
 
     def _setup_priv_option_config(self, p_config):
-        self.enable_priv_obj_position = p_config['enableObjPos']
-        self.enable_priv_obj_mass = p_config['enableObjMass']
-        self.enable_priv_obj_scale = p_config['enableObjScale']
-        self.enable_priv_obj_com = p_config['enableObjCOM']
-        self.enable_priv_obj_friction = p_config['enableObjFriction']
-        self.contact_input_dim = p_config['contact_input_dim']
-        self.contact_form = p_config['contact_form']
-        self.contact_input = p_config['contact_input']
-        self.contact_binarize_threshold = p_config['contact_binarize_threshold']
-        self.enable_priv_obj_orientation = p_config['enable_obj_orientation']
-        self.enable_priv_obj_linvel = p_config['enable_obj_linvel']
-        self.enable_priv_obj_angvel = p_config['enable_obj_angvel']
-        self.enable_priv_fingertip_position = p_config['enable_ft_pos']
-        self.enable_priv_fingertip_orientation = p_config['enable_ft_orientation']
-        self.enable_priv_fingertip_linvel = p_config['enable_ft_linvel']
-        self.enable_priv_fingertip_angvel = p_config['enable_ft_angvel']
-        self.enable_priv_hand_scale = p_config['enable_hand_scale']
         self.enable_priv_obj_restitution = p_config['enable_obj_restitution']
         self.enable_priv_tactile = p_config['enable_tactile']
 
@@ -1366,13 +1390,15 @@ class LinkerHandHora(VecTask):
         priv_dims['obj_restitution'] = 1
         priv_dims['tactile'] = self.num_contacts
         for name, dim in priv_dims.items():
-            if eval(f'self.enable_priv_{name}'):
+            # 使用hasattr安全检查属性是否存在，避免访问已删除的未使用参数
+            if hasattr(self, f'enable_priv_{name}') and eval(f'self.enable_priv_{name}'):
                 self.priv_info_dict[name] = (start_index, start_index + dim) # 在这里对priv_info进行了更新，并在后面读取这个表获得priv_info_dim，传给PPO
                 start_index += dim
 
     def _update_priv_buf(self, env_id, name, value):
         # normalize to -1, 1
-        if eval(f'self.enable_priv_{name}'):
+        # 使用hasattr安全检查属性是否存在
+        if hasattr(self, f'enable_priv_{name}') and eval(f'self.enable_priv_{name}'):
             s, e = self.priv_info_dict[name]
             if type(value) is list:
                 value = to_torch(value, dtype=torch.float, device=self.device)
@@ -1462,7 +1488,7 @@ class LinkerHandHora(VecTask):
             if self.enable_strict_dim_assertions:
                 raise
         else:
-            print(f"[PrivInfo Verify] OK: priv_info_dim={self.priv_info_dim}, slices={len(self.priv_info_dict)}")
+            print(f"[PrivInfo Verify, 不是priv总维度，是7类中每类priv信息的dim最大值] OK: priv_info_dim={self.priv_info_dim}, slices={len(self.priv_info_dict)}")
 
     def _setup_reward_config(self, r_config):
         # the list
@@ -1476,7 +1502,8 @@ class LinkerHandHora(VecTask):
                 self.reward_scale_dict[k.replace('_scale', '')] = v
         self.angvel_clip_min = r_config['angvelClipMin']
         self.angvel_clip_max = r_config['angvelClipMax']
-        self.angvel_penalty_threshold = r_config['angvelPenaltyThres']
+        self.angvel_penalty_threshold_high = r_config['angvelPenaltyThresHigh']
+        self.angvel_penalty_threshold_low  = r_config['angvelPenaltyThresLow']
 
     def _create_object_asset(self):
         # object file to asset
@@ -1615,7 +1642,6 @@ def compute_hand_reward(
     rotate_reward, rotate_reward_scale: float,
     waypoint_sparse_reward, waypoint_sparse_reward_scale: float,
     torque_penalty, torque_pscale: float,
-    work_penalty, work_pscale: float,
     z_dist_penalty, z_dist_penalty_scale: float,
     position_penalty, position_penalty_scale: float,
     rotate_penalty, rotate_penalty_scale: float,
@@ -1625,7 +1651,6 @@ def compute_hand_reward(
     reward = reward + object_linvel_penalty * object_linvel_penalty_scale
     reward = reward + waypoint_sparse_reward * waypoint_sparse_reward_scale
     reward = reward + torque_penalty * torque_pscale
-    reward = reward + work_penalty * work_pscale
     reward = reward + z_dist_penalty * z_dist_penalty_scale
     reward = reward + position_penalty * position_penalty_scale
     reward = reward + rotate_penalty * rotate_penalty_scale

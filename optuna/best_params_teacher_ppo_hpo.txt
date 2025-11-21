@@ -1,0 +1,21 @@
+Best Trial Number: 29
+Best Composite Score: 70.21
+
+Best Hyperparameters:
+  learning_rate: 0.0012240329824047295
+  weight_decay: 0.0007520620134903642
+  gamma: 0.98
+  tau: 0.95
+  e_clip: 0.3
+  entropy_coef: 0.0008256047881762017
+  critic_coef: 2.0
+  kl_threshold: 0.0490650356990199
+  mini_epochs: 3
+  minibatch_size: 16384
+  grad_norm: 1.0
+  angvelClipMax: 1.8686615731194038
+  angvelPenaltyThres: 4.89526187154547
+  rotate_reward_scale: 4.697093765212586
+  torque_penalty_scale: -0.4637014607396631
+  position_penalty_scale: -0.24577320583913456
+  rotate_penalty_scale: -0.4511860280096666

@@ -38,7 +38,6 @@ from termcolor import cprint
 from omegaconf import DictConfig, OmegaConf
 from hydra.utils import to_absolute_path
 
-from penspin.algo.ppo.ppo import PPO
 from penspin.algo.ppo.demon import DemonTrain
 from penspin.algo.ppo.ppo_rl_teacher import PPOTeacher
 from penspin.algo.ppo.ppo_rl_bc_teacher import PPO_RL_BC_Teacher
@@ -61,7 +60,6 @@ OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default 
 @hydra.main(config_name='config', config_path='configs')
 def main(config: DictConfig):
     time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    run_name = f"{config.wandb_name}_{time_str}"
 
     if config.checkpoint:
         # 如果包含通配符，则从 glob 模块导入 glob 函数。
@@ -80,19 +78,6 @@ def main(config: DictConfig):
     print_dict(cfg_dict)
 
     config.seed = set_seed(config.seed)
-
-    if config.wandb_activate:
-        import wandb
-        run = wandb.init(
-            project=config.wandb_project,
-            # group=cfg.wandb_group,
-            # entity=cfg.wandb_entity,
-            config=cfg_dict,
-            sync_tensorboard=True,
-            name=run_name,
-            resume="allow",
-            monitor_gym=True,
-        )
 
     cprint('Start Building the Environment', 'green', attrs=['bold'])
     env = isaacgym_task_map[config.task_name](
@@ -120,7 +105,13 @@ def main(config: DictConfig):
         # with open(os.path.join(output_dif, f'config_{date}_{git_hash()}.yaml'), 'w') as f:
         #     f.write(OmegaConf.to_yaml(config))
         agent.restore_train(config.train.load_path) #这里就是config.checkpoint
-        agent.train()
+        best_reward = agent.train()
+        
+        # 输出评分供Optuna使用（通过标准输出）
+        if best_reward is not None:
+            print(f"\nOPTUNA_SCORE: {best_reward}")
+        
+        return best_reward  # 返回最佳奖励值供Optuna使用
 
 
 if __name__ == '__main__':
