@@ -22,6 +22,7 @@
 # 4. 确定命令的GPU参数
 # 5. angvelClipMax\angvelClipMin\angvelPenaltyThresHigh\angvelPenaltyThresLow在configs/task/LinkerHandHora.yaml中配置
 # 6. 确认train.algo=PPOTeacher
+# 7. 奖励权重可通过修改脚本中的 REWARD_* 变量或 EXTRA_ARGS 传递来调整
 
 set -e  # 遇到错误立即退出
 
@@ -90,10 +91,21 @@ Grasp Cache:     3pose
 重置高度阈值:    0.12
 最大训练步数:    10000000000
 
-奖励参数:
-  angvelClipMax:        3.0
-  angvelPenaltyThres:   3.5
-  angvelClipMin:        -0.1
+角速度参数:
+  angvelClipMin:           ${ANGVEL_CLIP_MIN}
+  angvelClipMax:           ${ANGVEL_CLIP_MAX}
+  angvelPenaltyThresHigh:  ${ANGVEL_PENALTY_THRES_HIGH}
+  angvelPenaltyThresLow:   ${ANGVEL_PENALTY_THRES_LOW}
+
+奖励权重（合并后的最终值）:
+  rotate_reward:        ${REWARD_ROTATE}
+  obj_linvel_penalty:   ${REWARD_OBJ_LINVEL_PENALTY}
+  waypoint_sparse:      ${REWARD_WAYPOINT}
+  torque_penalty:       ${REWARD_TORQUE_PENALTY}
+  hand_pose_penalty:    ${REWARD_HAND_POSE_PENALTY}
+  rotate_penalty:       ${REWARD_ROTATE_PENALTY}
+  pencil_z_dist:        ${REWARD_PENCIL_Z_DIST_PENALTY}
+  position_penalty:     ${REWARD_POSITION_PENALTY}
 
 ========================================
 EOF
@@ -199,6 +211,30 @@ else
 fi
 
 # ========================================
+# 角速度参数配置
+# ========================================
+# 这些是默认值，可以通过 EXTRA_ARGS 覆盖
+# 例如: scripts/train_rl_teacher.sh 0 42 test task.env.angvelClipMax=0.5
+ANGVEL_CLIP_MIN=-0.5                   # 角速度裁剪下限
+ANGVEL_CLIP_MAX=0.5                    # 角速度裁剪上限
+ANGVEL_PENALTY_THRES_HIGH=1.0          # 角速度惩罚阈值（上限）
+ANGVEL_PENALTY_THRES_LOW=-0.5          # 角速度惩罚阈值（下限）
+
+# ========================================
+# 奖励权重配置（合并后的最终值）
+# ========================================
+# 这些是默认值，可以通过 EXTRA_ARGS 覆盖
+# 例如: scripts/train_rl_teacher.sh 0 42 test task.env.reward.rotate_reward_scale=2.0
+REWARD_ROTATE=1.0                      # 旋转奖励
+REWARD_OBJ_LINVEL_PENALTY=-0.3         # 物体线速度惩罚
+REWARD_WAYPOINT=0.0                    # 航点稀疏奖励
+REWARD_TORQUE_PENALTY=-0.01            # 力矩惩罚
+REWARD_HAND_POSE_PENALTY=-0.05         # 手部姿态一致性惩罚
+REWARD_ROTATE_PENALTY=0.0              # 旋转惩罚（逆向/超速）
+REWARD_PENCIL_Z_DIST_PENALTY=-1.5      # 铅笔高度差惩罚
+REWARD_POSITION_PENALTY=-0.1           # 位置惩罚
+
+# ========================================
 # 构建训练参数数组
 # ========================================
 ARGS=(
@@ -211,6 +247,20 @@ ARGS=(
     "train.ppo.max_agent_steps=500000000"
     "task.env.initPoseMode=low"
     "task.env.reset_height_threshold=0.12"
+    # 角速度参数
+    "task.env.reward.angvelClipMin=${ANGVEL_CLIP_MIN}"
+    "task.env.reward.angvelClipMax=${ANGVEL_CLIP_MAX}"
+    "task.env.reward.angvelPenaltyThresHigh=${ANGVEL_PENALTY_THRES_HIGH}"
+    "task.env.reward.angvelPenaltyThresLow=${ANGVEL_PENALTY_THRES_LOW}"
+    # 奖励权重参数
+    "task.env.reward.rotate_reward_scale=${REWARD_ROTATE}"
+    "task.env.reward.obj_linvel_penalty_scale=${REWARD_OBJ_LINVEL_PENALTY}"
+    "task.env.reward.waypoint_sparse_reward_scale=${REWARD_WAYPOINT}"
+    "task.env.reward.torque_penalty_scale=${REWARD_TORQUE_PENALTY}"
+    "task.env.reward.hand_pose_consistency_penalty_scale=${REWARD_HAND_POSE_PENALTY}"
+    "task.env.reward.rotate_penalty_scale=${REWARD_ROTATE_PENALTY}"
+    "task.env.reward.pencil_z_dist_penalty_scale=${REWARD_PENCIL_Z_DIST_PENALTY}"
+    "task.env.reward.position_penalty_scale=${REWARD_POSITION_PENALTY}"
 )
 
 # 添加额外参数

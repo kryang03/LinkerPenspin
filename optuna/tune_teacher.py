@@ -111,29 +111,56 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     hpo_overrides.append(f"train.ppo.grad_norm={grad_norm}")
     
     # --- E. 环境与奖励参数 ---
-    # 旋转奖励裁剪最大值（重要！）
-    angvel_clip_max = trial.suggest_float("angvelClipMax", 1.0, 2.0)
+    
+    # == 角速度参数 ==
+    # 角速度裁剪下限（默认: -0.5）
+    angvel_clip_min = trial.suggest_float("angvelClipMin", -1.0, -0.2)
+    hpo_overrides.append(f"task.env.reward.angvelClipMin={angvel_clip_min}")
+    
+    # 角速度裁剪上限（默认: 0.5）
+    angvel_clip_max = trial.suggest_float("angvelClipMax", 0.3, 1.0)
     hpo_overrides.append(f"task.env.reward.angvelClipMax={angvel_clip_max}")
     
-    # 旋转惩罚阈值（重要！）
-    angvel_penalty_thres = trial.suggest_float("angvelPenaltyThres", 3.0, 6.0)
-    hpo_overrides.append(f"task.env.reward.angvelPenaltyThres={angvel_penalty_thres}")
+    # 角速度惩罚阈值上限（默认: 1.0）
+    angvel_penalty_thres_high = trial.suggest_float("angvelPenaltyThresHigh", 0.8, 1.5)
+    hpo_overrides.append(f"task.env.reward.angvelPenaltyThresHigh={angvel_penalty_thres_high}")
     
-    # 旋转奖励权重
-    rotate_reward_scale = trial.suggest_float("rotate_reward_scale", 2.0, 5.0)
+    # 角速度惩罚阈值下限（默认: -0.5）
+    angvel_penalty_thres_low = trial.suggest_float("angvelPenaltyThresLow", -1.0, -0.2)
+    hpo_overrides.append(f"task.env.reward.angvelPenaltyThresLow={angvel_penalty_thres_low}")
+    
+    # == 奖励权重参数 ==
+    # 旋转奖励权重（默认: 1.0）
+    rotate_reward_scale = trial.suggest_float("rotate_reward_scale", 0.5, 2.0)
     hpo_overrides.append(f"task.env.reward.rotate_reward_scale={rotate_reward_scale}")
     
-    # 力矩惩罚权重
-    torque_penalty_scale = trial.suggest_float("torque_penalty_scale", -0.5, -0.05)
+    # 物体线速度惩罚权重（默认: -0.3）
+    obj_linvel_penalty_scale = trial.suggest_float("obj_linvel_penalty_scale", -0.6, -0.1)
+    hpo_overrides.append(f"task.env.reward.obj_linvel_penalty_scale={obj_linvel_penalty_scale}")
+    
+    # # 航点稀疏奖励权重（默认: 0.0）
+    # waypoint_sparse_reward_scale = trial.suggest_float("waypoint_sparse_reward_scale", 0.0, 0.5)
+    # hpo_overrides.append(f"task.env.reward.waypoint_sparse_reward_scale={waypoint_sparse_reward_scale}")
+    
+    # 力矩惩罚权重（默认: -0.01）
+    torque_penalty_scale = trial.suggest_float("torque_penalty_scale", -0.05, -0.001)
     hpo_overrides.append(f"task.env.reward.torque_penalty_scale={torque_penalty_scale}")
     
-    # 位置惩罚权重
-    position_penalty_scale = trial.suggest_float("position_penalty_scale", -0.5, -0.05)
-    hpo_overrides.append(f"task.env.reward.position_penalty_scale={position_penalty_scale}")
+    # 手部姿态一致性惩罚权重（默认: -0.05）
+    hand_pose_consistency_penalty_scale = trial.suggest_float("hand_pose_consistency_penalty_scale", -0.1, -0.01)
+    hpo_overrides.append(f"task.env.reward.hand_pose_consistency_penalty_scale={hand_pose_consistency_penalty_scale}")
     
-    # 旋转惩罚权重
-    rotate_penalty_scale = trial.suggest_float("rotate_penalty_scale", -0.5, -0.3)
+    # 旋转惩罚权重（逆向/超速）（默认: 0.0）
+    rotate_penalty_scale = trial.suggest_float("rotate_penalty_scale", -0.5, 0.0)
     hpo_overrides.append(f"task.env.reward.rotate_penalty_scale={rotate_penalty_scale}")
+    
+    # 铅笔高度差惩罚权重（默认: -1.5）
+    pencil_z_dist_penalty_scale = trial.suggest_float("pencil_z_dist_penalty_scale", -3.0, -0.5)
+    hpo_overrides.append(f"task.env.reward.pencil_z_dist_penalty_scale={pencil_z_dist_penalty_scale}")
+    
+    # 位置惩罚权重（默认: -0.1）
+    position_penalty_scale = trial.suggest_float("position_penalty_scale", -0.3, -0.01)
+    hpo_overrides.append(f"task.env.reward.position_penalty_scale={position_penalty_scale}")
     
     # --- 3. 创建唯一输出目录 ---
     output_dir = f"LinkerHandHora/optuna_trial_{trial.number:04d}"

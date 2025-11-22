@@ -58,21 +58,6 @@ ORIENTATION_SIMILARITY_THRESHOLD = 0.9
 # Contact上下界
 CONTACT_THRESH = 0.02
 TACTILE_FORCE_MAX = 4.0
-# Reward 缩放比例
-# hand_pose_consistency_penalty 是为了鼓励手部姿态的一致性，防止手部在抓握过程中发生过大的变化
-# 也就是原先的 pose_diff_penalty的条件性，仅当物体旋转角度处于 180°-360° (π 到 2π) 之间时，才计算当前手部姿态与初始姿态的差异并施加惩罚。
-REWARD_SCALE_DICT = {
-    'obj_linvel_penalty': 1.0,
-    'rotate_reward': 1.0,
-    'waypoint_sparse_reward': 0,
-    'torque_penalty': 0.1,
-    'pencil_z_dist_penalty': 1.5,
-    'position_penalty': 1,
-    'rotate_penalty': 0,
-    'hand_pose_consistency_penalty': 0.05
-}
-#    由于Python 3.7+ dict 保持插入顺序，.values() 返回的视图中的值顺序将与定义时一致
-REWARD_SCALE = list(REWARD_SCALE_DICT.values())
 
 class LinkerHandHora(VecTask):
     def __init__(self, config, sim_device, graphics_device_id, headless):
@@ -953,14 +938,14 @@ class LinkerHandHora(VecTask):
         hand_pose_consistency_penalty = self._compute_hand_pose_consistency_penalty()
 
         self.rew_buf[:] = compute_hand_reward(
-            object_linvel_penalty, self._get_reward_scale_by_name('obj_linvel_penalty')*REWARD_SCALE[0],
-            rotate_reward, self._get_reward_scale_by_name('rotate_reward')*REWARD_SCALE[1],
-            waypoint_sparse_reward, self._get_reward_scale_by_name('waypoint_sparse_reward')*REWARD_SCALE[2],
-            torque_penalty, self._get_reward_scale_by_name('torque_penalty')*REWARD_SCALE[3],
-            z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty')*REWARD_SCALE[4],
-            position_penalty, self._get_reward_scale_by_name('position_penalty')*REWARD_SCALE[5],
-            rotate_penalty, self._get_reward_scale_by_name('rotate_penalty')*REWARD_SCALE[6],
-            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty')*REWARD_SCALE[7]
+            object_linvel_penalty, self._get_reward_scale_by_name('obj_linvel_penalty'),
+            rotate_reward, self._get_reward_scale_by_name('rotate_reward'),
+            waypoint_sparse_reward, self._get_reward_scale_by_name('waypoint_sparse_reward'),
+            torque_penalty, self._get_reward_scale_by_name('torque_penalty'),
+            z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty'),
+            position_penalty, self._get_reward_scale_by_name('position_penalty'),
+            rotate_penalty, self._get_reward_scale_by_name('rotate_penalty'),
+            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty')
         )
         self.reset_buf[:] = self.check_termination(self.object_pos)
         
@@ -971,20 +956,20 @@ class LinkerHandHora(VecTask):
         # extras部分是传入ppo中的infos
         # _get_reward_scale_by_name()要更改 configs/task/LinkerHandHora.yaml中的scale
         self.extras['timestep_reward_sum'] = self.rew_buf.mean() # rew_buf 已经是各项加权求和后的总奖励，所以这里不变
-        self.extras['penalty/object_linvel_penalty'] = (object_linvel_penalty * self._get_reward_scale_by_name('obj_linvel_penalty') * REWARD_SCALE[0]).mean()
-        self.extras['rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward') * REWARD_SCALE[1]).mean()
-        self.extras['penalty/torques'] = (torque_penalty * self._get_reward_scale_by_name('torque_penalty') * REWARD_SCALE[3]).mean()
-        self.extras['penalty/z_dist_penalty'] = (z_dist_penalty * self._get_reward_scale_by_name('pencil_z_dist_penalty') * REWARD_SCALE[4]).mean()
-        self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty') * REWARD_SCALE[5]).mean()
-        self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty') * REWARD_SCALE[6]).mean()
-        self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty') * REWARD_SCALE[7]).mean()
+        self.extras['penalty/object_linvel_penalty'] = (object_linvel_penalty * self._get_reward_scale_by_name('obj_linvel_penalty')).mean()
+        self.extras['rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward')).mean()
+        self.extras['penalty/torques'] = (torque_penalty * self._get_reward_scale_by_name('torque_penalty')).mean()
+        self.extras['penalty/z_dist_penalty'] = (z_dist_penalty * self._get_reward_scale_by_name('pencil_z_dist_penalty')).mean()
+        self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty')).mean()
+        self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty')).mean()
+        self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty')).mean()
         self.extras['finger_obj_penalty(NOT USED)'] = finger_obj_penalty.mean()
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
         self.extras['vel/pitch_angvel'] = torch.abs(object_angvel[:, 1]).mean()
         self.extras['vel/yaw_angvel(NEED)'] = torch.abs(object_angvel[:, 2]).mean()
         # sparse，不能在每个时间步直接对所有环境取平均值
         self.extras['rot_angle'] = rot_angle
-        self.extras['reward/waypoint_sparse_reward'] = waypoint_sparse_reward * self._get_reward_scale_by_name('waypoint_sparse_reward') * REWARD_SCALE[2]
+        self.extras['reward/waypoint_sparse_reward'] = waypoint_sparse_reward * self._get_reward_scale_by_name('waypoint_sparse_reward')
         
         # 添加终止原因统计信息
 
@@ -1358,14 +1343,21 @@ class LinkerHandHora(VecTask):
         self.latency = 0.2
 
     def _setup_priv_option_config(self, p_config):
+        # 读取所有可选特权信息的配置
+        self.enable_priv_obj_orientation = p_config.get('enable_obj_orientation', False)
+        self.enable_priv_obj_linvel = p_config.get('enable_obj_linvel', False)
+        self.enable_priv_obj_angvel = p_config.get('enable_obj_angvel', False)
+        self.enable_priv_fingertip_position = p_config.get('enable_ft_pos', False)
+        self.enable_priv_fingertip_orientation = p_config.get('enable_ft_orientation', False)
+        self.enable_priv_fingertip_linvel = p_config.get('enable_ft_linvel', False)
+        self.enable_priv_fingertip_angvel = p_config.get('enable_ft_angvel', False)
+        self.enable_priv_hand_scale = p_config.get('enable_hand_scale', False)
         self.enable_priv_obj_restitution = p_config['enable_obj_restitution']
         self.enable_priv_tactile = p_config['enable_tactile']
 
         hand_asset_file = self.config['env']['asset']['handAsset']
-        if hand_asset_file == "assets/round_tip/allegro_hand_right_fsr_round_dense.urdf":
-            self.num_contacts = 5 * FINGERTIP_CNT + 12
-        else:# if hand_asset_file == "assets/round_tip/allegro_hand_right_fsr_round.urdf":
-            self.num_contacts = 3 * FINGERTIP_CNT
+        print(f'Hand asset file: {hand_asset_file}')
+        self.num_contacts = 3 * FINGERTIP_CNT
         if not self.config['env']['privInfo']['enable_tactile']:
             self.num_contacts = 0
 
@@ -1488,7 +1480,51 @@ class LinkerHandHora(VecTask):
             if self.enable_strict_dim_assertions:
                 raise
         else:
-            print(f"[PrivInfo Verify, 不是priv总维度，是7类中每类priv信息的dim最大值] OK: priv_info_dim={self.priv_info_dim}, slices={len(self.priv_info_dict)}")
+            print(f"[PrivInfo Verify] OK: priv_info_dim={self.priv_info_dim}, total_span={total_span}, slices={len(self.priv_info_dict)}")
+        
+        # 打印所有启用的特权信息及其维度
+        print("\n" + "="*80)
+        print("启用的特权信息 (Privileged Information) 配置:")
+        print("="*80)
+        print(f"{'名称':<30} {'索引范围':<15} {'维度':<8} {'状态'}")
+        print("-"*80)
+        
+        # 固定部分（始终启用）
+        fixed_privs = ['obj_position', 'obj_scale', 'obj_mass', 'obj_friction', 'obj_com']
+        for name in fixed_privs:
+            if name in self.priv_info_dict:
+                s, e = self.priv_info_dict[name]
+                print(f"{name:<30} [{s:>2}:{e:>2}]{'':>8} {e-s:<8} [固定启用]")
+        
+        print("-"*80)
+        
+        # 可选部分（根据配置启用）
+        optional_privs = ['obj_orientation', 'obj_linvel', 'obj_angvel', 
+                         'fingertip_position', 'fingertip_orientation', 
+                         'fingertip_linvel', 'fingertip_angvel', 
+                         'hand_scale', 'obj_restitution', 'tactile']
+        
+        enabled_count = len(fixed_privs)
+        disabled_list = []
+        
+        for name in optional_privs:
+            if name in self.priv_info_dict:
+                s, e = self.priv_info_dict[name]
+                print(f"{name:<30} [{s:>2}:{e:>2}]{'':>8} {e-s:<8} ✓ 已启用")
+                enabled_count += 1
+            else:
+                disabled_list.append(name)
+        
+        if disabled_list:
+            print("-"*80)
+            print("未启用的可选特权信息:")
+            for name in disabled_list:
+                print(f"{name:<30} {'':>15} {'':>8} ✗ 未启用")
+        
+        print("-"*80)
+        print(f"总计: {enabled_count} 项启用, 总维度 = {total_span}")
+        print(f"priv_info_dim (缓冲区大小) = {self.priv_info_dim}")
+        print("="*80 + "\n")
 
     def _setup_reward_config(self, r_config):
         # the list

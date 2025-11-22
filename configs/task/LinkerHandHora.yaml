@@ -54,16 +54,16 @@ env:
     angvelPenaltyThresLow: -0.5
     # reward scale: [init scale, final scale, curriculum start, curriculum end]
     # single scalar means no curriculum
-    rotate_reward_scale: 1.0
-    obj_linvel_penalty_scale: -0.3
-    waypoint_sparse_reward_scale: 1.0
-    torque_penalty_scale: -0.1
-    hand_pose_consistency_penalty_scale: -1.0
-    rotate_penalty_scale: -0.3
-    pencil_z_dist_penalty_scale: -1.0
+    # 注意：这些值是合并后的最终权重（原 yaml 值 × 原 REWARD_SCALE_DICT 值）
+    rotate_reward_scale: 1.0              # 1.0 × 1.0 = 1.0
+    obj_linvel_penalty_scale: -0.3        # -0.3 × 1.0 = -0.3
+    waypoint_sparse_reward_scale: 0.0     # 1.0 × 0 = 0.0
+    torque_penalty_scale: -0.01           # -0.1 × 0.1 = -0.01
+    hand_pose_consistency_penalty_scale: -0.05  # -1.0 × 0.05 = -0.05
+    rotate_penalty_scale: 0.0             # -0.3 × 0 = 0.0
+    pencil_z_dist_penalty_scale: -1.5     # -1.0 × 1.5 = -1.5
     # canonical position
-    position_penalty_scale: -0.1
-    action_penalty_scale: 0.0
+    position_penalty_scale: -0.1          # -0.1 × 1 = -0.1
   # Modified
   baseObjScale: 0.3
   randomization:
@@ -102,21 +102,35 @@ env:
     # stage 2 specific:
     noisy_rpy_scale: 0.1
     noisy_pos_scale: 0.02
-
+#
+    # │固定部分 (0-9):                                                  │
+    # │   [0:3]   obj_position                                         │
+    # │   [3:4]   obj_scale                                            │
+    # │   [4:5]   obj_mass                                             │
+    # │   [5:6]   obj_friction                                         │
+    # │   [6:9]   obj_com                                              │
+    # ├────────────────────────────────────────────────────────────────┤
+    # │ 动态部分 (9+，取决于启用的项):                                     │
+    # │   train_teacher.sh 默认配置:                                    │
+    # │   [9:13]  obj_orientation (4)                                  │
+    # │   [13:16] obj_angvel (3)                                       │
+    # │   [16:31] fingertip_position (15 = 5 fingers × 3D)             │
+    # │   [31:32] obj_restitution (1)                                  │
+    # │   [32:47] tactile (15 = 5 fingers × 3D force)                  │
   privInfo:
-    enableObjPos: True
+    enableObjPos: True # 
     enableObjScale: True
     enableObjMass: True
     enableObjCOM: True
-    enableObjFriction: True
+    enableObjFriction: True      #固定部分到此
     enable_obj_restitution: True
     enable_tactile: True         # Teacher默认开启触觉信息
     contact_form: 'gpu_contact'
     contact_input: 'binary'
-    enable_obj_orientation: True  # Teacher默认开启物体姿态信息
+    enable_obj_orientation: False  # Teacher默认开启物体姿态信息
     enable_obj_linvel: False
-    enable_obj_angvel: True      # Teacher默认开启物体角速度信息
-    enable_ft_pos: True          # Teacher默认开启指尖位置信息
+    enable_obj_angvel: False      # Teacher默认开启物体角速度信息
+    enable_ft_pos: False          # Teacher默认开启指尖位置信息
     enable_ft_orientation: False
     enable_ft_linvel: False
     enable_ft_angvel: False

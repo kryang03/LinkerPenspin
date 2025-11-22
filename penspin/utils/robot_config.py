@@ -247,7 +247,7 @@ def get_priv_info_fingertip_slice(enable_obj_linvel=False):
     
     注意：实际位置取决于环境配置中启用了哪些项
     
-    priv_info 布局（Linker Hand 21 DoF, 5 Fingers）:
+    priv_in组成： 布局（Linker Hand 21 DoF, 5 Fingers）:
     ┌────────────────────────────────────────────────────────────────┐
     │ 固定部分 (0-9):                                                │
     │   [0:3]   obj_position                                         │
