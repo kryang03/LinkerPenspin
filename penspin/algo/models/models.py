@@ -552,6 +552,9 @@ class StudentActorCritic(BaseActorCritic):
         self.input_mode = kwargs.get('input_mode', 'proprio-ends')
         self.use_point_cloud = kwargs.get('use_point_cloud_info', True)
         
+        # Priv info configuration (for extracting fingertip positions)
+        self.priv_config = kwargs.get('priv_config', {})
+        
         # ========== 维度验证 ==========
         # 验证基础维度配置
         assert policy_input_dim > 0, \
@@ -680,7 +683,7 @@ class StudentActorCritic(BaseActorCritic):
         
         # 4. Encode "privileged" info for student (fingertip + tactile)
         # Note: This is used during supervised training to match teacher's features
-        fingertip_slice = get_priv_info_fingertip_slice()
+        fingertip_slice = get_priv_info_fingertip_slice(**self.priv_config)
         fingertip_pos = obs_dict['priv_info'][..., fingertip_slice]  # Extract fingertip positions
         # Add noise for robustness
         new_priv = fingertip_pos + (torch.rand_like(fingertip_pos) - 0.5) * 0.02

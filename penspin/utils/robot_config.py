@@ -238,16 +238,41 @@ def get_fingertip_slice_range():
     start = PROPRIO_DIM + CONTACT_DIM
     return slice(start, start + FINGERTIP_POS_DIM)
 
-def get_priv_info_fingertip_slice(enable_obj_linvel=False):
+def get_priv_info_fingertip_slice(
+    enable_obj_orientation=True,
+    enable_obj_linvel=False,
+    enable_obj_angvel=True,
+    enable_ft_pos=True,
+    enable_ft_orientation=False,
+    enable_ft_linvel=False,
+    enable_ft_angvel=False,
+    enable_hand_scale=False,
+    enable_obj_restitution=True,
+    enable_tactile=True
+):
     """
     返回 priv_info 中 fingertip 位置的切片范围
     
+    参数必须与环境配置完全匹配，否则切片位置会错误！
+    
     Args:
-        enable_obj_linvel: 是否启用了 obj_linvel (默认False,匹配 train_teacher.sh 配置)
+        enable_obj_orientation: 是否启用物体姿态 (默认True，匹配 train_teacher.sh)
+        enable_obj_linvel: 是否启用物体线速度 (默认False)
+        enable_obj_angvel: 是否启用物体角速度 (默认True，匹配 train_teacher.sh)
+        enable_ft_pos: 是否启用指尖位置 (默认True，匹配 train_teacher.sh)
+        enable_ft_orientation: 是否启用指尖姿态 (默认False)
+        enable_ft_linvel: 是否启用指尖线速度 (默认False)
+        enable_ft_angvel: 是否启用指尖角速度 (默认False)
+        enable_hand_scale: 是否启用手部缩放 (默认False)
+        enable_obj_restitution: 是否启用物体弹性 (默认True，匹配 train_teacher.sh)
+        enable_tactile: 是否启用触觉信息 (默认True，匹配 train_teacher.sh)
     
-    注意：实际位置取决于环境配置中启用了哪些项
+    注意：
+    1. 参数顺序必须与 linker_hand_hora.py 中 priv_dims OrderedDict 的顺序一致
+    2. 实际位置取决于环境配置中启用了哪些项
+    3. 默认值匹配 configs/task/LinkerHandHora.yaml 和 scripts/train_rl_teacher.sh
     
-    priv_in组成： 布局（Linker Hand 21 DoF, 5 Fingers）:
+    priv_info 布局（Linker Hand 21 DoF, 5 Fingers）:
     ┌────────────────────────────────────────────────────────────────┐
     │ 固定部分 (0-9):                                                │
     │   [0:3]   obj_position                                         │
@@ -256,51 +281,82 @@ def get_priv_info_fingertip_slice(enable_obj_linvel=False):
     │   [5:6]   obj_friction                                         │
     │   [6:9]   obj_com                                              │
     ├────────────────────────────────────────────────────────────────┤
-    │ 动态部分 (9+，取决于启用的项):                                │
-    │   train_teacher.sh 默认配置:                                   │
-    │   [9:13]  obj_orientation (4)                                  │
-    │   [13:16] obj_angvel (3)                                       │
-    │   [16:31] fingertip_position (15 = 5 fingers × 3D)             │
-    │   [31:32] obj_restitution (1)                                  │
-    │   [32:47] tactile (15 = 5 fingers × 3D force)                  │
+    │ 动态部分 (9+，取决于启用的项，按以下顺序添加):                  │
+    │   [按序] obj_orientation (4)         - 物体姿态                │
+    │   [按序] obj_linvel (3)              - 物体线速度              │
+    │   [按序] obj_angvel (3)              - 物体角速度              │
+    │   [按序] fingertip_position (15)     - 指尖位置 ★ 目标        │
+    │   [按序] fingertip_orientation (20)  - 指尖姿态              │
+    │   [按序] fingertip_linvel (15)       - 指尖线速度            │
+    │   [按序] fingertip_angvel (15)       - 指尖角速度            │
+    │   [按序] hand_scale (1)              - 手部缩放               │
+    │   [按序] obj_restitution (1)         - 物体弹性系数           │
+    │   [按序] tactile (15)                - 触觉力信息             │
     │                                                                 │
-    │   如果启用 obj_linvel，则在 obj_angvel 后插入 3维:            │
-    │   [9:13]  obj_orientation (4)                                  │
-    │   [13:16] obj_linvel (3)         ← 插入位置                    │
-    │   [16:19] obj_angvel (3)                                       │
-    │   [19:34] fingertip_position (15)                              │
-    │   ...                                                           │
+    │ train_teacher.sh 默认配置 (总47维):                            │
+    │   [9:13]  obj_orientation (4)        ✓                        │
+    │   [13:16] obj_angvel (3)             ✓                        │
+    │   [16:31] fingertip_position (15)    ✓ ← 返回此范围          │
+    │   [31:32] obj_restitution (1)        ✓                        │
+    │   [32:47] tactile (15)               ✓                        │
     └────────────────────────────────────────────────────────────────┘
     
-    对比旧版 Allegro Hand (16 DoF, 4 Fingers):
-      - fingertip_position 维度: 12 (4×3) -> 15 (5×3)
-      - tactile 维度: 32 (密集传感器) -> 15 (5×3)
-    
     Returns:
-        slice: fingertip 位置的切片范围
+        slice: fingertip_position 在 priv_info 中的切片范围
+        
+    Raises:
+        ValueError: 如果 enable_ft_pos=False（fingertip_position 未启用）
     """
-    # 根据 linker_hand_hora.py 的 priv_info 构建逻辑 (line 1324-1370)
-    # 动态部分从索引 9 开始
-    fingertip_start = PRIV_DYNAMIC_START  # 9
+    if not enable_ft_pos:
+        raise ValueError("fingertip_position 必须启用才能获取其切片位置")
     
-    # 默认 train_teacher.sh 配置中启用的项（按顺序）
-    # 1. obj_orientation: 4
-    fingertip_start += PRIV_OBJ_ROT_DIM  # 9 + 4 = 13
+    # 根据 linker_hand_hora.py 的 priv_info 构建逻辑
+    # 动态部分从索引 9 开始（固定部分占 0-9）
+    current_index = PRIV_DYNAMIC_START  # 9
     
-    # 2. obj_linvel: 3 (可选，默认未启用)
+    # 按照 priv_dims OrderedDict 的顺序累加维度
+    # 注意：必须与 linker_hand_hora.py:1367-1377 的顺序完全一致
+    
+    # 1. obj_orientation (4维)
+    if enable_obj_orientation:
+        current_index += PRIV_OBJ_ROT_DIM
+    
+    # 2. obj_linvel (3维)
     if enable_obj_linvel:
-        fingertip_start += PRIV_OBJ_LINVEL_DIM  # 13 + 3 = 16
+        current_index += PRIV_OBJ_LINVEL_DIM
     
-    # 3. obj_angvel: 3
-    fingertip_start += PRIV_OBJ_ANGVEL_DIM  # 13 + 3 = 16 (默认，无linvel)
-                                             # 或 16 + 3 = 19 (启用linvel)
+    # 3. obj_angvel (3维)
+    if enable_obj_angvel:
+        current_index += PRIV_OBJ_ANGVEL_DIM
     
-    # 4. fingertip_position 维度
+    # 4. fingertip_position (15维) ← 目标位置
+    fingertip_start = current_index
     fingertip_end = fingertip_start + PRIV_FINGERTIP_POS_DIM_IN_PRIV
-    # 默认: [16:31] (16 + 15 = 31)
-    # 启用linvel: [19:34] (19 + 15 = 34)
     
     return slice(fingertip_start, fingertip_end)
+
+def get_priv_config_from_env(env):
+    """
+    从环境对象中提取 priv_info 配置
+    
+    Args:
+        env: LinkerHandHora 环境对象，包含 enable_priv_* 属性
+        
+    Returns:
+        dict: 包含所有 priv_info 配置的字典，可直接传递给 get_priv_info_fingertip_slice()
+    """
+    return {
+        'enable_obj_orientation': getattr(env, 'enable_priv_obj_orientation', False),
+        'enable_obj_linvel': getattr(env, 'enable_priv_obj_linvel', False),
+        'enable_obj_angvel': getattr(env, 'enable_priv_obj_angvel', False),
+        'enable_ft_pos': getattr(env, 'enable_priv_fingertip_position', False),
+        'enable_ft_orientation': getattr(env, 'enable_priv_fingertip_orientation', False),
+        'enable_ft_linvel': getattr(env, 'enable_priv_fingertip_linvel', False),
+        'enable_ft_angvel': getattr(env, 'enable_priv_fingertip_angvel', False),
+        'enable_hand_scale': getattr(env, 'enable_priv_hand_scale', False),
+        'enable_obj_restitution': getattr(env, 'enable_priv_obj_restitution', False),
+        'enable_tactile': getattr(env, 'enable_priv_tactile', False),
+    }
 
 def validate_dimensions():
     """验证维度配置的一致性"""

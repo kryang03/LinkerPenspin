@@ -127,10 +127,10 @@ env:
     enable_tactile: True         # Teacher默认开启触觉信息
     contact_form: 'gpu_contact'
     contact_input: 'binary'
-    enable_obj_orientation: False  # Teacher默认开启物体姿态信息
     enable_obj_linvel: False
-    enable_obj_angvel: False      # Teacher默认开启物体角速度信息
-    enable_ft_pos: False          # Teacher默认开启指尖位置信息
+    enable_obj_angvel: False      # Teacher默认开启物体角速度信息，3
+    enable_ft_pos: False          # Teacher默认开启指尖位置信息，15
+    enable_obj_orientation: False  # Teacher默认开启物体姿态信息，4
     enable_ft_orientation: False
     enable_ft_linvel: False
     enable_ft_angvel: False

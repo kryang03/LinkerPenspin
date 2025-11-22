@@ -1390,6 +1390,16 @@ class LinkerHandHora(VecTask):
     def _update_priv_buf(self, env_id, name, value):
         # normalize to -1, 1
         # 使用hasattr安全检查属性是否存在
+# 在初始化时没有定义 self.enable_priv_obj_position、self.enable_priv_obj_scale 等前 9 项对应的开关属性，hasattr(self, f'enable_priv_{name}') 对于这些固定项会返回 False。
+# 因此，_update_priv_buf 直接跳过了赋值操作。
+# 这导致 priv_info_buf 的前 9 个维度（包含物体位置、物体缩放、物体质量、摩擦力、质心）在整个推理过程中始终保持初始化时的 0。模型在接收到全 0 的物理参数后，无法正确感知物体状态，从而导致转笔失败。
+        
+        self.enable_priv_obj_position = True
+        self.enable_priv_obj_scale = True
+        self.enable_priv_obj_mass = True
+        self.enable_priv_obj_friction = True
+        self.enable_priv_obj_com = True
+        
         if hasattr(self, f'enable_priv_{name}') and eval(f'self.enable_priv_{name}'):
             s, e = self.priv_info_dict[name]
             if type(value) is list:

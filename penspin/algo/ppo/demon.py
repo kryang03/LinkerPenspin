@@ -91,6 +91,7 @@ class DemonTrain(object):
         self.demon_load(self.demon_path)
 
         # ---- Student Model ----
+        from penspin.utils.robot_config import get_priv_config_from_env
         net_config = {
             'actor_units': self.network_config.mlp.units,
             'priv_mlp_units': self.network_config.priv_mlp.units,
@@ -104,6 +105,7 @@ class DemonTrain(object):
             'proprio_len': self.proprio_len,
             'input_mode': self.input_mode,
             'use_point_cloud_info': True,  # Student uses point cloud
+            'priv_config': get_priv_config_from_env(self.env),  # Pass priv_info configuration
         }
         # 创建 Student 模型
         self.model = StudentActorCritic(net_config)
