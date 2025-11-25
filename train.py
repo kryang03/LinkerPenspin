@@ -32,11 +32,19 @@
 import isaacgym
 
 import os
+import warnings
 import hydra
 import datetime
 from termcolor import cprint
 from omegaconf import DictConfig, OmegaConf
 from hydra.utils import to_absolute_path
+
+# 抑制各种warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', message='.*Gym has been unmaintained.*')
+warnings.filterwarnings('ignore', message='.*version_base parameter.*')
+warnings.filterwarnings('ignore', message='.*working directory.*')
 
 from penspin.algo.ppo.demon import DemonTrain
 from penspin.algo.ppo.ppo_rl_teacher import PPOTeacher
@@ -57,7 +65,7 @@ OmegaConf.register_new_resolver('if', lambda pred, a, b: a if pred else b)
 OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default if arg == '' else arg)
 
 
-@hydra.main(config_name='config', config_path='configs')
+@hydra.main(version_base='1.1', config_name='config', config_path='configs')
 def main(config: DictConfig):
     time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 

@@ -16,7 +16,7 @@ import torch
 import torch.distributed as dist
 import numpy as np
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from isaacgym import gymapi
 
 from penspin.algo.ppo.experience import ExperienceBuffer
 from penspin.algo.models.models import TeacherActorCritic, StudentActorCritic, create_actor_critic
@@ -317,7 +317,7 @@ class PPO_RL_BC_Teacher(object):
         if not fn:
             return
         print("loading checkpoint from path", fn)
-        checkpoint = torch.load(fn)
+        checkpoint = torch.load(fn, weights_only=False)
         self.model.load_state_dict(checkpoint['model'])
         self.running_mean_std.load_state_dict(checkpoint['running_mean_std'])
         if self.normalize_priv:
@@ -329,7 +329,7 @@ class PPO_RL_BC_Teacher(object):
 
     def demon_load(self, path):
         print("loading demonstration checkpoint from path", path)
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=False)
         self.demon_model.load_state_dict(checkpoint['model'])
         self.running_mean_std_demon.load_state_dict(checkpoint['running_mean_std'])
         
@@ -345,7 +345,7 @@ class PPO_RL_BC_Teacher(object):
         self.running_mean_std_demon.eval()
     
     def restore_test(self, fn):
-        checkpoint = torch.load(fn)
+        checkpoint = torch.load(fn, weights_only=False)
         self.model.load_state_dict(checkpoint['model'])
         if self.normalize_input:
             self.running_mean_std.load_state_dict(checkpoint['running_mean_std'])
@@ -360,7 +360,33 @@ class PPO_RL_BC_Teacher(object):
         self.set_eval()
         obs_dict = self.env.reset()
         obs_dict['proprio_hist'] = obs_dict['proprio_hist'][..., -self.proprio_len:, :self.proprio_dim]
+        
+        # ================= [新增] 交互控制初始化 =================
+        print("\n[交互控制] 已激活:")
+        print("  按 'V' 或 'F' 切换垂直同步 (关闭后可加速渲染)")
+        print("  按 'P' 暂停/继续仿真")
+        print("  注意：需要点击窗口使其获得焦点")
+        gym = self.env.gym
+        viewer = self.env.viewer
+        if viewer:
+            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_F, "toggle_fast")
+            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_P, "toggle_pause")
+        
+        is_paused = False
+        # =======================================================
+        
         while True:
+            if is_paused:
+                if viewer:
+                    events = gym.query_viewer_action_events(viewer)
+                    for evt in events:
+                        if evt.action == "toggle_pause" and evt.value > 0:
+                            is_paused = False
+                            print(f"[仿真状态] 运行")
+                    gym.draw_viewer(viewer, self.env.sim, False)
+                    gym.sync_frame_time(self.env.sim)
+                continue
+            
             point_cloud = obs_dict['point_cloud_info']
             if self.normalize_point_cloud:
                 point_cloud = self.point_cloud_mean_std(
@@ -377,6 +403,17 @@ class PPO_RL_BC_Teacher(object):
             mu = torch.clamp(mu, -1.0, 1.0)
             obs_dict, r, done, info = self.env.step(mu, extrin_record=extrin)
             obs_dict['proprio_hist'] = obs_dict['proprio_hist'][..., -self.proprio_len:, :self.proprio_dim]
+            
+            if viewer:
+                events = getattr(self.env, 'last_events', [])
+                for evt in events:
+                    if evt.action == "toggle_pause" and evt.value > 0:
+                        is_paused = True
+                        print(f"[仿真状态] 暂停")
+                    if evt.action == "toggle_viewer_sync" and evt.value > 0:
+                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")  
+                    if evt.action == "toggle_fast" and evt.value > 0:
+                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")  
 
     def recon_criterion(self, out, target):
         if self.use_l1:

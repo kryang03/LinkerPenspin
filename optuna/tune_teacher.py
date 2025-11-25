@@ -65,31 +65,31 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # 学习率 (Best: ~0.002)
     # 原范围 5e-5~5e-3。最佳值偏向高端，且较大。
-    # 调整策略：缩小范围，聚焦于 5e-4 到 5e-3
-    lr = trial.suggest_float("learning_rate", 5e-4, 5e-3, log=True)
+    # 调整策略：缩小范围，聚焦于 1e-4 到 1e-3
+    lr = trial.suggest_float("learning_rate", 1e-4, 1e-3, log=True)
     hpo_overrides.append(f"train.ppo.learning_rate={lr}")
     
     # 权重衰减 (Best: ~4.9e-5)
     # 原范围 1e-5~1e-3。最佳值偏小。
     # 调整策略：聚焦于 1e-5 到 1e-4
-    weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-4, log=True)
+    weight_decay = trial.suggest_float("weight_decay", 1e-5, 5e-5, log=True)
     hpo_overrides.append(f"train.ppo.weight_decay={weight_decay}")
     
     # 折扣因子 (Best: 0.995)
     # 原范围 [0.98, 0.99, 0.995]。最佳值触顶。
     # 调整策略：移除 0.98，增加 0.999 尝试更长远视界
-    gamma = trial.suggest_categorical("gamma", [0.99, 0.995, 0.999])
+    gamma = trial.suggest_categorical("gamma", [0.985, 0.99, 0.992])
     hpo_overrides.append(f"train.ppo.gamma={gamma}")
     
     # GAE lambda (Best: 0.95)
     # 保持原样，0.95 是非常标准的 PPO 参数
-    tau = trial.suggest_categorical("tau", [0.90, 0.95, 0.97])
+    tau = trial.suggest_categorical("tau", [0.85, 0.90, 0.95])
     hpo_overrides.append(f"train.ppo.tau={tau}")
     
     # PPO裁剪范围 (Best: 0.3)
     # 原范围 [0.1, 0.2, 0.3]。最佳值触顶。
     # 调整策略：尝试更大的裁剪范围，增加 0.4
-    e_clip = trial.suggest_categorical("e_clip", [0.2, 0.3, 0.4])
+    e_clip = trial.suggest_categorical("e_clip", [0.1, 0.2, 0.3])
     hpo_overrides.append(f"train.ppo.e_clip={e_clip}")
     
     # 熵系数 (Best: ~0.005)
@@ -120,7 +120,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # Minibatch大小 (Best: 8192)
     # 选择了最小的 Batch。这通常意味着更频繁的更新对当前任务有利。
     # 调整策略：尝试更小的 4096 (如果显存允许)，保留 8192
-    minibatch_size = trial.suggest_categorical("minibatch_size", [4096, 8192, 16384])
+    minibatch_size = trial.suggest_categorical("minibatch_size", [8192, 16384, 32768])
     hpo_overrides.append(f"train.ppo.minibatch_size={minibatch_size}")
     
     # --- C. 梯度优化参数 ---
@@ -128,7 +128,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 梯度裁剪 (Best: 2.0)
     # 原范围 [0.5, 1.0, 2.0]。最佳值触顶。
     # 调整策略：移除 0.5，增加 4.0
-    grad_norm = trial.suggest_categorical("grad_norm", [1.0, 2.0, 4.0])
+    grad_norm = trial.suggest_categorical("grad_norm", [0.5, 1.0, 2.0])
     hpo_overrides.append(f"train.ppo.grad_norm={grad_norm}")
     
     # --- E. 环境与奖励参数 (基于 Best Values 重新中心化) ---
@@ -188,7 +188,8 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     hpo_overrides.append(f"task.env.reward.position_penalty_scale={position_penalty_scale}")
     
     # --- 3. 创建唯一输出目录 ---
-    output_dir = f"LinkerHandHora/optuna_trial_{trial.number:04d}"
+    # 使用 study_name 作为输出目录的基础
+    output_dir = f"{args.study_name}/optuna_trial_{trial.number:04d}"
     hpo_overrides.append(f"train.ppo.output_name={output_dir}")
     
     # 固定种子以保证可复现性（可选）
@@ -355,7 +356,7 @@ def main():
     parser.add_argument("--storage", type=str, default="sqlite:///optuna/hpo_teacher.db",
                        help="Optuna数据库存储路径")
     parser.add_argument("--study_name", type=str, default="teacher_ppo_hpo",
-                       help="Study名称")
+                       help="Study名称（也用作输出目录名）")
     parser.add_argument("--load_if_exists", action="store_true",
                        help="如果study已存在则加载并继续")
     
@@ -437,7 +438,7 @@ def main():
             print(f"  {key:30s} = {value}")
         print("="*80)
         
-        # 保存最佳参数到文件
+        # 保存最佳参数到文件（使用 study_name 作为标识）
         best_params_file = f"optuna/best_params_{args.study_name}.txt"
         with open(best_params_file, "w") as f:
             f.write(f"Best Trial Number: {study.best_trial.number}\n")

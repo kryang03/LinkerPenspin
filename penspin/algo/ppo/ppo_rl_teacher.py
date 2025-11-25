@@ -15,6 +15,7 @@ import os
 import time
 import torch
 import numpy as np
+from isaacgym import gymapi
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # 从 penspin.algo.ppo 模块导入 ExperienceBuffer，用于存储智能体与环境交互的数据
@@ -489,7 +490,7 @@ class PPOTeacher(object):
             return
         print("restore_train: loading checkpoint from path", fn)
         # 加载 checkpoint 文件
-        checkpoint = torch.load(fn)
+        checkpoint = torch.load(fn, weights_only=False)
         # 加载模型状态字典
         self.model.load_state_dict(checkpoint['model'])
         # 加载标准化统计信息状态字典
@@ -502,7 +503,7 @@ class PPOTeacher(object):
     # 恢复测试过程，加载模型权重和标准化统计信息
     def restore_test(self, fn):
         # 加载 checkpoint 文件
-        checkpoint = torch.load(fn)
+        checkpoint = torch.load(fn, weights_only=False)
         # 加载模型状态字典
         self.model.load_state_dict(checkpoint['model'])
         # 如果使用了标准化，则加载相应的 RunningMeanStd 状态字典
@@ -514,13 +515,43 @@ class PPOTeacher(object):
             self.point_cloud_mean_std.load_state_dict(checkpoint['point_cloud_mean_std'])
 
     # 测试智能体性能
+    # 测试智能体性能
     def test(self):
         # 设置模型为评估模式
         self.set_eval()
         # 重置环境，获取初始观察
         obs_dict = self.env.reset()
-        # 进入测试循环
+        
+        # ================= [新增] 交互控制初始化 =================
+        print("\n[交互控制] 已激活:")
+        print("  按 'V' 或 'F' 切换垂直同步 (关闭后可加速渲染)")
+        print("  按 'P' 暂停/继续仿真")
+        print("  注意：需要点击窗口使其获得焦点")
+        gym = self.env.gym
+        viewer = self.env.viewer
+        # 订阅V、F和P键（V键在vec_task中已注册为toggle_viewer_sync）
+        if viewer:
+            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_F, "toggle_fast")
+            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_P, "toggle_pause")
+        
+        # =======================================================
+        is_paused = False
+
         while True:
+            # 暂停逻辑（在step之前处理）
+            if is_paused:
+                if viewer:
+                    # 检查按键事件
+                    events = gym.query_viewer_action_events(viewer)
+                    for evt in events:
+                        if evt.action == "toggle_pause" and evt.value > 0:
+                            is_paused = False
+                            print(f"[仿真状态] 运行")
+                    # 暂停时只画图，不模拟物理
+                    gym.draw_viewer(viewer, self.env.sim, False)
+                    gym.sync_frame_time(self.env.sim)
+                continue
+
             # Teacher模式：处理点云标准化
             if self.normalize_point_cloud:
                 point_cloud = self.point_cloud_mean_std(
@@ -545,8 +576,26 @@ class PPOTeacher(object):
             
             # 在环境中执行动作，获取新的观察、奖励、done 标志和信息
             obs_dict, r, done, info = self.env.step(mu, extrin_record=extrin)
-
-    # 执行一个训练 epoch
+            
+            # 在step之后处理按键事件（现在不会丢失事件了）
+            if viewer:
+                # 直接读取我们在 render 中保存的列表，不要再次 query
+                # 使用 getattr 防止第一次运行时 last_events 未定义
+                events = getattr(self.env, 'last_events', [])
+                
+                for evt in events:
+                    # 处理 P 键
+                    if evt.action == "toggle_pause" and evt.value > 0:
+                        is_paused = True
+                        print(f"[仿真状态] 暂停")
+                    
+                    # V键：仅打印状态，实际逻辑已在 vec_task 中处理
+                    if evt.action == "toggle_viewer_sync" and evt.value > 0:
+                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")
+                    
+                    # F键作为额外的快捷键
+                    if evt.action == "toggle_fast" and evt.value > 0:
+                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")    # 执行一个训练 epoch
     def train_epoch(self):
         # 收集 minibatch 数据
         _t = time.time()

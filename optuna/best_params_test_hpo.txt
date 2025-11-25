@@ -1,0 +1,26 @@
+Best Trial Number: 0
+Best Composite Score: -9997.31
+
+Best Hyperparameters:
+  learning_rate: 0.0011844319751820387
+  weight_decay: 8.927180304353642e-05
+  gamma: 0.99
+  tau: 0.97
+  e_clip: 0.3
+  entropy_coef: 0.00778936896513396
+  critic_coef: 0.5
+  kl_threshold: 0.03917022549267169
+  mini_epochs: 6
+  minibatch_size: 4096
+  grad_norm: 1.0
+  angvelClipMin: -0.2900914470118925
+  angvelClipMax: 0.6824279936868144
+  angvelPenaltyThresHigh: 0.8925879806965068
+  angvelPenaltyThresLow: -0.7400978653524921
+  rotate_reward_scale: 1.7713516576204174
+  obj_linvel_penalty_scale: -0.11113781467069363
+  torque_penalty_scale: -0.03860648761840007
+  hand_pose_consistency_penalty_scale: -0.029622757404928084
+  rotate_penalty_scale: -0.08294758763127086
+  pencil_z_dist_penalty_scale: -1.9349484070147205
+  position_penalty_scale: -0.11022289254933335

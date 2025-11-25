@@ -5,9 +5,9 @@
 # scripts/visualize.sh pose3_50k_cfg7_200_3 > contacts/pose3_50k_cfg7_200_3.txt
 # scripts/visualize.sh pose3_50k_cfg9 > contacts/pose3_50k_cfg9.txt
 # scripts/visualize.sh pose3_3k_cfg_c > contacts/pose3_3k_cfg_c.txt
-# scripts/visualize.sh outputs/LinkerHandHora/optuna_trial_0033/teacher_nn > tmp_debug.txt
+# scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0000/teacher_nn > tmp_debug.txt
 #best:
-# scripts/visualize.sh outputs/LinkerHandHora/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
+# scripts/visualize.sh outputs/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
 # CHECKLIST
 # 1. 命令的最后一个参数指向output文件夹的名称，三维力信息是否重定向到正确的文件夹
 # 2. 检查checkpoint的名称

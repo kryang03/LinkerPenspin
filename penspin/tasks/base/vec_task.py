@@ -282,7 +282,11 @@ class VecTask(Env):
             if i in force_indices:
                 self.update_rigid_body_force()
             self.gym.simulate(self.sim)
-            self.render()
+            # >>>>> 注意：删除了这里的 self.render() <<<<<
+
+        # 2. 循环结束后，统一渲染一次
+        # 这样能捕获这整个时间段内的所有按键，并且大幅减少渲染开销
+        self.render()
 
         # fill time out buffer
         self.timeout_buf = torch.where(
@@ -338,29 +342,33 @@ class VecTask(Env):
             if self.gym.query_viewer_has_closed(self.viewer):
                 sys.exit()
 
-            # check for keyboard events
-            for evt in self.gym.query_viewer_action_events(self.viewer):
+            # 1. 捕获并保存事件，供外部读取 (解决按键丢失问题)
+            self.last_events = self.gym.query_viewer_action_events(self.viewer)
+
+            # 处理 VecTask 内部关心的按键
+            for evt in self.last_events:
                 if evt.action == 'QUIT' and evt.value > 0:
                     sys.exit()
                 elif evt.action == 'toggle_viewer_sync' and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
 
-            # fetch results
             if self.device != 'cpu':
                 self.gym.fetch_results(self.sim, True)
                 results_fetched = True
 
-            # step graphics
-            if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
-                graphics_stepped = True
+            # 2. 核心渲染逻辑
+            self.gym.step_graphics(self.sim)
+            graphics_stepped = True
+            self.gym.draw_viewer(self.viewer, self.sim, True)
 
-                self.gym.draw_viewer(self.viewer, self.sim, True)
-                # Wait for dt to elapse in real time.
-                # This synchronizes the physics simulation with the rendering rate.
+            # 3. 速度控制 (解决 V 键无效问题)
+            if self.enable_viewer_sync:
+                # 只有开启同步时才等待时间，模拟实时速度
                 self.gym.sync_frame_time(self.sim)
             else:
-                self.gym.poll_viewer_events(self.viewer)
+                # 关闭同步时，直接跳过等待，全速运行
+                # 注意：这里不需要 gym.poll_viewer_events，因为上面已经 query 过了
+                pass
 
         # fetch results and step graphics for cameras, but don't repeat if already done
         if self.enable_camera_sensors:
