@@ -1288,7 +1288,18 @@ class LinkerHandHora(VecTask):
             self.termination_counts['total_episodes'] += 1
         
         return resets
-
+    def reset_termination_counts(self):
+        """
+        手动重置终止原因计数器。
+        通常在 PPO 的每个 Epoch 结束时调用，以便统计当前 Epoch 的分布。
+        """
+        self.termination_counts = {
+            'max_episode_length': 0,
+            'object_below_threshold': 0,
+            'angular_velocity_too_high': 0,
+            'pencil_fall': 0,
+            'total_episodes': 0
+        }
     def _refresh_gym(self):
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)

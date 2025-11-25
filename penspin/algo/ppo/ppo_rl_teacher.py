@@ -360,7 +360,9 @@ class PPOTeacher(object):
         self.obs = self.env.reset()
         # 初始化 agent steps，每个 epoch 开始时增加一个 batch_size
         self.agent_steps = self.batch_size
-
+        self.success_count = 0
+        self.total_episodes = 0
+        self.env.reset_termination_counts()
         # 循环直到达到最大 agent steps
         while self.agent_steps < self.max_agent_steps:
             # 增加 epoch 计数
@@ -403,17 +405,20 @@ class PPOTeacher(object):
                 print(f'epsode sparse reward: {mean_sparse_reward:.2f}')
                 print(f'success rate (rot>6): {current_success_rate:.4f} ({self.success_count}/{self.total_episodes})')
                 print(f'best success rate: {self.best_success_rate:.4f}')
+                print(f'Terminations: Fall={self.env.termination_counts["pencil_fall"]} | '
+                      f'Drop={self.env.termination_counts["object_below_threshold"]} | '
+                      f'Overspeed={self.env.termination_counts["angular_velocity_too_high"]}')
                 # 打印额外信息
-                for k, v in self.extra_info.items():
-                    # 如果是张量，打印其平均值
-                    if isinstance(v, torch.Tensor):
-                        if len(v.shape) > 0:  # 非标量张量
-                            # 转换为浮点数再计算平均值（处理整数张量）
-                            print(f'{k}: {v.float().mean().item():.4f}')
-                        else:  # 标量张量
-                            print(f'{k}: {v.item():.4f}')
-                    else:
-                        print(f'{k}: {v}')
+                # for k, v in self.extra_info.items():
+                #     # 如果是张量，打印其平均值
+                #     if isinstance(v, torch.Tensor):
+                #         if len(v.shape) > 0:  # 非标量张量
+                #             # 转换为浮点数再计算平均值（处理整数张量）
+                #             print(f'{k}: {v.float().mean().item():.4f}')
+                #         else:  # 标量张量
+                #             print(f'{k}: {v.item():.4f}')
+                #     else:
+                #         print(f'{k}: {v}')
                 # 打印训练信息
                 info_string = f'Agent Steps: {int(self.agent_steps // 1e6):04}M | FPS: {all_fps:.1f} | ' \
                               f'Last FPS: {last_fps:.1f} | ' \
@@ -440,7 +445,7 @@ class PPOTeacher(object):
 
             # 如果当前平均奖励高于历史最优，且达到开始保存最优模型的步数，则保存最优模型
             if mean_rewards > self.best_rewards and self.agent_steps >= self.save_best_after:
-                print(f'save current best reward: {mean_rewards:.2f}')
+                # print(f'save current best reward: {mean_rewards:.2f}')
                 # 删除之前的最优模型文件
                 prev_best_ckpt = os.path.join(self.nn_dir, f'best_reward_{self.best_rewards:.2f}.pth')
                 if os.path.exists(prev_best_ckpt):
@@ -449,7 +454,9 @@ class PPOTeacher(object):
                 self.best_rewards = mean_rewards
                 # 保存当前最优模型
                 self.save(os.path.join(self.nn_dir, f'best_reward_{mean_rewards:.2f}'))
-
+            self.env.reset_termination_counts()
+            self.success_count = 0
+            self.total_episodes = 0
         # 达到最大步数时打印信息
         print('max steps achieved')
         print(f'Final best reward: {self.best_rewards:.2f}')

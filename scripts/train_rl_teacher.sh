@@ -5,7 +5,7 @@
 # ========================================
 # 使用方法:
 # scripts/train_rl_teacher.sh <GPU_ID> <SEED> <OUTPUT_NAME> [EXTRA_ARGS...]
-# 例如: scripts/train_rl_teacher.sh 0 42 reproduce_trial_002
+# 例如: scripts/train_rl_teacher.sh 0 42 debug_teacher
 # 
 # 功能特性:
 # 1. 自动创建带时间戳的唯一输出目录
@@ -269,61 +269,32 @@ if [ -n "${EXTRA_ARGS}" ]; then
 fi
 
 # ========================================
-# 执行训练并实时监控
+# 执行训练 (后台运行)
 # ========================================
-echo "开始训练..."
+echo "启动训练进程..."
 echo "日志将写入文件: ${LOG_FILE}"
+
+# 使用 nohup 后台运行
+nohup env CUDA_VISIBLE_DEVICES=${GPUS} python -u train.py "${ARGS[@]}" >> ${LOG_FILE} 2>&1 &
+PID=$!
+
+# 保存 PID 到文件
+echo ${PID} > ${OUTPUT_DIR}/train.pid
+
+echo "训练已在后台启动，PID: ${PID}"
 echo "查看实时日志: tail -f ${LOG_FILE}"
 echo "访问地址: http://localhost:${TB_PORT}"
 echo "=========================================="
 echo ""
 
-# 使用 python -u 禁用 Python 输出缓冲，确保日志实时写入
-# 训练输出只写入日志文件，不显示在终端
-CUDA_VISIBLE_DEVICES=${GPUS} \
-python -u train.py "${ARGS[@]}" >> ${LOG_FILE} 2>&1
-
-# 捕获训练退出状态
-TRAIN_EXIT_CODE=${PIPESTATUS[0]}
-
 # ========================================
-# 训练完成处理
+# 提示
 # ========================================
-{
-    echo ""
-    echo "=========================================="
-    echo "训练完成"
-    echo "=========================================="
-    echo "结束时间:        $(date +"%Y-%m-%d %H:%M:%S")"
-    echo "退出状态:        ${TRAIN_EXIT_CODE}"
-    echo ""
-    echo "结果位置:"
-    echo "  输出目录:      ${OUTPUT_DIR}"
-    echo "  模型目录:      ${OUTPUT_DIR}/teacher_nn"
-    echo "  TensorBoard:   ${OUTPUT_DIR}/teacher_tb"
-    echo "  训练日志:      ${LOG_FILE}"
-    echo "  配置文件:      ${CONFIG_FILE}"
-    echo ""
-    echo "TensorBoard 访问:"
-    echo "  http://localhost:${TB_PORT}"
-    echo ""
-    
-    if [ ${TRAIN_EXIT_CODE} -eq 0 ]; then
-        echo "✓ 训练成功完成！"
-    else
-        echo "✗ 训练异常退出，退出码: ${TRAIN_EXIT_CODE}"
-    fi
-    echo "=========================================="
-} | tee -a ${LOG_FILE}
-
-# ========================================
-# 清理与提示
-# ========================================
-echo ""
 echo "提示:"
 echo "1. 查看实时日志: tail -f ${LOG_FILE}"
 echo "2. 查看 TensorBoard: http://localhost:${TB_PORT}"
-echo "3. 停止 TensorBoard: kill \$(cat ${OUTPUT_DIR}/tensorboard.pid)"
+echo "3. 停止训练: kill ${PID}"
+echo "4. 停止 TensorBoard: kill \$(cat ${OUTPUT_DIR}/tensorboard.pid)"
 echo ""
 
-exit ${TRAIN_EXIT_CODE}
+exit 0

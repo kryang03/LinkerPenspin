@@ -32,18 +32,25 @@ echo ""
 # 确保optuna目录存在
 mkdir -p optuna
 
-# 运行优化（统一使用 STUDY_NAME）
-python optuna/tune_teacher.py \
+LOG_FILE="optuna/hpo_${STUDY_NAME}.log"
+echo "日志文件:     $LOG_FILE"
+
+# 运行优化（后台运行）
+nohup python -u optuna/tune_teacher.py \
     --gpu "$GPU_ID" \
     --n_trials "$N_TRIALS" \
     --max_steps "$MAX_STEPS" \
     --storage "sqlite:///optuna/hpo_${STUDY_NAME}.db" \
     --study_name "$STUDY_NAME" \
-    --load_if_exists
+    --load_if_exists > "${LOG_FILE}" 2>&1 &
+
+PID=$!
+echo "HPO 已在后台启动，PID: $PID"
+echo "查看日志: tail -f $LOG_FILE"
 
 echo ""
 echo "========================================"
-echo "优化完成！"
+echo "优化任务已提交后台"
 echo "========================================"
 echo ""
 echo "查看结果:"
@@ -53,6 +60,5 @@ echo "  3. 可视化图表: optuna/param_importances_${STUDY_NAME}.html"
 echo "  4. 优化历史: optuna/optimization_history_${STUDY_NAME}.html"
 echo "  5. TensorBoard: tensorboard --logdir outputs/${STUDY_NAME}/optuna_trial_*"
 echo ""
-echo "继续优化（累加更多试验）:"
-echo "  bash optuna/run_hpo.sh $GPU_ID <更多试验次数> $MAX_STEPS"
+echo "停止任务: kill $PID ; 还要 ps aux | grep train.py 杀死所有子进程"
 echo ""
