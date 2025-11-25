@@ -160,6 +160,8 @@ class VecTask(Env):
         self.gym.prepare_sim(self.sim)
         self._set_viewer()
         self.obs_dict = {}
+        # 标记是否已经打印过当前渲染速度模式（仅打印一次默认状态）
+        self._printed_viewer_speed_state = False
 
     def _set_viewer(self):
         self.enable_viewer_sync = True
@@ -351,6 +353,14 @@ class VecTask(Env):
                     sys.exit()
                 elif evt.action == 'toggle_viewer_sync' and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
+                    mode_str = "正常速度(同步实时)" if self.enable_viewer_sync else "加速模式(不等待实时)"
+                    print(f"[Viewer] 已切换渲染模式: {mode_str}")
+
+            # 如果还没打印过当前模式，则在第一次 render 时打印一次默认状态
+            if not self._printed_viewer_speed_state:
+                mode_str = "正常速度(同步实时)" if self.enable_viewer_sync else "加速模式(不等待实时)"
+                print(f"[Viewer] 当前渲染模式: {mode_str} (未做任何按键操作时的默认状态)")
+                self._printed_viewer_speed_state = True
 
             if self.device != 'cpu':
                 self.gym.fetch_results(self.sim, True)
