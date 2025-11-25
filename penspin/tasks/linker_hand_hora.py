@@ -907,9 +907,10 @@ class LinkerHandHora(VecTask):
         penalty_reverse_rotation = torch.relu(self.angvel_penalty_threshold_low-vec_dot)
         rotate_penalty = penalty_overspeed + penalty_reverse_rotation
         # 累计旋转角度（用于统计圈数）
-        rot_angle = torch.abs(vec_dot) * self.dt * self.control_freq_inv # 当前时间步旋转角度
+        rot_angle = vec_dot * self.dt * self.control_freq_inv # 当前时间步旋转角度
         self.total_rot_angle += rot_angle
-        # linear velocity: use position difference instead of self.object_linvel
+        # 计算物体线速度惩罚，这里不使用self.object_linvel，而是用位置差分计算
+        # 在仿真中，物理计算频率（Physics Freq, e.g., 1000Hz）通常远高于控制频率（Control Freq, e.g., 50Hz）。 self.object_linvel 只是这 20 个物理步中最后一步的速度。如果物体刚好在那一步发生了碰撞（Contact），瞬时速度可能会剧烈抖动（高频噪声），而位置差分则平滑了这一过程。
         object_linvel = ((self.object_pos - self.object_pos_prev) / (self.control_freq_inv * self.dt)).clone()
         object_linvel_penalty = torch.norm(object_linvel, p=1, dim=-1)
         # TODO: move this to a more appropriate place
@@ -927,11 +928,9 @@ class LinkerHandHora(VecTask):
         else:
             z_dist_penalty = to_torch([0], device=self.device)
 
-        # penalize large deviation of cube
-        # position_penalty = (self.object_pos[:, 0] - OBJ_CANON_POS[0]) ** 2 + (self.object_pos[:, 1] - OBJ_CANON_POS[1]) ** 2 \
-        #     + (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
+        # 惩罚在z轴上的位置偏离
         position_penalty = (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
-        # finger obj deviation penalty
+        # 未使用，惩罚指尖与物体的距离
         finger_obj_penalty = ((self.fingertip_pos - self.object_pos.repeat(1, FINGERTIP_CNT)) ** 2).sum(-1)
 
         # 新增奖励：当每圈旋转180-360度时，根据手部姿态与初始状态的差异给出惩罚

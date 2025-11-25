@@ -228,26 +228,29 @@ def objective(trial: optuna.trial.Trial, args) -> float:
         )
         
         # 提取并打印 priv_info 配置信息（在训练开始时输出）
-        priv_info_section = []
-        in_priv_section = False
-        equals_count = 0
-        for line in result.stdout.split('\n'):
-            if '特权信息 (Privileged Information) 维度配置:' in line:
-                in_priv_section = True
-                # 从前一个分隔线开始
-                if priv_info_section and priv_info_section[-1].startswith('='*80):
-                    priv_info_section = [priv_info_section[-1]]
+        try:
+            priv_info_section = []
+            in_priv_section = False
+            equals_count = 0
+            for line in result.stdout.split('\n'):
+                if '特权信息 (Privileged Information) 维度配置:' in line:
+                    in_priv_section = True
+                    # 从前一个分隔线开始
+                    if priv_info_section and priv_info_section[-1].startswith('='*80):
+                        priv_info_section = [priv_info_section[-1]]
+                
+                if in_priv_section:
+                    priv_info_section.append(line)
+                    # 计数等号分隔线，需要至少2个才是完整的section
+                    if line.startswith('='*80):
+                        equals_count += 1
+                        if equals_count >= 3:  # 开始、标题后、结束
+                            break
             
-            if in_priv_section:
-                priv_info_section.append(line)
-                # 计数等号分隔线，需要至少2个才是完整的section
-                if line.startswith('='*80):
-                    equals_count += 1
-                    if equals_count >= 3:  # 开始、标题后、结束
-                        break
-        
-        if priv_info_section and len(priv_info_section) > 3:
-            print("\n" + '\n'.join(priv_info_section))
+            if priv_info_section and len(priv_info_section) > 3:
+                print("\n" + '\n'.join(priv_info_section))
+        except Exception as priv_error:
+            print(f"警告: 提取priv_info配置失败: {priv_error}")
         
         # 检查返回码
         if result.returncode != 0:
@@ -294,25 +297,45 @@ def objective(trial: optuna.trial.Trial, args) -> float:
         print(f"  Success Rate:        {success_rate:.4f}")
         print(f"  Mean Rot Angle(rad): {mean_rot_angle:.4f}")
         
-        # 计算综合评分：重要性依次递增
-        # 权重设计：reward (1x) < success_rate (100x) < mean_rot_angle (1000x)
-        # 这样mean_rot_angle对评分影响最大，success_rate次之，reward影响最小
-        composite_score = (
-            1.0 * best_reward +           # 基础奖励权重
-            100.0 * success_rate +        # 成功率权重（中等重要）
-            100.0 * mean_rot_angle       # 平均旋转角度权重（最重要）
-        )
-        print(f"  Composite Score:     {composite_score:.2f}")
-        print(f"    = 1.0×{best_reward:.2f} + 100.0×{success_rate:.4f} + 100.0×{mean_rot_angle:.4f}")
+        # 计算综合评分:重要性依次递增
+        # 权重设计:reward (1x) < success_rate (100x) < mean_rot_angle (1000x)
+        # 这样mean_rot_angle对评分影响最大,success_rate次之,reward影响最小
+        try:
+            composite_score = (
+                1.0 * best_reward +           # 基础奖励权重
+                100.0 * success_rate +        # 成功率权重(中等重要)
+                100.0 * mean_rot_angle       # 平均旋转角度权重(最重要)
+            )
+            print(f"  Composite Score:     {composite_score:.2f}")
+            print(f"    = 1.0×{best_reward:.2f} + 100.0×{success_rate:.4f} + 100.0×{mean_rot_angle:.4f}")
+        except Exception as calc_error:
+            print(f"\n[错误] 计算综合评分失败: {calc_error}")
+            print(f"  best_reward={best_reward}, success_rate={success_rate}, mean_rot_angle={mean_rot_angle}")
+            raise optuna.exceptions.TrialPruned()
             
     except subprocess.TimeoutExpired:
         print(f"\n[错误] Trial {trial.number} 训练超时")
         raise optuna.exceptions.TrialPruned()
         
     except Exception as e:
-        print(f"\n[错误] Trial {trial.number} 训练失败: {e}")
+        print(f"\n[错误] Trial {trial.number} 训练失败")
+        print(f"异常类型: {type(e).__name__}")
+        print(f"异常信息: {str(e)}")
         import traceback
+        print("\n完整调用栈:")
         traceback.print_exc()
+        
+        # 尝试输出更多调试信息
+        try:
+            if 'result' in locals():
+                print(f"\n进程返回码: {result.returncode}")
+                print(f"STDOUT最后500字符:")
+                print(result.stdout[-500:] if result.stdout else "(无输出)")
+                print(f"\nSTDERR最后500字符:")
+                print(result.stderr[-500:] if result.stderr else "(无错误)")
+        except:
+            pass
+            
         raise optuna.exceptions.TrialPruned()
     
     print("\n" + "="*80)
