@@ -87,6 +87,41 @@ def main(config: DictConfig):
         headless=config.headless,
     )
     # env = LinkerHandHora(config=omegaconf_to_dict(config.task),...)
+    
+    # 打印 priv_info 维度信息（供 Optuna 查看配置）
+    if hasattr(env, 'priv_info_dict') and hasattr(env, 'priv_info_dim'):
+        print("\n" + "="*80)
+        print("特权信息 (Privileged Information) 维度配置:")
+        print("="*80)
+        print(f"{'名称':<30} {'索引范围':<15} {'维度':<8} {'状态'}")
+        print("-"*80)
+        
+        # 固定部分
+        fixed_privs = ['obj_position', 'obj_scale', 'obj_mass', 'obj_friction', 'obj_com']
+        for name in fixed_privs:
+            if name in env.priv_info_dict:
+                s, e = env.priv_info_dict[name]
+                print(f"{name:<30} [{s:>2}:{e:>2}]{'':>8} {e-s:<8} [固定]")
+        
+        print("-"*80)
+        
+        # 可选部分
+        optional_privs = ['obj_orientation', 'obj_linvel', 'obj_angvel', 
+                         'fingertip_position', 'fingertip_orientation', 
+                         'fingertip_linvel', 'fingertip_angvel', 
+                         'hand_scale', 'obj_restitution', 'tactile']
+        
+        enabled_count = len(fixed_privs)
+        for name in optional_privs:
+            if name in env.priv_info_dict:
+                s, e = env.priv_info_dict[name]
+                print(f"{name:<30} [{s:>2}:{e:>2}]{'':>8} {e-s:<8} ✓")
+                enabled_count += 1
+        
+        print("-"*80)
+        total_dim = sum([e - s for _, (s, e) in env.priv_info_dict.items()])
+        print(f"总计: {enabled_count} 项启用, 实际维度 = {total_dim}, 缓冲区大小 = {env.priv_info_dim}")
+        print("="*80 + "\n")
 
     output_dif = os.path.join('outputs', config.train.ppo.output_name)
     os.makedirs(output_dif, exist_ok=True)
@@ -105,13 +140,13 @@ def main(config: DictConfig):
         # with open(os.path.join(output_dif, f'config_{date}_{git_hash()}.yaml'), 'w') as f:
         #     f.write(OmegaConf.to_yaml(config))
         agent.restore_train(config.train.load_path) #这里就是config.checkpoint
-        best_reward = agent.train()
+        train_result = agent.train()
         
-        # 输出评分供Optuna使用（通过标准输出）
-        if best_reward is not None:
-            print(f"\nOPTUNA_SCORE: {best_reward}")
+        # 输出三个独立指标供Optuna使用（通过标准输出）
+        if train_result is not None and isinstance(train_result, dict):
+            print(f"\nOPTUNA_METRICS: reward={train_result['best_reward']:.4f} success_rate={train_result['success_rate']:.4f} mean_rot_angle={train_result['mean_rot_angle']:.4f}")
         
-        return best_reward  # 返回最佳奖励值供Optuna使用
+        return train_result  # 返回训练结果供Optuna使用
 
 
 if __name__ == '__main__':

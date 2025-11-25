@@ -453,12 +453,16 @@ class PPOTeacher(object):
         print('max steps achieved')
         print(f'Final best reward: {self.best_rewards:.2f}')
         print(f'Final success rate: {self.best_success_rate:.4f}')
-        # 返回综合评分供Optuna使用
-        # 策略：以reward为主（权重1.0），成功率提供巨大加成（权重1000，因为成功很罕见）
-        # 这样如果有任何成功案例，都会显著提升评分
-        composite_score = self.best_rewards + 1000.0 * self.best_success_rate
-        print(f'Composite score for optimization: {composite_score:.2f}')
-        return composite_score
+        print(f'Final mean rotation angle (rad): {mean_rot_angle:.4f}')
+        # 返回三个独立指标供Optuna使用
+        # best_reward: 最佳episode奖励
+        # best_success_rate: 最佳成功率（旋转角度>6的比例）
+        # mean_rot_angle: 最终旋转角度均值（弧度）
+        return {
+            'best_reward': self.best_rewards,
+            'success_rate': self.best_success_rate,
+            'mean_rot_angle': mean_rot_angle
+        }
 
     # 保存模型权重和标准化统计信息
     def save(self, name):

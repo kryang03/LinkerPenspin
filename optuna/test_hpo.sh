@@ -23,7 +23,7 @@ rm -f optuna/best_params_test_hpo.txt
 # 运行10次快速试验，每次只训练1M步
 python optuna/tune_teacher.py \
     --gpu 0 \
-    --n_trials 10 \
+    --n_trials 4 \
     --max_steps 1000000 \
     --storage "sqlite:///optuna/test_hpo.db" \
     --study_name "test_hpo"
