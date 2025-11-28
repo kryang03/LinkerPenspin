@@ -185,6 +185,33 @@ class PPO_RL_BC_Teacher(object):
             self.proprio_dim, self.proprio_len
         )
 
+        # 打印显存相关的关键参数
+        print("\n" + "="*80)
+        print("PPO训练配置 - 显存相关参数")
+        print("="*80)
+        print(f"num_actors (并行环境数):     {self.num_actors}")
+        print(f"horizon_length (轨迹长度):   {self.horizon_length}")
+        print(f"batch_size (批次大小):       {self.batch_size} = {self.num_actors} × {self.horizon_length}")
+        print(f"minibatch_size (小批次):     {self.minibatch_size}")
+        print(f"mini_epochs (训练轮数):      {self.mini_epochs_num}")
+        print(f"obs_dim (观测维度):          {self.obs_shape[0]}")
+        print(f"priv_info_dim (特权信息):    {self.priv_info_dim}")
+        print(f"action_dim (动作维度):       {self.actions_num}")
+        print("-"*80)
+        estimated_buffer_gb = (
+            self.batch_size * (
+                self.obs_shape[0] +  # obs
+                self.priv_info_dim +  # priv_info
+                self.critic_info_dim +  # critic_info
+                self.point_cloud_buffer_dim * 3 +  # point_cloud
+                self.proprio_len * self.proprio_dim * 2 +  # proprio + tactile
+                self.actions_num * 3 +  # actions, mus, sigmas
+                4  # rewards, values, neglogpacs, dones
+            ) * 4  # float32 = 4 bytes
+        ) / (1024**3)
+        print(f"预估缓冲区显存:              ~{estimated_buffer_gb:.2f} GB")
+        print("="*80 + "\n")
+
         batch_size = self.num_actors
         current_rewards_shape = (batch_size, 1)
         self.current_rewards = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)

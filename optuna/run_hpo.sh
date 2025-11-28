@@ -11,7 +11,7 @@ set -e
 # ========================================
 # 可配置参数
 # ========================================
-STUDY_NAME="teacher_reproduce_trial_03"  # Study名称（同时用作输出目录）
+STUDY_NAME="teacher_reproduce_trial_04"  # Study名称（同时用作输出目录）
 
 GPU_ID=${1:-0}
 N_TRIALS=${2:-40}

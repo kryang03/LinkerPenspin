@@ -228,6 +228,26 @@ class PPOTeacher(object):
             self.proprio_dim,self.proprio_len # 添加 proprio_dim 和 proprio_len 参数
         )
 
+        # ================================================================================
+        # 打印显存相关的关键配置参数
+        # ================================================================================
+        print("\n" + "="*80)
+        print("显存相关配置参数 (Memory-Critical Configuration)")
+        print("="*80)
+        print(f"环境数量 (num_actors):        {self.num_actors:,}")
+        print(f"Horizon 长度:                 {self.horizon_length}")
+        print(f"Batch Size:                   {self.batch_size:,} = {self.num_actors:,} × {self.horizon_length}")
+        print(f"Minibatch Size:               {self.minibatch_size:,}")
+        print(f"Mini Epochs:                  {self.mini_epochs_num}")
+        print(f"观察维度 (obs_shape):         {self.obs_shape[0]}")
+        print(f"动作维度 (actions_num):       {self.actions_num}")
+        print(f"特权信息维度 (priv_info):     {self.priv_info_dim}")
+        print(f"Critic信息维度:               {self.critic_info_dim}")
+        print(f"点云缓冲维度:                 {self.point_cloud_buffer_dim}")
+        print(f"本体感觉历史长度:             {self.proprio_len}")
+
+        print("="*80 + "\n")
+
         # 初始化当前 episode 奖励和长度
         batch_size = self.num_actors
         current_rewards_shape = (batch_size, 1)

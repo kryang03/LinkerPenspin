@@ -268,8 +268,25 @@ class LinkerHandHora(VecTask):
         object_rb_count = 1
         self.object_rb_handles = list(range(linker_hand_rb_count, linker_hand_rb_count + object_rb_count))
 
+        # 打印显存相关的关键参数
+        print("\n" + "="*80)
+        print("环境初始化 - 显存相关参数")
+        print("="*80)
+        print(f"num_envs (环境数量):        {num_envs}")
+        print(f"环境间距 (spacing):         {spacing}")
+        print(f"每行环境数 (num_per_row):   {num_per_row}")
+        print(f"手部刚体数量:               {self.num_linker_hand_bodies}")
+        print(f"物体刚体数量:               {object_rb_count}")
+        print(f"总刚体数/环境:              {self.num_linker_hand_bodies + object_rb_count}")
+        print("="*80)
+        print(f"开始创建 {num_envs} 个并行环境...")
+        print("="*80 + "\n")
+
         for i in range(num_envs):
-            tprint(f'{i} / {num_envs} num_envs')
+            # 只在特定进度点打印（0%, 25%, 50%, 75%, 100%）
+            if i == 0 or i == num_envs - 1 or i % (num_envs // 4) == 0:
+                progress = (i / num_envs) * 100
+                tprint(f'环境创建进度: {i}/{num_envs} ({progress:.1f}%)')
             # create env instance
             env_ptr = self.gym.create_env(self.sim, lower, upper, num_per_row)
             if self.aggregate_mode >= 1:

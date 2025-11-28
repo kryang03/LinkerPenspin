@@ -3,7 +3,7 @@
 """
 Optuna超参数优化脚本 - RL Teacher PPO训练
 基于 optuna/RL_TEACHER_PARAMETERS.md 中的重要参数总结
-
+CUDA_VISIBLE_DEVICES=0 python train.py task=LinkerHandHora headless=True seed=42 train.ppo.output_name=test_mem_info train.algo=PPOTeacher task.env.grasp_cache_name=3pose task.env.initPoseMode=low task.env.reset_height_threshold=0.12 task.env.numEnvs=8192 train.ppo.horizon_length=32 train.ppo.minibatch_size=32768
 优化策略：
 1. 以最终reward为主要评判标准
 2. 旋转角度>10的成功案例会获得巨大加成（权重1000）
@@ -123,7 +123,21 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     grad_norm = trial.suggest_categorical("grad_norm", [0.5, 1.0, 2.0])
     hpo_overrides.append(f"train.ppo.grad_norm={grad_norm}")
     
-    # --- E. 环境与奖励参数 (基于 Best Values 重新中心化) ---
+    # --- D. 环境与数据收集规模参数 ---
+    
+    # 环境数量 (默认: 8192)
+    # 影响并行采样效率和样本多样性
+    # 范围：4096, 8192
+    num_envs = trial.suggest_categorical("num_envs", [4096, 8192])
+    hpo_overrides.append(f"task.env.numEnvs={num_envs}")
+    
+    # Horizon长度 (默认: 16)
+    # 影响每次采样的轨迹长度和更新频率
+    # 范围：16, 24, 32
+    horizon_length = trial.suggest_categorical("horizon_length", [16, 24 ,32])
+    hpo_overrides.append(f"train.ppo.horizon_length={horizon_length}")
+    
+    # --- E. 奖励参数 (基于 Best Values 重新中心化) ---
     
     # 1. 角速度相关
     # Clip Min (Best: -0.22) -> Range: -0.4 ~ -0.1
