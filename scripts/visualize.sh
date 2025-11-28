@@ -5,7 +5,7 @@
 # scripts/visualize.sh pose3_50k_cfg7_200_3 > contacts/pose3_50k_cfg7_200_3.txt
 # scripts/visualize.sh pose3_50k_cfg9 > contacts/pose3_50k_cfg9.txt
 # scripts/visualize.sh pose3_3k_cfg_c > contacts/pose3_3k_cfg_c.txt
-# scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0000/teacher_nn > tmp_debug.txt
+# scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0039/teacher_nn
 #best:
 # scripts/visualize.sh outputs/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
 # CHECKLIST

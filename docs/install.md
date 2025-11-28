@@ -9,5 +9,6 @@ Download IsaacGym Preview 4.0 ([Download](https://developer.nvidia.com/isaac-gym
 cd ../isaacgym/python/   
 pip install -e .
 
-cd ../../LinkerPenspin/|
+cd ../../LinkerPenspin/
+pip install optuna
 ////可以修改.envrc: export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/home/user/anaconda3/envs/penspin/lib/

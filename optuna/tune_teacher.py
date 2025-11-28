@@ -76,50 +76,42 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     hpo_overrides.append(f"train.ppo.weight_decay={weight_decay}")
     
     # 折扣因子 (Best: 0.995)
-    # 原范围 [0.98, 0.99, 0.995]。最佳值触顶。
-    # 调整策略：移除 0.98，增加 0.999 尝试更长远视界
+    # 当前动作对未来累积奖励的影响程度
     gamma = trial.suggest_categorical("gamma", [0.985, 0.99, 0.992])
     hpo_overrides.append(f"train.ppo.gamma={gamma}")
     
     # GAE lambda (Best: 0.95)
-    # 保持原样，0.95 是非常标准的 PPO 参数
+    # GAE (Generalized Advantage Estimation) 的平滑系数，用于权衡偏差（Bias）和方差（Variance）
     tau = trial.suggest_categorical("tau", [0.85, 0.90, 0.95])
     hpo_overrides.append(f"train.ppo.tau={tau}")
     
     # PPO裁剪范围 (Best: 0.3)
-    # 原范围 [0.1, 0.2, 0.3]。最佳值触顶。
-    # 调整策略：尝试更大的裁剪范围，增加 0.4
+    # 限制了新策略 $\pi_{new}$ 和旧策略 $\pi_{old}$ 之间的差异幅度
     e_clip = trial.suggest_categorical("e_clip", [0.1, 0.2, 0.3])
     hpo_overrides.append(f"train.ppo.e_clip={e_clip}")
     
     # 熵系数 (Best: ~0.005)
-    # 位于中间，说明原范围 0.0~0.01 合理。
-    # 调整策略：微调为 0.001 ~ 0.008
+    # 数值越大，智能体越倾向于采取随机动作；数值越小，策略越容易收敛到确定性行为
     entropy_coef = trial.suggest_float("entropy_coef", 0.001, 0.008)
     hpo_overrides.append(f"train.ppo.entropy_coef={entropy_coef}")
     
     # Critic损失系数 (Best: 1.0)
-    # 保持原样
+    # Loss = Loss_{Actor} + critic_coef * Loss_{Critic}，相对较高的权重意味着在这个任务配置中，准确估计当前状态的价值（V值）非常重要
     critic_coef = trial.suggest_categorical("critic_coef", [0.5, 1.0, 2.0])
     hpo_overrides.append(f"train.ppo.critic_coef={critic_coef}")
     
     # KL散度阈值 (Best: ~0.049)
-    # 原范围 0.01~0.05。最佳值严重触顶 (0.049 接近 0.05)。
-    # 调整策略：大幅提升上限，探索允许更大更新步幅的可能性
+    # 计算新旧策略之间的 KL 散度，太剧烈降低学习率，太保守增大学习率
     kl_threshold = trial.suggest_float("kl_threshold", 0.03, 0.08)
     hpo_overrides.append(f"train.ppo.kl_threshold={kl_threshold}")
     
     # --- B. PPO数据收集参数 ---
     
-    # Mini-epochs (Best: 7)
-    # 原范围 3-8。最佳值偏大。
-    # 调整策略：改为 5-10
+    # Mini-epochs
     mini_epochs = trial.suggest_int("mini_epochs", 5, 10)
     hpo_overrides.append(f"train.ppo.mini_epochs={mini_epochs}")
     
-    # Minibatch大小 (Best: 8192)
-    # 选择了最小的 Batch。这通常意味着更频繁的更新对当前任务有利。
-    # 调整策略：尝试更小的 4096 (如果显存允许)，保留 8192
+    # Minibatch大小
     minibatch_size = trial.suggest_categorical("minibatch_size", [8192, 16384, 32768])
     hpo_overrides.append(f"train.ppo.minibatch_size={minibatch_size}")
     
