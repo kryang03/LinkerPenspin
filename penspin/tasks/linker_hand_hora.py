@@ -261,6 +261,15 @@ class LinkerHandHora(VecTask):
             self.hand_indices.append(hand_idx)
             self.hand_actors.append(hand_actor)
 
+            # 设置碰撞过滤器：防止手部自碰撞，同时允许与外部物体（如被抓取物体、地面）碰撞
+            # filter=1 的手部部件之间不会发生碰撞，但会与 filter=0 的物体碰撞
+            hand_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, hand_actor)
+            for shape_prop in hand_shape_props:
+                shape_prop.filter = 1  # 将手部所有部件设为组 1，组内不碰撞
+                shape_prop.restitution = 0.0  # 减少碰撞时的弹跳
+                shape_prop.friction = 0.8  # 增加抓取摩擦力
+            self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_shape_props)
+
             # add object
             eval_object_type = self.config['env']['object']['evalObjectType']
             if eval_object_type is None:
@@ -318,6 +327,7 @@ class LinkerHandHora(VecTask):
                 for p in hand_props:
                     p.friction = rand_friction
                     p.restitution = obj_restitution
+                    p.filter = 1  # 保持碰撞过滤器设置，防止手部自碰撞
                 self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_props)
 
                 object_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)

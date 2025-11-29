@@ -34,7 +34,7 @@
           rgba="1 1 1 1" />
       </material>
     </visual>
-    <!-- <collision>
+    <collision>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
@@ -42,7 +42,7 @@
         <mesh
           filename="meshes/base_link.STL" />
       </geometry>
-    </collision> -->
+    </collision>
   </link>
   <link
     name="little_joint0">
@@ -1060,7 +1060,7 @@
           rgba="1 1 1 1" />
       </material>
     </visual>
-    <!-- <collision>
+    <collision>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
@@ -1068,7 +1068,7 @@
         <mesh
           filename="meshes/thumb_joint1.STL" />
       </geometry>
-    </collision> -->
+    </collision>
   </link>
   <joint
     name="thumb_joint1"
@@ -1118,7 +1118,7 @@
           rgba="1 1 1 1" />
       </material>
     </visual>
-    <!-- <collision>
+    <collision>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
@@ -1126,7 +1126,7 @@
         <mesh
           filename="meshes/thumb_joint2.STL" />
       </geometry>
-    </collision> -->
+    </collision>
   </link>
   <joint
     name="thumb_joint2"
