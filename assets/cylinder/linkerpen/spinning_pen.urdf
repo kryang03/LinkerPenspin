@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<robot name="spinning_pen">
+
+  <!-- Materials -->
+  <material name="nylon_white">
+    <color rgba="0.95 0.95 0.92 1.0"/>
+  </material>
+  <material name="aluminum_grey">
+    <color rgba="0.75 0.76 0.78 1.0"/>
+  </material>
+
+  <!-- 1. BODY LINK -->
+  <link name="body_link">
+    <inertial>
+      <mass value="0.02439"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00004644" ixy="0" ixz="0" iyy="0.00004644" iyz="0" izz="0.00000143"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.009" length="0.15"/>
+      </geometry>
+      <material name="nylon_white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.009" length="0.15"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- 2. LEFT TIP -->
+  <link name="left_tip_link">
+    <inertial>
+      <mass value="0.00827"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00000036" ixy="0" ixz="0" iyy="0.00000036" iyz="0" izz="0.00000040"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.009" length="0.015"/>
+      </geometry>
+      <material name="aluminum_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.009" length="0.015"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- 3. RIGHT TIP -->
+  <link name="right_tip_link">
+    <inertial>
+      <mass value="0.00827"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.00000036" ixy="0" ixz="0" iyy="0.00000036" iyz="0" izz="0.00000040"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.009" length="0.015"/>
+      </geometry>
+      <material name="aluminum_grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.009" length="0.015"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- JOINTS (Fixed) -->
+  <!-- Joint offset calculation: Body Length/2 + Tip Length/2 -->
+  <joint name="body_to_left" type="fixed">
+    <parent link="body_link"/>
+    <child link="left_tip_link"/>
+    <origin xyz="0 0 -0.08249999999999999" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="body_to_right" type="fixed">
+    <parent link="body_link"/>
+    <child link="right_tip_link"/>
+    <origin xyz="0 0 0.08249999999999999" rpy="0 0 0"/>
+  </joint>
+
+</robot>

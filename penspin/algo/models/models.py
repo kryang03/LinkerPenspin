@@ -52,7 +52,7 @@
 #   - obj_ends: [batch, 3, 6]  物体端点 (视觉跟踪，如SAM)
 #   - student_pc_info: [batch, 100, 6]  点云+特征 (xyz+rgb)
 #   - tactile_hist: [batch, 30, 15]  触觉历史 (5 fingers × 3D)
-#   - priv_info: [batch, 47]  (仅训练时，提取fingertip用于监督)
+#   - priv_info: [batch, 64]  (仅训练时，提取fingertip用于监督，维度取决于启用项)
 #
 # 编码流程：
 #   1. proprio_hist -> TemporalTransformer -> [batch, 32] -> Linear -> [batch, 40]
@@ -60,7 +60,7 @@
 #      obj_ends[:,:,3:] -> end_mlp [6,6,6] -> [batch, 3, 6]
 #      max_pool -> [batch, 18]  (flatten)
 #   3. student_pc_info -> PointNet -> [batch, 256]
-#   4. fingertip_pos (from priv_info[16:31]) + noise -> [batch, 15]
+#   4. fingertip_pos (通过 PrivInfoLayout 动态获取索引) + noise -> [batch, 15]
 #      if "tactile" in mode: concat(tactile_hist[:,-2:,:]) -> [batch, 15+30=45]
 #      -> env_mlp [256,128,64] -> extrin_gt [batch, 64]
 #   5. obs_input = concat([obs, proprio_feat, obj_ends_feat, pc_feat, extrin_gt])
@@ -89,6 +89,21 @@
 #
 # 说明：PROPRIO_DIM=42 = 21维当前位置 + 21维目标位置（非速度）
 #
+# priv_info 新版布局（移除 obj_scale，新增 obj_linvel 和 fingertip_linvel）：
+# ┌────────────────────────────────────────────────────────────────┐
+# │ 固定部分 (0-8):                                                │
+# │   [0:3]   obj_position                                         │
+# │   [3:4]   obj_mass                                             │
+# │   [4:5]   obj_friction                                         │
+# │   [5:8]   obj_com                                              │
+# ├────────────────────────────────────────────────────────────────┤
+# │ 动态部分 (8+，按启用顺序):                                      │
+# │   obj_orientation (4)  -> obj_linvel (3)  -> obj_angvel (3)   │
+# │   -> fingertip_position (15) -> fingertip_linvel (15)         │
+# │   -> obj_restitution (1) -> tactile (15)                      │
+# │   总维度: 64（默认配置）                                        │
+# └────────────────────────────────────────────────────────────────┘
+#
 # -----------------------------------------------
 # 三、Teacher 和 Student 的主要差异
 # -----------------------------------------------
@@ -97,7 +112,7 @@
 #    - Student: 可部署传感器 (视觉跟踪的端点, 带噪声的点云)
 #
 # 2. **特权信息使用**：
-#    - Teacher: 完整 priv_info (47维) 包含物体物理属性、指尖状态等
+#    - Teacher: 完整 priv_info (64维，新配置) 包含物体物理属性、速度、指尖状态等
 #    - Student: 仅使用 fingertip_position (15维) + tactile (30维)
 #
 # 3. **训练模式**：
@@ -159,7 +174,9 @@ from penspin.utils.robot_config import (
     TACTILE_FEATURE_DIM, TACTILE_USED_TIMESTEPS,
     POINT_CLOUD_FEATURE_DIM, POINT_CLOUD_FEATURE_DIM_STUDENT,
     POINTNET_OUTPUT_DIM,
-    get_priv_info_fingertip_slice
+    PrivInfoLayout, get_priv_info_fingertip_slice,
+    # Flying hand 支持
+    NUM_FLYING_DOF, NUM_TOTAL_DOF_FLYING, NUM_DOF_REDUCED
 )
 
 
@@ -313,6 +330,8 @@ class BaseActorCritic(nn.Module):
         # 显示基础维度
         print(f"\n【基础维度】")
         print(f"  NUM_DOF: {NUM_DOF}  (Allegro: 16 -> Linker: 21)")
+        print(f"  NUM_FLYING_DOF: {NUM_FLYING_DOF}  (6 DoF floating base)")
+        print(f"  NUM_TOTAL_DOF_FLYING: {NUM_TOTAL_DOF_FLYING}  (Flying hand total: 6 + 21)")
         print(f"  NUM_FINGERS: {NUM_FINGERS}  (Allegro: 4 -> Linker: 5)")
         print(f"  PROPRIO_DIM: {PROPRIO_DIM}  (Allegro: 32 -> Linker: 42)")
         print(f"  CONTACT_DIM: {CONTACT_DIM}  (Allegro: 32 -> Linker: 15)")
@@ -358,15 +377,29 @@ class BaseActorCritic(nn.Module):
         """
         验证维度配置的一致性
         
+        支持的动作维度配置：
+        - 27: Flying hand + 全部手指 (6 + 21)
+        - 19: Flying hand + 禁用无名指小拇指 (6 + 13)  
+        - 21: 无 flying hand + 全部手指
+        - 13: 无 flying hand + 禁用无名指小拇指
+        
         Returns:
             bool: 如果所有维度检查通过返回True
         """
         try:
             dim_info = self.get_dimension_info()
             
-            # 基础检查
-            assert self.actions_num == NUM_DOF, \
-                f"actions_num ({self.actions_num}) != NUM_DOF ({NUM_DOF})"
+            # 支持的动作维度
+            valid_action_dims = {
+                NUM_TOTAL_DOF_FLYING,  # 27: flying + full
+                NUM_FLYING_DOF + NUM_DOF_REDUCED,  # 19: flying + reduced (6 + 13)
+                NUM_DOF,  # 21: no flying + full
+                NUM_DOF_REDUCED,  # 13: no flying + reduced
+            }
+            
+            # 基础检查 - 支持多种动作维度配置
+            assert self.actions_num in valid_action_dims, \
+                f"actions_num ({self.actions_num}) not in valid dimensions: {valid_action_dims}"
             
             if isinstance(self, TeacherActorCritic):
                 # Teacher 特定检查
@@ -388,7 +421,7 @@ class BaseActorCritic(nn.Module):
                 assert FINGERTIP_POS_DIM <= new_priv_dim <= FINGERTIP_POS_DIM + TACTILE_FEATURE_DIM, \
                     f"new_priv_dim ({new_priv_dim}) out of expected range"
             
-            print(f"✓ {self.__class__.__name__} 维度验证通过!")
+            print(f"✓ {self.__class__.__name__} 维度验证通过! (actions_num={self.actions_num})")
             return True
             
         except AssertionError as e:

@@ -27,10 +27,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from penspin.tasks.linker_hand_hora import LinkerHandHora
-from penspin.tasks.linker_hand_grasp import LinkerHandGrasp
+
+# LinkerHandGrasp 是独立的缓存生成脚本，位于 cache/ 目录
+# 不在此处导入以避免循环依赖
 
 # Mappings from strings to environments
 isaacgym_task_map = {
     'LinkerHandHora': LinkerHandHora,
-    'LinkerHandGrasp': LinkerHandGrasp,
 }

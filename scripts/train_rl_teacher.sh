@@ -18,23 +18,16 @@
 # CHECKLIST: 
 # 1. 命令的最后一个参数对应OUTPUT_NAME，测reward时用tmp，开训时标注信息
 # 2. task.env.grasp_cache_name = 所使用的canonical pose文件名
-# 3. 确认最低高度task.env.reset_height_threshold
+# 3. 早期终止阈值：task.env.relative_z_drop_threshold (物体下降阈值)
+#                  task.env.pencil_tilt_threshold (铅笔倾倒阈值)
 # 4. 确定命令的GPU参数
 # 5. angvelClipMax\angvelClipMin\angvelPenaltyThresHigh\angvelPenaltyThresLow在configs/task/LinkerHandHora.yaml中配置
 # 6. 确认train.algo=PPOTeacher
 # 7. 奖励权重可通过修改脚本中的 REWARD_* 变量或 EXTRA_ARGS 传递来调整
+# 8. 可通过环境变量覆盖早期终止阈值：
+#    RELATIVE_Z_DROP_THRESHOLD=0.15 PENCIL_TILT_THRESHOLD=0.10 scripts/train_rl_teacher.sh 0 42 test
 
 set -e  # 遇到错误立即退出
-
-# ========================================
-# 参数解析
-# ========================================
-if [ "$#" -lt 3 ]; then
-    echo "错误: 参数不足"
-    echo "用法: $0 <GPU_ID> <SEED> <OUTPUT_NAME> [EXTRA_ARGS...]"
-    echo "示例: $0 0 42 teacher_test"
-    exit 1
-fi
 
 GPUS=$1        # GPU ID
 SEED=$2        # 随机种子
@@ -125,7 +118,8 @@ EOF
     echo "  task.env.grasp_cache_name=3pose \\"
     echo "  train.ppo.max_agent_steps=10000000000 \\"
     echo "  task.env.initPoseMode=low \\"
-    echo "  task.env.reset_height_threshold=0.12 \\"
+    echo "  task.env.relative_z_drop_threshold=${RELATIVE_Z_DROP_THRESHOLD} \\"
+    echo "  task.env.pencil_tilt_threshold=${PENCIL_TILT_THRESHOLD} \\"
     echo "  ${EXTRA_ARGS}"
     echo "=========================================="
     echo ""
@@ -221,6 +215,14 @@ ANGVEL_PENALTY_THRES_HIGH=1.0          # 角速度惩罚阈值（上限）
 ANGVEL_PENALTY_THRES_LOW=-0.5          # 角速度惩罚阈值（下限）
 
 # ========================================
+# 动作空间配置
+# ========================================
+# 禁用无名指和小拇指以缩减动作空间 (21 -> 13 DoF)
+# 设为 True 可优化强化学习搜索效率
+# 例如: scripts/train_rl_teacher.sh 0 42 test task.env.actionSpace.disableRingLittleFinger=True
+DISABLE_RING_LITTLE=True              # 默认使用完整21 DoF
+# FLYING_HAND 默认开启，在configs/task/LinkerHandHora.yaml中
+# ========================================
 # 奖励权重配置（合并后的最终值）
 # ========================================
 # 这些是默认值，可以通过 EXTRA_ARGS 覆盖
@@ -234,6 +236,10 @@ REWARD_ROTATE_PENALTY=0.0              # 旋转惩罚（逆向/超速）
 REWARD_PENCIL_Z_DIST_PENALTY=-1.5      # 铅笔高度差惩罚
 REWARD_POSITION_PENALTY=-0.1           # 位置惩罚
 
+# 早期终止阈值（默认值，可通过命令行覆盖）
+RELATIVE_Z_DROP_THRESHOLD=${RELATIVE_Z_DROP_THRESHOLD:-0.12}  # 物体下降阈值（米）
+PENCIL_TILT_THRESHOLD=${PENCIL_TILT_THRESHOLD:-0.12}          # 铅笔倾倒阈值（米）
+
 # ========================================
 # 构建训练参数数组
 # ========================================
@@ -246,7 +252,11 @@ ARGS=(
     "task.env.grasp_cache_name=3pose"
     "train.ppo.max_agent_steps=500000000"
     "task.env.initPoseMode=low"
-    "task.env.reset_height_threshold=0.12"
+    # 早期终止阈值（新命名）
+    "task.env.relative_z_drop_threshold=${RELATIVE_Z_DROP_THRESHOLD}"
+    "task.env.pencil_tilt_threshold=${PENCIL_TILT_THRESHOLD}"
+    # 动作空间配置
+    "task.env.actionSpace.disableRingLittleFinger=${DISABLE_RING_LITTLE}"
     # 角速度参数
     "task.env.reward.angvelClipMin=${ANGVEL_CLIP_MIN}"
     "task.env.reward.angvelClipMax=${ANGVEL_CLIP_MAX}"

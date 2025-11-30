@@ -8,8 +8,75 @@ env:
   initPoseMode: 'high'
   numEnvs: ${resolve_default:8192,${...num_envs}}
   numObservations: 126 # 这个参数在vec_tast用到 21*2*3
-  numActions: 21 # modified
+  # ============================================================
+  # numActions 说明：
+  # 此值为基准动作维度，实际维度由以下配置组合决定：
+  # ┌─────────────────────────────────────────────────────────────┐
+  # │ 配置                           │ 实际动作维度                │
+  # ├─────────────────────────────────────────────────────────────┤
+  # │ Flying + 完整手指              │ 6 + 21 = 27 DoF            │
+  # │ Flying + 禁用 ring/little      │ 6 + 13 = 19 DoF            │
+  # │ 无 Flying + 完整手指           │ 21 DoF                     │
+  # │ 无 Flying + 禁用 ring/little   │ 13 DoF                     │
+  # └─────────────────────────────────────────────────────────────┘
+  # ============================================================
+  numActions: 27 # Flying Hand (6) + 全部手指 (21) = 27
   envSpacing: 0.5
+  
+  # ============================================================
+  # Flying Hand 配置 (6 DoF Floating Base)
+  # ============================================================
+  # 为转笔任务设计的浮空底座，允许手腕在空间中移动和旋转
+  # 通过严格的速度和位置限制防止利用惯性"作弊"（甩手腕转笔）
+  #
+  # Flying Base 结构 (6 DoF):
+  #   - virtual_px: 平移 X 轴 (±5cm)
+  #   - virtual_py: 平移 Y 轴 (±5cm)
+  #   - virtual_pz: 平移 Z 轴 (30cm~40cm)
+  #   - virtual_rx: 旋转 Roll (±90°)
+  #   - virtual_ry: 旋转 Pitch (±90°)
+  #   - virtual_rz: 旋转 Yaw (±180°)
+  #
+  # 速度限制:
+  #   - 线速度: 0.1 m/s (极慢，防止甩动惯性)
+  #   - 角速度: 2.0 rad/s (约 115°/s，允许适度翻转)
+  # ============================================================
+  flyingHand:
+    enabled: True              # 是否启用 Flying Hand
+    defaultHeight: 0.35        # 默认悬浮高度 (m)
+    heightLower: 0.30          # 最低高度限制 (m)
+    heightUpper: 0.40          # 最高高度限制 (m)
+    xyLimit: 0.05              # XY 平面移动限制 (m)
+    linearVelocity: 0.1        # 线速度限制 (m/s)
+    angularVelocity: 2.0       # 角速度限制 (rad/s)
+    # Flying base 的 PD 增益 (位置控制模式下)
+    # 需要足够高以实现刚性位控 (参考 interactive_tune.py: stiffness=1000, damping=50)
+    basePgain: 1000.0          # 位置增益 (提高以实现精确位控)
+    baseDgain: 50.0            # 速度增益
+  asset:
+    # Flying Hand URDF (带 6 DoF 浮空底座)
+    # 原始 URDF: 'assets/linker_hand/L25_dof_urdf.urdf' (21 DoF, 固定底座)
+    # Flying URDF: 'assets/linker_hand/L25_dof_urdf_flying.urdf' (27 DoF, 浮空底座)
+    handAsset: 'assets/linker_hand/L25_dof_urdf_flying.urdf' # Flying Hand
+  
+  # ============================================================
+  # 动作空间配置 (Action Space Configuration)
+  # ============================================================
+  # 通过禁用无名指和小拇指来缩减动作空间，优化强化学习搜索效率
+  # 
+  # Linker Hand 关节顺序 (共21 DoF):
+  #   little (小拇指): joint 0-3  (4 DoF)
+  #   ring (无名指):   joint 4-7  (4 DoF)
+  #   middle (中指):   joint 8-11 (4 DoF)
+  #   index (食指):    joint 12-15 (4 DoF)
+  #   thumb (拇指):    joint 16-20 (5 DoF)
+  #
+  # 禁用小拇指+无名指后: 21 - 8 = 13 DoF (middle + index + thumb)
+  # ============================================================
+  actionSpace:
+    disableRingLittleFinger: True  # True: 使用13维动作空间, False: 使用21维动作空间
+    # 被禁用手指的关节将锁定在初始抓取姿态
+    # 观测仍包含所有手指信息（位置、触觉等）
 
   episodeLength: 400  # 训练时使用400, 测试时使用4000
   enableDebugVis: False
@@ -18,10 +85,12 @@ env:
   controller:
     torque_control: True
     controlFrequencyInv: 10  # 20Hz
-    pgain: 3
-    dgain: 0.1
+    # PD 增益和力矩限制已调整以适配 LinkerPen (45g)
+    # 原始参数 (pgain=3, dgain=0.1, torque_limit=0.7) 对应 20g 的笔
+    pgain: 6                  # 提高位置增益，增强刚性
+    dgain: 0.2                # 相应提高阻尼
     action_scale: 0.04167
-    torque_limit: 0.7
+    torque_limit: 1.5         # 提高力矩限制以支持更大的 PD 输出
 
   rotation_axis: '+z'
   genGrasps: False
@@ -29,8 +98,11 @@ env:
 
   clipObservations: 5.0
   clipActions: 1.0
-  # Modified
-  reset_height_threshold: 0.12
+  # Modified - 适配 Flying Hand 的高度设置
+  # Flying Hand 悬浮高度范围: 30cm~40cm
+  # 早期终止阈值配置 (Early Termination Thresholds)
+  relative_z_drop_threshold: 0.15  # 物体高度偏离初始位置超过此值则重置（上升或下降都算，单位:米）
+  pencil_tilt_threshold: 0.08      # LinkerPen 两端高度差超过此值视为倾倒（单位:米，对应约 26° 倾斜）
 
   grasp_cache_name: 'internal_linker'
 
@@ -65,83 +137,124 @@ env:
     # canonical position
     position_penalty_scale: -0.1          # -0.1 × 1 = -0.1
   # Modified
-  baseObjScale: 0.3
+  baseObjScale: 1.0
   randomization:
-    # Randomization Property
+    # ========================================================================
+    # 物体物理属性随机化 (Object Physical Randomization)
+    # 针对转笔技巧 (Triangle Pass, Thumb Around, Index Bust) 优化
+    # ========================================================================
+    
+    # --- 质量随机化 ---
+    # LinkerPen 质量已在 URDF 中精确定义（约 40.9g）
+    # 启用微小质量扰动以增强 sim2real 鲁棒性
     randomizeMass: True
-    randomizeMassLower: 0.01
-    randomizeMassUpper: 0.02
+    randomizeMassLower: 0.035   # 35g (-15%)
+    randomizeMassUpper: 0.048   # 48g (+17%)
+    
+    # --- 质心随机化 ---
+    # 模拟制造公差和配重不均匀
     randomizeCOM: True
-    randomizeCOMLower: -0.001
-    randomizeCOMUpper: 0.001
+    randomizeCOMLower: -0.002   # ±2mm
+    randomizeCOMUpper: 0.002
+    
+    # --- 摩擦系数随机化 ---
+    # 真实物理参考:
+    #   - 尼龙-橡胶摩擦系数: 0.3-0.6
+    #   - 铝-橡胶摩擦系数: 0.4-0.8
+    #   - 手指皮肤-塑料: 0.4-1.0
+    # 范围设计: 适度扩展以覆盖 sim2real gap
     randomizeFriction: True
-    randomizeFrictionLower: 0.3
-    randomizeFrictionUpper: 3.0
-    #这里不能删除随机化，因为加载dof缓存的条件是if self.randomize_scale and self.scale_list_init:    
+    randomizeFrictionLower: 0.4   # 最小摩擦（光滑表面）
+    randomizeFrictionUpper: 1.2   # 最大摩擦（粗糙表面）
+    
+    # --- 恢复系数随机化 ---
+    # 真实物理参考:
+    #   - 塑料-橡胶碰撞: 0.2-0.5
+    #   - 金属-橡胶碰撞: 0.3-0.6
+    # 转笔时不希望过度弹跳，范围偏低
+    randomizeRestitution: True
+    randomizeRestitutionLower: 0.1   # 低弹性（能量损失大）
+    randomizeRestitutionUpper: 0.5   # 中等弹性
+    
+    # --- 缩放随机化 ---
+    # LinkerPen 使用实际尺寸，不需要缩放
+    # 保留 randomizeScale=True 因为加载 dof 缓存的条件依赖它
     randomizeScale: True
     randomize_hand_scale: False
-    # if scale_list_init is True, randomizeScaleLower and randomizeScaleUpper is not useful
     scaleListInit: True
-
-    # 通过这里取消了object scale随机化
-    randomizeScaleList: [0.3]
-    randomizeScaleLower: 0.25  # only useful when not scaleListInit
-    randomizeScaleUpper: 0.3  # only useful when not scaleListInit
-
+    randomizeScaleList: [1.0]
+    randomizeScaleLower: 1.0
+    randomizeScaleUpper: 1.0
+    
+    # --- PD 增益随机化 ---
+    # 模拟电机响应差异
     randomizePDGains: True
     randomizePGainLower: 2.5
     randomizePGainUpper: 3.5
     randomizeDGainLower: 0.09
     randomizeDGainUpper: 0.11
+    
+    # --- 观测噪声 ---
     obs_noise_e_scale: 0.01
     obs_noise_t_scale: 0.005
     pose_noise_scale: 0
     action_noise_e_scale: 0.01
     action_noise_t_scale: 0.005
     jointNoiseScale: 0.0
-    # stage 2 specific:
+    
+    # --- Stage 2 特定参数 ---
     noisy_rpy_scale: 0.1
     noisy_pos_scale: 0.02
 #
-    # │固定部分 (0-9):                                                  │
+    # ================================================================
+    # priv_info 布局说明（新版，移除 obj_scale）
+    # ================================================================
+    # │固定部分 (0-8):                                                  │
     # │   [0:3]   obj_position                                         │
-    # │   [3:4]   obj_scale                                            │
-    # │   [4:5]   obj_mass                                             │
-    # │   [5:6]   obj_friction                                         │
-    # │   [6:9]   obj_com                                              │
+    # │   [3:4]   obj_mass                                             │
+    # │   [4:5]   obj_friction                                         │
+    # │   [5:8]   obj_com                                              │
     # ├────────────────────────────────────────────────────────────────┤
-    # │ 动态部分 (9+，取决于启用的项):                                     │
-    # │   train_teacher.sh 默认配置:                                    │
-    # │   [9:13]  obj_orientation (4)                                  │
-    # │   [13:16] obj_angvel (3)                                       │
-    # │   [16:31] fingertip_position (15 = 5 fingers × 3D)             │
-    # │   [31:32] obj_restitution (1)                                  │
-    # │   [32:47] tactile (15 = 5 fingers × 3D force)                  │
+    # │ 动态部分 (8+，取决于启用的项):                                     │
+    # │   train_teacher.sh 默认配置 (新版):                             │
+    # │   [8:12]  obj_orientation (4)                                  │
+    # │   [12:15] obj_linvel (3)          ✓ 新增启用                   │
+    # │   [15:18] obj_angvel (3)                                       │
+    # │   [18:33] fingertip_position (15)                              │
+    # │   [33:48] fingertip_linvel (15)   ✓ 新增启用                   │
+    # │   [48:49] obj_restitution (1)                                  │
+    # │   [49:64] tactile (15)                                         │
+    # │   总维度: 64                                                    │
+    # ================================================================
   privInfo:
-    enableObjPos: True # 
-    enableObjScale: True
+    enableObjPos: True
+    # enableObjScale: 已移除（LinkerPen 使用固定尺寸 1.0）
     enableObjMass: True
     enableObjCOM: True
-    enableObjFriction: True      #固定部分到此
+    enableObjFriction: True      # 固定部分到此（共8维）
     enable_obj_restitution: True
     enable_tactile: True         # Teacher默认开启触觉信息
     contact_form: 'gpu_contact'
     contact_input: 'binary'
-    enable_obj_linvel: False
-    enable_obj_angvel: True      # Teacher默认开启物体角速度信息，3
-    enable_ft_pos: True          # Teacher默认开启指尖位置信息，15
-    enable_obj_orientation: True  # Teacher默认开启物体姿态信息，4
+    enable_obj_linvel: True      # Teacher默认开启物体线速度信息，3维 [新增]
+    enable_obj_angvel: True      # Teacher默认开启物体角速度信息，3维
+    enable_ft_pos: True          # Teacher默认开启指尖位置信息，15维
+    enable_obj_orientation: True # Teacher默认开启物体姿态信息，4维
     enable_ft_orientation: False
-    enable_ft_linvel: False
+    enable_ft_linvel: True       # Teacher默认开启指尖线速度信息，15维 [新增]
     enable_ft_angvel: False
+    enable_hand_scale: False
 
   object:
-    type: 'cylinder_pencil-5-7'
+    type: 'cylinder_linkerpen'
     evalObjectType: null
     sampleProb: [1.0]
 
-  asset:
-    handAsset: 'assets/linker_hand/L25_dof_urdf.urdf' # modified
+
+  # 碰撞几何优化选项
+  # useVHACD: True  - 使用 VHACD 凸分解，更快但精度略低
+  # useVHACD: False - 使用 submesh 凸分解，更精确但较慢（默认）
+  useVHACD: False
 
   # set to True if you use camera sensors in the environment
   enableCameraSensors: False

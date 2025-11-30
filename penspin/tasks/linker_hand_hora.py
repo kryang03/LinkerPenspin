@@ -12,19 +12,19 @@ import omegaconf
 import numpy as np
 import math
 
-from glob import glob
 from collections import OrderedDict
 
 from isaacgym import gymtorch
 from isaacgym import gymapi
 from isaacgym.torch_utils import quat_conjugate, quat_mul, to_torch, quat_apply, tensor_clamp, torch_rand_float, quat_from_euler_xyz
 
-from penspin.utils.point_cloud_prep import sample_cylinder, sample_cuboid
+from penspin.utils.point_cloud_prep import sample_cylinder
 from .base.vec_task import VecTask
 from penspin.utils.misc import tprint
 # Import centralized robot dimension constants
 from penspin.utils.robot_config import (
     NUM_DOF,
+    NUM_DOF_REDUCED,
     PROPRIO_DIM,
     CONTACT_DIM,
     FINGERTIP_CNT,
@@ -32,7 +32,22 @@ from penspin.utils.robot_config import (
     CONTACT_LINK_NAMES,
     FINGERTIP_POS_DIM,
     PRIV_FINGERTIP_ROT_DIM,
-    OBS_WITH_CONTACT_FINGERTIP_DIM
+    OBS_WITH_CONTACT_FINGERTIP_DIM,
+    ACTIVE_FINGER_INDICES_REDUCED,
+    ActionSpaceMapper,
+    # Flying Hand 相关常量
+    NUM_FLYING_DOF,
+    NUM_TOTAL_DOF_FLYING,
+    FLYING_DOF_NAMES,
+    FLYING_DOF_INDICES,
+    FLYING_DEFAULT_HEIGHT,
+    FLYING_HEIGHT_LOWER,
+    FLYING_HEIGHT_UPPER,
+    FLYING_XY_LIMIT,
+    # Flying Hand 相对限位常量
+    FLYING_RELATIVE_XY_LIMIT,
+    FLYING_RELATIVE_Z_LIMIT,
+    FLYING_RELATIVE_ROT_LIMIT,
 )
 
 # 刚体的 位置 (3) + 姿态 (4, 四元数) + 线速度 (3) + 角速度 (3)
@@ -71,6 +86,10 @@ class LinkerHandHora(VecTask):
         self._setup_object_info(config['env']['object'])
         # 4. setup rewards
         self._setup_reward_config(config['env']['reward'])
+        # 5. setup flying hand configuration (必须在 action space 之前)
+        self._setup_flying_hand_config(config['env'])
+        # 6. setup action space (支持 flying hand + 禁用手指)
+        self._setup_action_space_config(config['env'])
 
         self.base_obj_scale = config['env']['baseObjScale']
         # print("缩放比例", self.base_obj_scale)
@@ -80,18 +99,38 @@ class LinkerHandHora(VecTask):
         self.aggregate_mode = self.config['env']['aggregateMode']
         self.up_axis = 'z'
         self.rotation_axis = config['env']['rotation_axis']
-        self.reset_z_threshold = self.config['env']['reset_height_threshold']
+        # 早期终止阈值（支持新旧配置键名，向后兼容）
+        self.relative_z_drop_threshold = self.config['env'].get(
+            'relative_z_drop_threshold',
+            self.config['env'].get('reset_height_threshold', 0.06)  # 向后兼容旧配置
+        )
+        self.pencil_tilt_threshold = self.config['env'].get('pencil_tilt_threshold', 0.12)
         self.grasp_cache_name = self.config['env']['grasp_cache_name']
         self.canonical_pose_category = config['env']['genGraspCategory']
         self.num_pose_per_cache = NUM_POSE_PER_CACHE
         self.with_camera = config['env']['enableCameraSensors']
         self.enable_obj_ends = config['env']['enable_obj_ends']
         self.init_pose_mode = config['env']['initPoseMode']
-        self.num_linker_hand_dofs = self.config['env']['numActions']
+        # 根据是否启用 Flying Hand 设置 DOF 数量
+        if self.flying_hand_enabled:
+            self.num_linker_hand_dofs = NUM_TOTAL_DOF_FLYING  # 27 = 6 (base) + 21 (hand)
+        else:
+            self.num_linker_hand_dofs = self.config['env']['numActions']  # 21
         # Important: map CUDA device IDs to Vulkan ones.
         graphics_device_id = 0
 
         super().__init__(config, sim_device, graphics_device_id, headless)
+        
+        # 覆盖动作空间（当动作维度与默认配置不同时）
+        # 这包括：Flying Hand、禁用手指、或两者组合
+        if self.actual_action_dim != self.config['env']['numActions']:
+            from gym import spaces
+            self.num_actions = self.actual_action_dim
+            self.act_space = spaces.Box(
+                np.ones(self.actual_action_dim, dtype=np.float32) * -1., 
+                np.ones(self.actual_action_dim, dtype=np.float32) * 1.
+            )
+            print(f"动作空间已更新: {self.act_space.shape} (策略输出维度: {self.actual_action_dim})")
 
         self.eval_done_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
 
@@ -133,6 +172,39 @@ class LinkerHandHora(VecTask):
         self._refresh_gym()
 
         self.num_dofs = self.gym.get_sim_dof_count(self.sim) // self.num_envs
+        
+        # ============================================================
+        # 重新分配观测缓冲区（使用实际的 DOF 数量）
+        # ============================================================
+        # vec_task.py 中的 _allocate_buffers 使用硬编码的 NUM_DOF=21，
+        # 但 Flying Hand 需要 27 DOF。这里根据实际的 num_dofs 重新分配。
+        # PROPRIO_DIM = 2 * num_dofs (当前位置 + 目标位置)
+        self.actual_proprio_dim = 2 * self.num_dofs  # 保存为实例变量，用于 compute_observations
+        if self.config['env']['privInfo']['enable_tactile']:
+            obs_buf_lag_dim = self.actual_proprio_dim + CONTACT_DIM + FINGERTIP_POS_DIM
+        else:
+            obs_buf_lag_dim = self.actual_proprio_dim
+        self.obs_buf_lag_history = torch.zeros(
+            (self.num_envs, 80, obs_buf_lag_dim), 
+            device=self.device, dtype=torch.float
+        )
+        # obs_buf 使用 6 * num_dofs (3个时间步 × 2 × num_dofs)
+        self.obs_buf = torch.zeros(
+            (self.num_envs, 6 * self.num_dofs), 
+            device=self.device, dtype=torch.float
+        )
+        # 重新分配 proprio_hist_buf（之前在 _allocate_task_buffer 中使用了 PROPRIO_DIM 常量）
+        self.proprio_hist_buf = torch.zeros(
+            (self.num_envs, self.prop_hist_len, self.actual_proprio_dim),
+            device=self.device, dtype=torch.float
+        )
+        # 重新分配噪声缓冲区（需要与 num_dofs 匹配，因为它们与 dof_pos 相加）
+        self.random_obs_noise_e = torch.zeros(
+            (self.num_envs, self.num_dofs), device=self.device, dtype=torch.float
+        )
+        self.random_action_noise_e = torch.zeros(
+            (self.num_envs, self.num_dofs), device=self.device, dtype=torch.float
+        )
 
         self.prev_targets = torch.zeros((self.num_envs, self.num_dofs), dtype=torch.float, device=self.device)
         self.cur_targets = torch.zeros((self.num_envs, self.num_dofs), dtype=torch.float, device=self.device)
@@ -174,6 +246,17 @@ class LinkerHandHora(VecTask):
         # useful buffers
         self.init_pose_buf = torch.zeros((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float)
         self.actions = torch.zeros((self.num_envs, self.num_actions), device=self.device, dtype=torch.float)
+        
+        # ============================================================
+        # 每个环境独立的相对限位张量 (Per-Environment Relative Limits)
+        # ============================================================
+        # 这些张量会在 reset_idx 时根据 init_pose_buf 动态更新
+        # 确保每个环境的动作空间相对于其初始位置对称
+        # ============================================================
+        if self.use_relative_limit:
+            # 初始化为全局绝对限位（会在 reset 时更新）
+            self.env_dof_lower_limits = self.linker_hand_dof_lower_limits.unsqueeze(0).expand(self.num_envs, -1).clone()
+            self.env_dof_upper_limits = self.linker_hand_dof_upper_limits.unsqueeze(0).expand(self.num_envs, -1).clone()
         # there is an extra dim [self.control_freq_inv] because we want to get a mean over multiple control steps
         self.torques = torch.zeros((self.num_envs, self.control_freq_inv, self.num_actions), device=self.device, dtype=torch.float)
         self.dof_vel_finite_diff = torch.zeros((self.num_envs, self.control_freq_inv, self.num_dofs), device=self.device, dtype=torch.float)
@@ -193,8 +276,10 @@ class LinkerHandHora(VecTask):
         # ----
 
         assert type(self.p_gain) in [int, float] and type(self.d_gain) in [int, float], 'assume p_gain and d_gain are only scalars'
-        self.p_gain = torch.ones((self.num_envs, self.num_actions), device=self.device, dtype=torch.float) * self.p_gain
-        self.d_gain = torch.ones((self.num_envs, self.num_actions), device=self.device, dtype=torch.float) * self.d_gain
+        # 注意：p_gain 和 d_gain 需要与 DOF 维度匹配（而不是 action 维度），
+        # 因为在 update_low_level_control 中它们需要与 cur_targets、dof_pos、dof_vel 相乘
+        self.p_gain = torch.ones((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float) * self.p_gain
+        self.d_gain = torch.ones((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float) * self.d_gain
 
         # debug and understanding statistics
         self.evaluate = self.config['on_evaluation']
@@ -233,6 +318,9 @@ class LinkerHandHora(VecTask):
         # 为每个环境记录当前episode的终止原因
         self.current_termination_reason = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_fall, 4: angular_velocity_too_high
+        
+        # 初始化物体高度缓冲区，用于相对 relative_z_drop_threshold 计算
+        self.init_object_z_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         
         # 为每个环境记录终止时的实际值（用于调试输出）
         self.termination_actual_values = torch.zeros(self.num_envs, device=self.device)
@@ -299,6 +387,20 @@ class LinkerHandHora(VecTask):
             self.hand_indices.append(hand_idx)
             self.hand_actors.append(hand_actor)
 
+            # ============ 碰撞过滤器设置 ============
+            # 获取手部 actor 的所有刚体形状属性
+            hand_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, hand_actor)
+            # 为所有 link 设置相同的 collision filter
+            # 在 Isaac Gym 中，拥有相同非零 filter ID 的形状之间**不会**发生碰撞
+            # 但它们会与 filter ID 为 0 的物体（如地面、交互物体）发生碰撞
+            for shape_prop in hand_shape_props:
+                shape_prop.filter = 1  # 将手部所有部件设为组 1，避免自碰撞
+                shape_prop.restitution = 0.0  # 减少碰撞时的弹跳
+                shape_prop.friction = 0.8     # 增加抓取摩擦力
+            # 将修改后的属性应用回去
+            self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_shape_props)
+            # ========================================
+
             # add object
             eval_object_type = self.config['env']['object']['evalObjectType']
             if eval_object_type is None:
@@ -320,24 +422,18 @@ class LinkerHandHora(VecTask):
             ])
             object_idx = self.gym.get_actor_index(env_ptr, object_handle, gymapi.DOMAIN_SIM)
             self.object_indices.append(object_idx)
-            self.obj_scale = self.base_obj_scale
-            # Modified，为了躲避scale随机化，这里注释掉
-
-            # if self.randomize_scale:
-            #     num_scales = len(self.randomize_scale_list)
-            #     self.obj_scale = np.random.uniform(
-            #         self.randomize_scale_list[i % num_scales] - 0.025,
-            #         self.randomize_scale_list[i % num_scales] + 0.025
-            #     )
+            
+            # LinkerPen 使用实际尺寸，不需要缩放
+            self.obj_scale = 1.0
             self.gym.set_actor_scale(env_ptr, object_handle, self.obj_scale)
-            self._update_priv_buf(env_id=i, name='obj_scale', value=self.obj_scale)
-            # print("缩放比例", self.obj_scale)
+            # 注：obj_scale 已从 priv_info 中移除（固定为 1.0）
 
             obj_com = [0, 0, 0]
-            # COM是物体的质心
+            # COM是物体的质心 - 对于 LinkerPen，质心已在 URDF 中精确定义
+            # 这里仍保留微小扰动以增加鲁棒性
             if self.randomize_com:
                 prop = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
-                assert len(prop) == 1
+                # LinkerPen 有多个 link，只修改第一个（主体）
                 obj_com = [np.random.uniform(self.randomize_com_lower, self.randomize_com_upper),
                            np.random.uniform(self.randomize_com_lower, self.randomize_com_upper),
                            np.random.uniform(self.randomize_com_lower, self.randomize_com_upper)]
@@ -347,38 +443,77 @@ class LinkerHandHora(VecTask):
 
             obj_friction = 1.0
             obj_restitution = 0.0  # default is 0
-            # TODO: bad engineering because of urgent modification
+            
+            # 摩擦系数随机化
             if self.randomize_friction:
                 rand_friction = np.random.uniform(self.randomize_friction_lower, self.randomize_friction_upper)
-                obj_restitution = np.random.uniform(0, 1)
-
+                obj_friction = rand_friction
+            
+            # 恢复系数随机化
+            if self.randomize_restitution:
+                obj_restitution = np.random.uniform(self.randomize_restitution_lower, self.randomize_restitution_upper)
+            
+            # 应用摩擦和恢复系数到手和物体
+            if self.randomize_friction or self.randomize_restitution:
                 hand_props = self.gym.get_actor_rigid_shape_properties(env_ptr, hand_actor)
                 for p in hand_props:
-                    p.friction = rand_friction
+                    p.friction = obj_friction
                     p.restitution = obj_restitution
                 self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_props)
 
                 object_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)
                 for p in object_props:
-                    p.friction = rand_friction
+                    p.friction = obj_friction
                     p.restitution = obj_restitution
                 self.gym.set_actor_rigid_shape_properties(env_ptr, object_handle, object_props)
-                obj_friction = rand_friction
+            
             self._update_priv_buf(env_id=i, name='obj_friction', value=obj_friction)
             self._update_priv_buf(env_id=i, name='obj_restitution', value=obj_restitution)
 
+            # 质量处理
+            # URDF 中精确定义了 LinkerPen 质量（约 40.9g）
+            # 如果启用质量随机化，则在 URDF 基础上应用均匀扰动
+            prop = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
+            urdf_total_mass = sum([p.mass for p in prop])
+            
             if self.randomize_mass:
-                prop = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
+                # 随机生成目标质量
+                target_mass = np.random.uniform(self.randomize_mass_lower, self.randomize_mass_upper)
+                # 计算缩放因子并应用到所有刚体
+                mass_scale = target_mass / urdf_total_mass if urdf_total_mass > 0 else 1.0
                 for p in prop:
-                    p.mass = np.random.uniform(self.randomize_mass_lower, self.randomize_mass_upper)
+                    p.mass *= mass_scale
+                    # 同时缩放惯量张量
+                    p.inertia.x *= mass_scale
+                    p.inertia.y *= mass_scale
+                    p.inertia.z *= mass_scale
                 self.gym.set_actor_rigid_body_properties(env_ptr, object_handle, prop)
-                self._update_priv_buf(env_id=i, name='obj_mass', value=prop[0].mass)
+                total_mass = target_mass
             else:
-                prop = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
-                self._update_priv_buf(env_id=i, name='obj_mass', value=prop[0].mass)
+                total_mass = urdf_total_mass
+            
+            self._update_priv_buf(env_id=i, name='obj_mass', value=total_mass)
+            
+            # 在第一个环境中打印物体的完整物理属性（随机化后的最终值）
+            if i == 0:
+                print("\n" + "="*70)
+                print("物体物理属性（随机化后的最终值）")
+                print("="*70)
+                print(f"随机化配置:")
+                print(f"  - 质量随机化: {self.randomize_mass} [{self.randomize_mass_lower}, {self.randomize_mass_upper}]")
+                print(f"  - 质心随机化: {self.randomize_com} [{self.randomize_com_lower}, {self.randomize_com_upper}]")
+                print(f"  - 摩擦随机化: {self.randomize_friction} [{self.randomize_friction_lower}, {self.randomize_friction_upper}]")
+                print(f"  - 恢复系数随机化: {self.randomize_restitution} [{self.randomize_restitution_lower}, {self.randomize_restitution_upper}]")
+                print(f"本环境实际值:")
+                print(f"  - 总质量: {total_mass:.4f} kg ({total_mass*1000:.2f} g)")
+                print(f"  - 摩擦系数: {obj_friction:.4f}")
+                print(f"  - 恢复系数: {obj_restitution:.4f}")
+                print(f"  - 质心偏移: {obj_com}")
+                self._print_object_properties(env_ptr, object_handle)
 
             if self.point_cloud_sampled_dim > 0:
-                self.obj_point_clouds.append(self.asset_point_clouds[object_type_id] * self.obj_scale)
+                # 不再乘以 obj_scale，因为已经是 1.0
+                self.obj_point_clouds.append(self.asset_point_clouds[object_type_id])
 
             if self.aggregate_mode > 0:
                 self.gym.end_aggregate(env_ptr)
@@ -427,10 +562,10 @@ class LinkerHandHora(VecTask):
     def reset_idx(self, env_ids):
         if self.randomize_pd_gains:
             self.p_gain[env_ids] = torch_rand_float(
-                self.randomize_p_gain_lower, self.randomize_p_gain_upper, (len(env_ids), self.num_actions),
+                self.randomize_p_gain_lower, self.randomize_p_gain_upper, (len(env_ids), self.num_dofs),
                 device=self.device).squeeze(1)
             self.d_gain[env_ids] = torch_rand_float(
-                self.randomize_d_gain_lower, self.randomize_d_gain_upper, (len(env_ids), self.num_actions),
+                self.randomize_d_gain_lower, self.randomize_d_gain_upper, (len(env_ids), self.num_dofs),
                 device=self.device).squeeze(1)
 
         self.random_obs_noise_e[env_ids] = torch.normal(0, self.random_obs_noise_e_scale, size=(len(env_ids), self.num_dofs), device=self.device, dtype=torch.float)
@@ -458,6 +593,20 @@ class LinkerHandHora(VecTask):
             self.prev_targets[s_ids, :self.num_linker_hand_dofs] = pos
             self.cur_targets[s_ids, :self.num_linker_hand_dofs] = pos
             self.init_pose_buf[s_ids, :] = pos
+            
+            # ============================================================
+            # 更新每个环境的相对限位
+            # ============================================================
+            # 根据初始位置和相对范围，计算每个环境的动作限位
+            # 确保动作空间在初始位置两侧对称
+            # ============================================================
+            if self.use_relative_limit:
+                # 计算相对限位: init_pose ± relative_range
+                relative_lower = pos - self.dof_relative_range.unsqueeze(0)
+                relative_upper = pos + self.dof_relative_range.unsqueeze(0)
+                # 与绝对限位取交集
+                self.env_dof_lower_limits[s_ids] = torch.max(relative_lower, self.linker_hand_dof_lower_limits.unsqueeze(0))
+                self.env_dof_upper_limits[s_ids] = torch.min(relative_upper, self.linker_hand_dof_upper_limits.unsqueeze(0))
 
         object_indices = torch.unique(self.object_indices[env_ids]).to(torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.root_state_tensor), gymtorch.unwrap_tensor(object_indices), len(object_indices))
@@ -465,6 +614,9 @@ class LinkerHandHora(VecTask):
         if not self.torque_control:
             self.gym.set_dof_position_target_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.prev_targets), gymtorch.unwrap_tensor(hand_indices), len(env_ids))
         self.gym.set_dof_state_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.dof_state), gymtorch.unwrap_tensor(hand_indices), len(env_ids))
+
+        # 记录初始物体高度用于相对 relative_z_drop_threshold
+        self.init_object_z_buf[env_ids] = self.root_state_tensor[self.object_indices[env_ids], 2].clone()
 
         # reset tactile
         self.contact_thresh[env_ids] = CONTACT_THRESH
@@ -557,11 +709,11 @@ class LinkerHandHora(VecTask):
         # 3. 物体端点跟踪 (Object End Points Tracking)
         # --------------------------------------------------------------
         
-        # 定义物体的本地坐标系下的端点位置（例如铅笔的头部和尾部）
-        # 这里假设物体中心在本地坐标系原点，长度为 pen_length * obj_scale
+        # 定义物体的本地坐标系下的端点位置（LinkerPen 的两端）
+        # pen_length = 0.18m，无需缩放
         pencil_ends = [
-            [0, 0, -(self.pen_length/2) * self.obj_scale],
-            [0, 0, (self.pen_length/2) * self.obj_scale]
+            [0, 0, -self.pen_length / 2],  # -0.09m
+            [0, 0, self.pen_length / 2]    # +0.09m
         ]
         # 端点相对于机械臂根部的位置
         pencil_end_1 = self.object_pos + quat_apply(
@@ -573,8 +725,8 @@ class LinkerHandHora(VecTask):
         ) - self.root_state_tensor[self.hand_indices, :3]
         # 对计算出的物体端点位置添加均匀分布噪声，噪声范围与 pen_radius * 2 相关
         # (torch.rand(...) - 0.5) * (self.pen_radius*2) 生成范围在 [-pen_radius, pen_radius] 的均匀噪声
-        pencil_end_1 += (torch.rand(pencil_end_1.shape[0], 3).to(self.device) - 0.5) * (self.pen_radius*2)
-        pencil_end_2 += (torch.rand(pencil_end_2.shape[0], 3).to(self.device) - 0.5) * (self.pen_radius*2)
+        pencil_end_1 += (torch.rand(pencil_end_1.shape[0], 3).to(self.device) - 0.5) * (self.pen_radius * 2)
+        pencil_end_2 += (torch.rand(pencil_end_2.shape[0], 3).to(self.device) - 0.5) * (self.pen_radius * 2)
 
         # 将两个端点位置拼接起来，形状为 (num_envs, 6)
         # unsqueeze(1) 添加一个维度，形状变为 (num_envs, 1, 6)，便于后续拼接到历史缓冲区
@@ -590,8 +742,8 @@ class LinkerHandHora(VecTask):
         # 提取 obs_buf_lag_history 中最近的三个时间步的obs历史 (前 obs_buf.shape[1]//3=42 部分)
         # 形状变化：(num_envs, history_len, obs_dim) -> (num_envs, 3, obs_dim_per_step//3) -> (num_envs, 3 * obs_dim_per_step//3)
 
-        t_buf = (self.obs_buf_lag_history[:, -3:, :PROPRIO_DIM].reshape(self.num_envs, -1)).clone()
-                # t_buf shape: torch.Size([1, 3*42])
+        t_buf = (self.obs_buf_lag_history[:, -3:, :self.actual_proprio_dim].reshape(self.num_envs, -1)).clone()
+                # t_buf shape: torch.Size([1, 3*actual_proprio_dim])
 
         # 将提取的历史部分赋值给主观测缓冲区的开头部分
         self.obs_buf[:, :t_buf.shape[1]] = t_buf  # [1, 126]
@@ -629,17 +781,17 @@ class LinkerHandHora(VecTask):
         # 这确保重置后的历史观测从初始状态开始
         # 注意：初始目标位置也用初始姿态填充，这可能是为了在episode开始时agent目标就是保持初始姿态
         self.obs_buf_lag_history[at_reset_env_ids, :, 0:self.num_linker_hand_dofs] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
-        self.obs_buf_lag_history[at_reset_env_ids, :, self.num_linker_hand_dofs:PROPRIO_DIM] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
+        self.obs_buf_lag_history[at_reset_env_ids, :, self.num_linker_hand_dofs:self.actual_proprio_dim] = self.init_pose_buf[at_reset_env_ids].unsqueeze(1)
         # 对于重置的环境，用当前的物体端点位置填充其历史缓冲区
         self.obj_ends_history[at_reset_env_ids, :, :] = cur_obj_ends[at_reset_env_ids]
 
         # 如果启用了触觉，则对于重置的环境，将其观测历史缓冲区中触觉相关部分清零
-        # 范围是 PROPRIO_DIM 到 PROPRIO_DIM+CONTACT_DIM
+        # 范围是 actual_proprio_dim 到 actual_proprio_dim+CONTACT_DIM
         if self.config['env']['privInfo']['enable_tactile']:
-            self.obs_buf_lag_history[at_reset_env_ids, :, PROPRIO_DIM:PROPRIO_DIM+CONTACT_DIM] = torch.zeros((len(at_reset_env_ids),80,CONTACT_DIM),device=self.device)
+            self.obs_buf_lag_history[at_reset_env_ids, :, self.actual_proprio_dim:self.actual_proprio_dim+CONTACT_DIM] = torch.zeros((len(at_reset_env_ids),80,CONTACT_DIM),device=self.device)
             # 对于重置的环境，用当前的指尖位置填充其观测历史缓冲区中指尖位置部分
-            # 范围是 PROPRIO_DIM+CONTACT_DIM 到 PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM
-            self.obs_buf_lag_history[at_reset_env_ids, :, PROPRIO_DIM+CONTACT_DIM:PROPRIO_DIM+CONTACT_DIM+FINGERTIP_POS_DIM] = self.fingertip_pos[at_reset_env_ids].unsqueeze(1)
+            # 范围是 actual_proprio_dim+CONTACT_DIM 到 actual_proprio_dim+CONTACT_DIM+FINGERTIP_POS_DIM
+            self.obs_buf_lag_history[at_reset_env_ids, :, self.actual_proprio_dim+CONTACT_DIM:self.actual_proprio_dim+CONTACT_DIM+FINGERTIP_POS_DIM] = self.fingertip_pos[at_reset_env_ids].unsqueeze(1)
 
         # 重置相关的速度信息缓冲
         # 在接触或碰撞时记录的物体和指尖线速度/角速度，在重置时也需要清零或用当前值填充
@@ -673,12 +825,12 @@ class LinkerHandHora(VecTask):
         # 6. 提取特定历史缓冲区 (Extract Specific History Buffers)
         # --------------------------------------------------------------
         # 从主观测历史 obs_buf_lag_history 中提取最近 prop_hist_len 个时间步的本体感知信息 (关节位置和目标)
-        # 范围是 0 到 PROPRIO_DIM，因为只使用关节位置和目标位置
-        self.proprio_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, :PROPRIO_DIM]  # [1, 30, PROPRIO_DIM] - 示例形状
+        # 范围是 0 到 actual_proprio_dim，因为只使用关节位置和目标位置
+        self.proprio_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, :self.actual_proprio_dim]  # [1, 30, actual_proprio_dim] - 示例形状
         # 如果启用了触觉，从主观测历史中提取最近 prop_hist_len 个时间步的触觉信息
-        # 范围是 PROPRIO_DIM 到 PROPRIO_DIM + CONTACT_DIM
+        # 范围是 actual_proprio_dim 到 actual_proprio_dim + CONTACT_DIM
         if self.config['env']['privInfo']['enable_tactile']:
-            self.tactile_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, PROPRIO_DIM:PROPRIO_DIM + CONTACT_DIM]
+            self.tactile_hist_buf[:] = self.obs_buf_lag_history[:, -self.prop_hist_len:, self.actual_proprio_dim:self.actual_proprio_dim + CONTACT_DIM]
 
         # --------------------------------------------------------------
         # 7. 更新特权信息缓冲区 (Update Privileged Information Buffer)
@@ -1071,9 +1223,10 @@ class LinkerHandHora(VecTask):
                     if reason_code == 1:
                         reason_text = f"达到最大步数(阈值={self.max_episode_length}步, 实际={int(actual_value)}步)"
                     elif reason_code == 2:
-                        reason_text = f"物体低于阈值(阈值={self.reset_z_threshold:.3f}m, 实际={actual_value:.3f}m)"
+                        init_z = float(self.init_object_z_buf[eid].item())
+                        reason_text = f"物体高度偏离超过阈值(允许偏离={self.relative_z_drop_threshold:.3f}m, 实际偏离={actual_value:.3f}m, 初始高度={init_z:.3f}m)"
                     elif reason_code == 3:
-                        reason_text = f"铅笔倾倒(高度差阈值=0.08m, 实际={actual_value:.3f}m)"
+                        reason_text = f"铅笔倾倒(高度差阈值={self.pencil_tilt_threshold:.2f}m, 实际={actual_value:.3f}m)"
                     elif reason_code == 4:
                         threshold = 10.0 * self.angvel_penalty_threshold_high
                         reason_text = f"角速度过大(阈值={threshold:.2f}rad/s, 实际={abs(actual_value):.2f}rad/s)"
@@ -1118,10 +1271,37 @@ class LinkerHandHora(VecTask):
 # vec_task在step()中调用了pre_physics_step()，而vec_task的step()在子类linker_hand_hora的step()被调用被重写
 # linker_hand_hora的step()最终会作为env.step在demon.py和ppo.py中被调用
     def pre_physics_step(self, actions):
-        self.actions = actions.clone().to(self.device)
+        # ====================================================================
+        # 动作空间映射
+        # ====================================================================
+        # 策略网络输出的动作可能是：
+        # - 27 维 (Flying Hand + 全部手指)
+        # - 19 维 (Flying Hand + 禁用 ring/little)
+        # - 21 维 (无 Flying + 全部手指)
+        # - 13 维 (无 Flying + 禁用 ring/little)
+        #
+        # 需要将策略动作映射到仿真的完整 DOF 空间
+        # ====================================================================
+        
+        # 如果动作维度与仿真 DOF 不同，需要扩展
+        if self.disable_ring_little:
+            # 将缩减的策略动作扩展为完整的仿真 DOF 动作
+            expanded_actions = self.action_mapper.expand_actions(actions, None)
+            self.actions = expanded_actions.clone().to(self.device)
+        else:
+            self.actions = actions.clone().to(self.device)
+        
         targets = self.prev_targets + self.action_scale * self.actions
         # targets = self.actions.clone()
-        self.cur_targets[:] = tensor_clamp(targets, self.linker_hand_dof_lower_limits, self.linker_hand_dof_upper_limits)
+        # ============================================================
+        # 使用每个环境独立的限位（相对限位）
+        # ============================================================
+        if self.use_relative_limit:
+            # 每个环境有独立的限位，根据初始位置计算
+            self.cur_targets[:] = torch.max(torch.min(targets, self.env_dof_upper_limits), self.env_dof_lower_limits)
+        else:
+            # 使用全局绝对限位
+            self.cur_targets[:] = tensor_clamp(targets, self.linker_hand_dof_lower_limits, self.linker_hand_dof_upper_limits)
         # get prev* buffer here
         self.prev_targets[:] = self.cur_targets
         self.object_rot_prev[:] = self.object_rot
@@ -1211,6 +1391,12 @@ class LinkerHandHora(VecTask):
         self._refresh_gym()
         random_action_noise_t = torch.normal(0, self.random_action_noise_t_scale, size=self.linker_hand_dof_pos.shape, device=self.device, dtype=torch.float)
         noise_action = self.cur_targets + self.random_action_noise_e + random_action_noise_t
+        
+        # Flying Hand: 前 6 个 DOF 是虚拟基座，不应添加噪声
+        # 它们需要精确执行位控指令
+        if self.flying_hand_enabled:
+            noise_action[:, :NUM_FLYING_DOF] = self.cur_targets[:, :NUM_FLYING_DOF]
+        
         if self.torque_control:
             dof_pos = self.linker_hand_dof_pos
             dof_vel = (dof_pos - previous_dof_pos) / self.dt
@@ -1237,8 +1423,10 @@ class LinkerHandHora(VecTask):
 
     def check_termination(self, object_pos):
         term_by_max_eps = torch.greater_equal(self.progress_buf, self.max_episode_length)
-        # default option
-        reset_z = torch.less(object_pos[:, -1], self.reset_z_threshold)
+        # 使用相对高度阈值：当物体偏离初始高度超过阈值时终止（上升或下降都算）
+        # relative_z_drop_threshold 表示允许偏离的最大距离（正值）
+        z_deviation = torch.abs(self.init_object_z_buf - object_pos[:, -1])  # 偏离了多少（绝对值）
+        reset_z = torch.greater(z_deviation, self.relative_z_drop_threshold)  # 偏离超过阈值
         
         # 新增：角速度过大的early termination（超过最高转速阈值的10倍）
         # 用于过滤初始化时发生碰撞导致的异常高速旋转
@@ -1255,10 +1443,10 @@ class LinkerHandHora(VecTask):
         reset_z_envs = torch.where(reset_z)[0]
         angvel_too_high_envs = torch.where(angvel_too_high)[0]
         
-        # 设置终止原因 (优先级: 角速度过大 > 物体低于阈值 > 达到最大长度)
+        # 设置终止原因 (优先级: 角速度过大 > 物体高度偏离 > 达到最大长度)
         # 同时记录实际值用于调试
-        self.current_termination_reason[reset_z_envs] = 2  # object_below_threshold
-        self.termination_actual_values[reset_z_envs] = object_pos[reset_z_envs, -1]
+        self.current_termination_reason[reset_z_envs] = 2  # object_z_deviation
+        self.termination_actual_values[reset_z_envs] = z_deviation[reset_z_envs]  # 记录实际偏离距离
         
         self.current_termination_reason[term_by_max_eps_envs] = 1  # max_episode_length
         self.termination_actual_values[term_by_max_eps_envs] = self.progress_buf[term_by_max_eps_envs].float()
@@ -1270,16 +1458,17 @@ class LinkerHandHora(VecTask):
         resets = torch.logical_or(resets, angvel_too_high)
 
         if self.canonical_pose_category == 'pencil':
+            # LinkerPen 端点计算，无需缩放
             pencil_ends = [
-                [0, 0, -(self.pen_length/2) * self.obj_scale],
-                [0, 0, (self.pen_length/2) * self.obj_scale]
+                [0, 0, -self.pen_length / 2],  # -0.09m
+                [0, 0, self.pen_length / 2]    # +0.09m
             ]
             pencil_end_1 = self.object_pos + quat_apply(self.object_rot, to_torch(pencil_ends[0], device=self.device)[None].repeat(self.num_envs, 1))
             pencil_end_2 = self.object_pos + quat_apply(self.object_rot, to_torch(pencil_ends[1], device=self.device)[None].repeat(self.num_envs, 1))
             pencil_z_min = torch.min(pencil_end_1, pencil_end_2)[:, -1]
             pencil_z_max = torch.max(pencil_end_1, pencil_end_2)[:, -1]
-            # Modified
-            pencil_fall = torch.greater(pencil_z_max - pencil_z_min, 0.08)  # pencil fall threshold 0.08m
+            # LinkerPen 倾倒判定：高度差超过阈值（笔长 0.18m，约 45度倾斜）
+            pencil_fall = torch.greater(pencil_z_max - pencil_z_min, 0.12)  # pencil fall threshold 0.12m
 
             # 记录铅笔倾倒的环境 (最高优先级)
             pencil_fall_envs = torch.where(pencil_fall)[0]
@@ -1345,6 +1534,10 @@ class LinkerHandHora(VecTask):
         self.randomize_friction = rand_config['randomizeFriction']
         self.randomize_friction_lower = rand_config['randomizeFrictionLower']
         self.randomize_friction_upper = rand_config['randomizeFrictionUpper']
+        # 恢复系数随机化配置
+        self.randomize_restitution = rand_config.get('randomizeRestitution', True)
+        self.randomize_restitution_lower = rand_config.get('randomizeRestitutionLower', 0.1)
+        self.randomize_restitution_upper = rand_config.get('randomizeRestitutionUpper', 0.5)
         self.randomize_scale = rand_config['randomizeScale']
         self.randomize_hand_scale = rand_config['randomize_hand_scale']
         self.scale_list_init = rand_config['scaleListInit']
@@ -1388,14 +1581,16 @@ class LinkerHandHora(VecTask):
         if not self.config['env']['privInfo']['enable_tactile']:
             self.num_contacts = 0
 
+        # priv_info 布局（新版，移除 obj_scale）
+        # 固定部分：obj_position(3) + obj_mass(1) + obj_friction(1) + obj_com(3) = 8维
+        # 注意：obj_scale 已移除，因为 LinkerPen 使用固定尺寸
         self.priv_info_dict = {
             'obj_position': (0, 3),
-            'obj_scale': (3, 4),
-            'obj_mass': (4, 5),
-            'obj_friction': (5, 6),
-            'obj_com': (6, 9),
+            'obj_mass': (3, 4),
+            'obj_friction': (4, 5),
+            'obj_com': (5, 8),
         }
-        start_index = 9
+        start_index = 8  # 从索引 8 开始添加动态部分
 
         priv_dims = OrderedDict()
         priv_dims['obj_orientation'] = 4
@@ -1417,12 +1612,8 @@ class LinkerHandHora(VecTask):
     def _update_priv_buf(self, env_id, name, value):
         # normalize to -1, 1
         # 使用hasattr安全检查属性是否存在
-# 在初始化时没有定义 self.enable_priv_obj_position、self.enable_priv_obj_scale 等前 9 项对应的开关属性，hasattr(self, f'enable_priv_{name}') 对于这些固定项会返回 False。
-# 因此，_update_priv_buf 直接跳过了赋值操作。
-# 这导致 priv_info_buf 的前 9 个维度（包含物体位置、物体缩放、物体质量、摩擦力、质心）在整个推理过程中始终保持初始化时的 0。模型在接收到全 0 的物理参数后，无法正确感知物体状态，从而导致转笔失败。
-        
+        # 固定部分的启用开关（总是启用）
         self.enable_priv_obj_position = True
-        self.enable_priv_obj_scale = True
         self.enable_priv_obj_mass = True
         self.enable_priv_obj_friction = True
         self.enable_priv_obj_com = True
@@ -1434,43 +1625,23 @@ class LinkerHandHora(VecTask):
             self.priv_info_buf[env_id, s:e] = value
 
     def _setup_object_info(self, o_config):
+        """设置物体信息 - 简化版，仅支持 linkerpen 转笔"""
         self.object_type = o_config['type']
         raw_prob = o_config['sampleProb']
         assert (sum(raw_prob) == 1)
 
-        primitive_list = self.object_type.split('+')
-        print('---- Primitive List ----')
-        print(primitive_list)
-        self.object_type_prob = []
-        self.object_type_list = []
+        print('---- Object Setup (LinkerPen) ----')
+        print(f'Object type: {self.object_type}')
+        
+        # 简化：仅支持 cylinder_linkerpen
+        self.object_type_prob = [1.0]
+        self.object_type_list = ['linkerpen']
         self.asset_files_dict = {
-            'simple_tennis_ball': 'assets/ball.urdf',
-            'simple_cube': 'assets/cube.urdf',
-            'simple_cylin4cube': 'assets/cylinder4cube.urdf',
+            'linkerpen': 'assets/cylinder/linkerpen/spinning_pen.urdf',
         }
-        for p_id, prim in enumerate(primitive_list):
-            if 'cuboid' in prim:
-                subset_name = self.object_type.split('_')[-1]
-                cuboids = sorted(glob(f'assets/cuboid/{subset_name}/*.urdf'))
-                cuboid_list = [f'cuboid_{i}' for i in range(len(cuboids))]
-                self.object_type_list += cuboid_list
-                for i, name in enumerate(cuboids):
-                    self.asset_files_dict[f'cuboid_{i}'] = name.replace('../assets/', '')
-                self.object_type_prob += [raw_prob[p_id] / len(cuboid_list) for _ in cuboid_list]
-            elif 'cylinder' in prim:
-                subset_name = self.object_type.split('_')[-1]
-                cylinders = sorted(glob(f'assets/cylinder/{subset_name}/*.urdf'))
-                cylinder_list = [f'cylinder_{i}' for i in range(len(cylinders))]
-                self.object_type_list += cylinder_list
-                for i, name in enumerate(cylinders):
-                    self.asset_files_dict[f'cylinder_{i}'] = name.replace('../assets/', '')
-                self.object_type_prob += [raw_prob[p_id] / len(cylinder_list) for _ in cylinder_list]
-            else:
-                self.object_type_list += [prim]
-                self.object_type_prob += [raw_prob[p_id]]
+        
         print('---- Object List ----')
-        print(f'using {len(self.object_type_list)} training objects')
-        assert (len(self.object_type_list) == len(self.object_type_prob))
+        print(f'using {len(self.object_type_list)} training objects: {self.object_type_list}')
 
     def _allocate_task_buffer(self, num_envs):
         # extra buffers for observe randomized params
@@ -1578,6 +1749,124 @@ class LinkerHandHora(VecTask):
         self.angvel_penalty_threshold_high = r_config['angvelPenaltyThresHigh']
         self.angvel_penalty_threshold_low  = r_config['angvelPenaltyThresLow']
 
+    def _setup_action_space_config(self, env_config):
+        """
+        设置动作空间配置
+        
+        支持两个独立的配置选项：
+        1. Flying Hand: 添加 6 DoF 浮空底座
+        2. 禁用无名指和小拇指: 缩减手部动作空间
+        
+        动作维度组合：
+        ┌─────────────────────────────────────────────────────────────────┐
+        │ 配置                           │ 动作维度                        │
+        ├─────────────────────────────────────────────────────────────────┤
+        │ Flying + 完整手指              │ 6 + 21 = 27 DoF                │
+        │ Flying + 禁用 ring/little      │ 6 + 13 = 19 DoF                │
+        │ 无 Flying + 完整手指           │ 21 DoF                          │
+        │ 无 Flying + 禁用 ring/little   │ 13 DoF                          │
+        └─────────────────────────────────────────────────────────────────┘
+        
+        Args:
+            env_config: 环境配置字典
+        """
+        action_space_config = env_config.get('actionSpace', {})
+        self.disable_ring_little = action_space_config.get('disableRingLittleFinger', False)
+        
+        # 注意：flying_hand_enabled 需要在此方法调用之前设置（由 _setup_flying_hand_config 设置）
+        # 如果还未设置，默认为 False
+        if not hasattr(self, 'flying_hand_enabled'):
+            self.flying_hand_enabled = False
+        
+        # 创建动作空间映射器（包含 Flying Hand 和手指禁用的配置）
+        self.action_mapper = ActionSpaceMapper(
+            disable_ring_little=self.disable_ring_little,
+            flying_hand_enabled=self.flying_hand_enabled
+        )
+        
+        # 设置实际动作维度（策略网络输出维度）
+        self.actual_action_dim = self.action_mapper.get_action_dim()
+        
+        # 打印配置信息
+        self.action_mapper.print_config()
+
+    def _setup_flying_hand_config(self, env_config):
+        """
+        设置 Flying Hand 配置
+        
+        Flying Hand 是带有 6 DoF 浮空底座的灵巧手，用于转笔任务。
+        底座允许手在空间中移动和旋转，但通过严格的速度和位置限制
+        防止利用惯性"作弊"（甩手腕转笔）。
+        
+        Args:
+            env_config: 环境配置字典
+        """
+        flying_config = env_config.get('flyingHand', {})
+        
+        # 是否启用 Flying Hand
+        self.flying_hand_enabled = flying_config.get('enabled', False)
+        
+        if self.flying_hand_enabled:
+            # 从配置读取参数，使用默认值作为后备
+            self.flying_default_height = flying_config.get('defaultHeight', FLYING_DEFAULT_HEIGHT)
+            self.flying_height_lower = flying_config.get('heightLower', FLYING_HEIGHT_LOWER)
+            self.flying_height_upper = flying_config.get('heightUpper', FLYING_HEIGHT_UPPER)
+            self.flying_xy_limit = flying_config.get('xyLimit', FLYING_XY_LIMIT)
+            self.flying_linear_velocity = flying_config.get('linearVelocity', 0.1)
+            self.flying_angular_velocity = flying_config.get('angularVelocity', 2.0)
+            # Flying base PD 增益需要足够高以实现精确位控
+            # 参考 interactive_tune.py: stiffness=1000, damping=50
+            self.flying_base_pgain = flying_config.get('basePgain', 1000.0)
+            self.flying_base_dgain = flying_config.get('baseDgain', 50.0)
+            
+            # ============================================================
+            # 相对限位配置 (Relative Limit Configuration)
+            # ============================================================
+            # 动作空间相对于初始位置的对称限位，避免初始化后动作空间不对称
+            # 例如: 如果初始 Pitch = -1.31 rad，绝对限位 [-1.57, 1.57]，
+            #       则正向可移动 2.88 rad，负向只能 0.26 rad（不对称）
+            # 使用相对限位后: 正负方向都限制在 relative_limit 范围内
+            # ============================================================
+            relative_config = flying_config.get('relativeLimit', {})
+            self.use_relative_limit = relative_config.get('enabled', True)  # 默认启用
+            # Flying base 相对限位范围 (使用 robot_config 中的常量作为默认值)
+            self.flying_relative_xy_limit = relative_config.get('xyLimit', FLYING_RELATIVE_XY_LIMIT)
+            self.flying_relative_z_limit = relative_config.get('zLimit', FLYING_RELATIVE_Z_LIMIT)
+            self.flying_relative_rot_limit = relative_config.get('rotLimit', FLYING_RELATIVE_ROT_LIMIT)
+            
+            print("\n" + "="*70)
+            print("Flying Hand 配置 (6 DoF Floating Base)")
+            print("="*70)
+            print(f"  启用状态: {self.flying_hand_enabled}")
+            print(f"  默认高度: {self.flying_default_height}m")
+            print(f"  高度范围: [{self.flying_height_lower}, {self.flying_height_upper}]m")
+            print(f"  XY 限制 (绝对): ±{self.flying_xy_limit}m")
+            print(f"  线速度限制: {self.flying_linear_velocity} m/s")
+            print(f"  角速度限制: {self.flying_angular_velocity} rad/s")
+            print(f"  PD 增益: P={self.flying_base_pgain}, D={self.flying_base_dgain}")
+            print("-"*70)
+            print(f"  相对限位启用: {self.use_relative_limit}")
+            if self.use_relative_limit:
+                print(f"    XY 相对限位: ±{self.flying_relative_xy_limit}m")
+                print(f"    Z 相对限位: ±{self.flying_relative_z_limit}m")
+                print(f"    旋转相对限位: ±{self.flying_relative_rot_limit} rad")
+            print("="*70 + "\n")
+        else:
+            # 设置默认值（即使未启用也需要这些属性存在）
+            self.flying_default_height = FLYING_DEFAULT_HEIGHT
+            self.flying_height_lower = FLYING_HEIGHT_LOWER
+            self.flying_height_upper = FLYING_HEIGHT_UPPER
+            self.flying_xy_limit = FLYING_XY_LIMIT
+            self.flying_linear_velocity = 0.1
+            self.flying_angular_velocity = 2.0
+            self.flying_base_pgain = 1000.0
+            self.flying_base_dgain = 50.0
+            # 非 Flying Hand 模式下禁用相对限位
+            self.use_relative_limit = False
+            self.flying_relative_xy_limit = 0.0
+            self.flying_relative_z_limit = 0.0
+            self.flying_relative_rot_limit = 0.0
+
     def _create_object_asset(self):
         # object file to asset
         asset_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../')
@@ -1585,16 +1874,62 @@ class LinkerHandHora(VecTask):
         # load hand asset
         hand_asset_options = gymapi.AssetOptions()
         hand_asset_options.flip_visual_attachments = False
-        hand_asset_options.fix_base_link = True
+        # ====================================================================
+        # Flying Hand 配置
+        # ====================================================================
+        # 对于 Flying Hand (带 6 DoF 浮空底座)：
+        #   - fix_base_link = True: 固定 world_virtual 到世界坐标系
+        #   - 手仍然可以通过 6 个虚拟关节在空间中移动/旋转
+        # 对于普通 Hand (固定底座)：
+        #   - fix_base_link = True: 固定 base_link 到世界坐标系
+        # ====================================================================
+        hand_asset_options.fix_base_link = True  # 始终固定最顶层的 base link
         hand_asset_options.collapse_fixed_joints = False
         hand_asset_options.disable_gravity = True
         hand_asset_options.thickness = 0.001
         hand_asset_options.angular_damping = 0.01
-        hand_asset_options.convex_decomposition_from_submeshes = True
-        # 这里需要用Vhacd让碰撞体积更精确
-        # hand_asset_options.vhacd_enabled = True
-        # hand_asset_options.vhacd_params = gymapi.VhacdParams()
-        # hand_asset_options.vhacd_params.resolution = 100000
+        
+        # Flying Hand 特有配置：打印加载信息
+        if self.flying_hand_enabled:
+            print("\n" + "="*60)
+            print("Flying Hand 模式已启用")
+            print("="*60)
+            print(f"  URDF 文件: {hand_asset_file}")
+            print(f"  总 DOF: {NUM_TOTAL_DOF_FLYING} = {NUM_FLYING_DOF} (base) + {NUM_DOF} (hand)")
+            print(f"  默认高度: {self.flying_default_height}m")
+            print(f"  高度范围: {self.flying_height_lower}m ~ {self.flying_height_upper}m")
+            print(f"  XY 限制: ±{self.flying_xy_limit}m")
+            print("="*60 + "\n")
+        
+        # ====================================================================
+        # 碰撞几何优化配置
+        # ====================================================================
+        # 对于精细转笔技巧（thumb_around, triangle_pass），碰撞检测的精度和速度都很重要
+        # 选项 1: convex_decomposition_from_submeshes（当前使用）
+        #         - 从 mesh 子部件自动生成凸包
+        #         - 精度高，但速度较慢
+        # 选项 2: VHACD 凸分解（推荐用于性能优化）
+        #         - 体积层次近似凸分解
+        #         - 可调节精度/速度平衡
+        # ====================================================================
+        
+        # 默认使用 submesh 凸分解（保持兼容性）
+        use_vhacd = self.config['env'].get('useVHACD', False)
+        
+        if use_vhacd:
+            # VHACD 凸分解 - 更快但精度略低
+            hand_asset_options.convex_decomposition_from_submeshes = False
+            hand_asset_options.vhacd_enabled = True
+            hand_asset_options.vhacd_params = gymapi.VhacdParams()
+            # 降低分辨率以提升速度，同时保持足够精度
+            hand_asset_options.vhacd_params.resolution = 50000  # 默认 100000
+            hand_asset_options.vhacd_params.max_convex_hulls = 8  # 限制每个 mesh 的凸包数
+            hand_asset_options.vhacd_params.max_num_vertices_per_ch = 32  # 限制每个凸包的顶点数
+            print("[Asset] Using VHACD convex decomposition for hand collision")
+        else:
+            # Submesh 凸分解 - 更精确
+            hand_asset_options.convex_decomposition_from_submeshes = True
+            print("[Asset] Using submesh convex decomposition for hand collision")
         if self.torque_control:
             hand_asset_options.default_dof_drive_mode = int(gymapi.DOF_MODE_EFFORT)
         else:
@@ -1605,26 +1940,15 @@ class LinkerHandHora(VecTask):
                                   FINGERTIP_LINK_NAMES]
         # 这里不通过在urdf中加入刚体作为传感器，而是直接读取指尖所受的net_force
         self.contact_sensor_names = CONTACT_LINK_NAMES 
-        # urdf中，<link name="link_1.0_fsr">:代表了一个 FSR (Force-Sensitive Resistor) 触觉传感器物理部分
-        # self.contact_sensor_names = ["link_1.0_fsr", "link_2.0_fsr", "link_5.0_fsr",
-        #                              "link_6.0_fsr", "link_9.0_fsr", "link_10.0_fsr",
-        #                              "link_14.0_fsr", "link_15.0_fsr", "link_0.0_fsr", 
-        #                              "link_4.0_fsr", "link_8.0_fsr", "link_13.0_fsr"]
-        # for tip_name in ['3.0', '15.0', '7.0', '11.0']:
-        #     # 5*num_linker_dofs的指尖传感器
-        #     if hand_asset_file == "assets/round_tip/linker_hand_right_fsr_round_dense.urdf":
-        #         tip_fsr_range = [2, 5, 8, 11, 13]
-        #     else:
-        #         tip_fsr_range = []
-        #     for i in tip_fsr_range:
-        #         self.contact_sensor_names.append("link_{}_tip_fsr_{}".format(tip_name, str(i)))
 
-        # load object asset
         self.object_asset_list = []
         self.asset_point_clouds = []
         for object_type in self.object_type_list:
             object_asset_file = self.asset_files_dict[object_type]
             object_asset_options = gymapi.AssetOptions()
+            # 设置 collapse_fixed_joints=True 以合并 fixed joint 连接的刚体
+            object_asset_options.collapse_fixed_joints = True
+            
             # If we've specified a specific eval object, we only need to load that object.
             eval_object_type = self.config['env']['object']['evalObjectType']
             if eval_object_type is not None and object_type != eval_object_type:
@@ -1634,26 +1958,88 @@ class LinkerHandHora(VecTask):
 
             object_asset = self.gym.load_asset(self.sim, asset_root, object_asset_file, object_asset_options)
             self.object_asset_list.append(object_asset)
-            if 'cylin4cube' in object_type and self.point_cloud_sampled_dim > 0:
-                pcs = sample_cylinder(1) * 0.08
-                pcs[:, :2] *= 1.2
-                self.asset_point_clouds.append(pcs)
-            else:
-                if 'cylinder' in object_type:
-                    # dim 0 is cylinder height, 1 = 0.08m
-                    # dim 1,2 are cylinder diameter, 1 = 0.08m [radius 4cm] 
-                    size_info = np.load(os.path.join(asset_root, object_asset_file.replace('.urdf', '.npy')))[0]
-                    self.pen_radius = size_info[1]
-                    self.pen_length = size_info[0] * (size_info[1] * 2)
-                    print("loading", os.path.join(asset_root, object_asset_file.replace('.urdf', '.npy')), "radius", self.pen_radius, "length", self.pen_length,"BEFORE scale")
-                    if self.point_cloud_sampled_dim > 0:
-                        self.asset_point_clouds.append(sample_cylinder(size_info[0]) * self.pen_radius * 2)
-                elif ('cube' in object_type or 'cuboid' in object_type) and self.point_cloud_sampled_dim > 0:
-                    size_info = np.load(os.path.join(asset_root, object_asset_file.replace('.urdf', '.npy')))[0]
-                    self.asset_point_clouds.append(sample_cuboid(size_info[0] * 0.08, size_info[1] * 0.08, size_info[2] * 0.08))
+            
+            # LinkerPen 几何参数（直接定义，无需从 npy 文件读取）
+            # 来自 pen_gen.py: L_BODY=0.15, L_TIP=0.015×2, R_BODY_OUT=0.009
+            self.pen_radius = 0.009  # 9mm 半径
+            self.pen_length = 0.18   # 总长度 150mm + 15mm×2 = 180mm
+            print(f"LinkerPen loaded: radius={self.pen_radius}m, length={self.pen_length}m (no scale applied)")
+            
+            # 点云采样（如果需要）
+            if self.point_cloud_sampled_dim > 0:
+                # 使用长度/直径比例进行采样
+                length_ratio = self.pen_length / (self.pen_radius * 2)  # 0.18 / 0.018 = 10
+                self.asset_point_clouds.append(sample_cylinder(length_ratio) * self.pen_radius * 2)
 
         assert any([x is not None for x in self.object_asset_list])
         # assert any([x is not None for x in self.asset_point_clouds])
+
+    def _print_object_properties(self, env_ptr, object_handle):
+        """
+        打印 IsaacGym 加载后的物体完整物理属性，用于验证 URDF 读取正确性。
+        包括：质量、质心、惯量、摩擦、恢复系数等所有相关量。
+        """
+        print("\n" + "=" * 100)
+        print("IsaacGym 物体物理属性验证 (Object Physical Properties Verification)")
+        print("=" * 100)
+        
+        # 获取刚体属性 (Rigid Body Properties)
+        rb_props = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
+        print(f"\n--- 刚体属性 (Rigid Body Properties) ---")
+        print(f"刚体数量: {len(rb_props)}")
+        
+        total_mass = 0.0
+        for idx, prop in enumerate(rb_props):
+            total_mass += prop.mass
+            print(f"\n  [Link {idx}]")
+            print(f"    质量 (mass):           {prop.mass:.6f} kg ({prop.mass * 1000:.2f} g)")
+            print(f"    质心 (COM):            ({prop.com.x:.6f}, {prop.com.y:.6f}, {prop.com.z:.6f}) m")
+            print(f"    惯量 (inertia):")
+            print(f"      Ixx: {prop.inertia.x.x:.8e}, Ixy: {prop.inertia.x.y:.8e}, Ixz: {prop.inertia.x.z:.8e}")
+            print(f"      Iyx: {prop.inertia.y.x:.8e}, Iyy: {prop.inertia.y.y:.8e}, Iyz: {prop.inertia.y.z:.8e}")
+            print(f"      Izx: {prop.inertia.z.x:.8e}, Izy: {prop.inertia.z.y:.8e}, Izz: {prop.inertia.z.z:.8e}")
+            print(f"    flags:                 {prop.flags}")
+        
+        print(f"\n  总质量 (Total Mass): {total_mass:.6f} kg ({total_mass * 1000:.2f} g)")
+        
+        # 获取形状属性 (Shape Properties) - 包含摩擦、恢复系数等
+        shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)
+        print(f"\n--- 形状属性 (Shape Properties) ---")
+        print(f"形状数量: {len(shape_props)}")
+        
+        for idx, prop in enumerate(shape_props):
+            print(f"\n  [Shape {idx}]")
+            print(f"    摩擦系数 (friction):       {prop.friction:.4f}")
+            print(f"    恢复系数 (restitution):    {prop.restitution:.4f}")
+            print(f"    滚动摩擦 (rolling_friction): {prop.rolling_friction:.4f}")
+            print(f"    扭转摩擦 (torsion_friction): {prop.torsion_friction:.4f}")
+            print(f"    接触偏移 (contact_offset):  {prop.contact_offset:.6f}")
+            print(f"    静止偏移 (rest_offset):     {prop.rest_offset:.6f}")
+            print(f"    合规性 (compliance):       {prop.compliance:.6f}")
+            print(f"    厚度 (thickness):          {prop.thickness:.6f}")
+            # 注意：filter 是碰撞过滤器
+        
+        # 获取 DOF 属性（如果物体有关节）
+        dof_count = self.gym.get_actor_dof_count(env_ptr, object_handle)
+        print(f"\n--- 自由度属性 (DOF Properties) ---")
+        print(f"自由度数量: {dof_count}")
+        
+        if dof_count > 0:
+            dof_props = self.gym.get_actor_dof_properties(env_ptr, object_handle)
+            for idx in range(dof_count):
+                print(f"\n  [DOF {idx}]")
+                print(f"    damping: {dof_props['damping'][idx]:.6f}")
+                print(f"    stiffness: {dof_props['stiffness'][idx]:.6f}")
+                print(f"    friction: {dof_props['friction'][idx]:.6f}")
+        
+        # 打印预期值对比（来自 pen_gen.py）
+        print(f"\n--- 预期值对比 (Expected from pen_gen.py) ---")
+        print(f"  预期尼龙主体质量:  24.39 g")
+        print(f"  预期铝头质量 (x2): 8.27 g × 2 = 16.54 g")
+        print(f"  预期总质量:        40.93 g")
+        print(f"  预期半径:          9 mm")
+        print(f"  预期总长度:        180 mm (150 + 15×2)")
+
 
     def _parse_hand_dof_props(self):
         self.num_linker_hand_dofs = self.gym.get_asset_dof_count(self.hand_asset)
@@ -1662,51 +2048,208 @@ class LinkerHandHora(VecTask):
         self.linker_hand_dof_lower_limits = []
         self.linker_hand_dof_upper_limits = []
 
+        # 手部关节的限制（21 DoF）
+        # 重要: 顺序按 IsaacGym 加载后的字母顺序: index -> little -> middle -> ring -> thumb
+        # index (食指): joint0 侧摆 [-0.18, 0], joint1-3 弯曲 [-1.57, 0]
+        # little (小拇指): joint0 侧摆 [0, 0.18], joint1-3 弯曲 [-1.57, 0]
+        # middle (中指): joint0 锁定 [0, 0], joint1-3 弯曲 [-1.57, 0]
+        # ring (无名指): joint0 侧摆 [-0.18, 0], joint1-3 弯曲 [-1.57, 0]
+        # thumb (拇指): joint0 展开 [-0.61, 0.61], joint1 弯曲 [-1.43, 0], joint2-4 弯曲 [-1.57, 0]
+        hand_dof_lower_limits = [
+            -0.18, -1.57, -1.57, -1.57,  # index (4)
+            0., -1.57, -1.57, -1.57,     # little (4)
+            0., -1.57, -1.57, -1.57,     # middle (4, joint0锁定)
+            -0.18, -1.57, -1.57, -1.57,  # ring (4)
+            -0.61, -1.43, -1.57, -1.57, -1.57  # thumb (5)
+        ]
+        hand_dof_upper_limits = [
+            0., 0., 0., 0.,    # index (4)
+            0.18, 0., 0., 0.,  # little (4)
+            0., 0., 0., 0.,    # middle (4, joint0锁定)
+            0., 0., 0., 0.,    # ring (4)
+            0.61, 0., 0., 0., 0.  # thumb (5)
+        ]
+
+        # ====================================================================
+        # Flying Hand DOF 配置
+        # ====================================================================
+        # 如果启用了 Flying Hand，前 6 个 DOF 是虚拟底座关节：
+        #   [0] virtual_px: 平移 X
+        #   [1] virtual_py: 平移 Y
+        #   [2] virtual_pz: 平移 Z
+        #   [3] virtual_rx: 旋转 Roll
+        #   [4] virtual_ry: 旋转 Pitch
+        #   [5] virtual_rz: 旋转 Yaw
+        # 后 21 个 DOF 是原始手部关节
+        # ====================================================================
+        
+        if self.flying_hand_enabled:
+            # Flying base 的限制（从 gen_flying_hand.py 中获取）
+            flying_dof_lower_limits = [
+                -self.flying_xy_limit,       # px: -0.05
+                -self.flying_xy_limit,       # py: -0.05
+                self.flying_height_lower,    # pz: 0.30
+                -1.57,                       # rx: -90°
+                -1.57,                       # ry: -90°
+                -3.14,                       # rz: -180°
+            ]
+            flying_dof_upper_limits = [
+                self.flying_xy_limit,        # px: 0.05
+                self.flying_xy_limit,        # py: 0.05
+                self.flying_height_upper,    # pz: 0.40
+                1.57,                        # rx: 90°
+                1.57,                        # ry: 90°
+                3.14,                        # rz: 180°
+            ]
+            # 合并 flying base + hand DOF 限制
+            all_dof_lower_limits = flying_dof_lower_limits + hand_dof_lower_limits
+            all_dof_upper_limits = flying_dof_upper_limits + hand_dof_upper_limits
+        else:
+            all_dof_lower_limits = hand_dof_lower_limits
+            all_dof_upper_limits = hand_dof_upper_limits
+
         for i in range(self.num_linker_hand_dofs):
-            # another option, just do it for now, parse directly from Nvidia's Calibrated Value
-            # avoid frequently or adding another URDF
-            linker_hand_dof_lower_limits = [0., -1.57, -1.57, -1.57, -0.18, -1.57, -1.57, -1.57, 0., -1.57, -1.57, -1.57, -0.18, -1.57, -1.57, -1.57, -0.61, -1.43, -1.57, -1.57, -1.57]
-            linker_hand_dof_upper_limits = [0.18, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.61, 0., 0., 0., 0.]
-            linker_hand_dof_props['lower'][i] = linker_hand_dof_lower_limits[i]
-            linker_hand_dof_props['upper'][i] = linker_hand_dof_upper_limits[i]
+            linker_hand_dof_props['lower'][i] = all_dof_lower_limits[i]
+            linker_hand_dof_props['upper'][i] = all_dof_upper_limits[i]
             
             self.linker_hand_dof_lower_limits.append(linker_hand_dof_props['lower'][i])
             self.linker_hand_dof_upper_limits.append(linker_hand_dof_props['upper'][i])
-            linker_hand_dof_props['effort'][i] = self.torque_limit
-            if self.torque_control:
-                linker_hand_dof_props['stiffness'][i] = 0.
-                linker_hand_dof_props['damping'][i] = 0.
-                linker_hand_dof_props['driveMode'][i] = gymapi.DOF_MODE_EFFORT
+            
+            # Flying base 使用位置控制模式（PD 控制器）
+            if self.flying_hand_enabled and i < NUM_FLYING_DOF:
+                linker_hand_dof_props['effort'][i] = 1000.0  # 高力矩限制以支持刚性位控
+                linker_hand_dof_props['stiffness'][i] = self.flying_base_pgain
+                linker_hand_dof_props['damping'][i] = self.flying_base_dgain
+                linker_hand_dof_props['driveMode'][i] = gymapi.DOF_MODE_POS
+                linker_hand_dof_props['friction'][i] = 0.0
+                linker_hand_dof_props['armature'][i] = 0.01
+                # 设置速度限制
+                if i < 3:  # 平移关节
+                    linker_hand_dof_props['velocity'][i] = self.flying_linear_velocity
+                else:  # 旋转关节
+                    linker_hand_dof_props['velocity'][i] = self.flying_angular_velocity
             else:
-                linker_hand_dof_props['stiffness'][i] = self.config['env']['controller']['pgain']
-                linker_hand_dof_props['damping'][i] = self.config['env']['controller']['dgain']
-            linker_hand_dof_props['friction'][i] = 0.01
-            linker_hand_dof_props['armature'][i] = 0.001
+                # 手部关节使用原有配置
+                linker_hand_dof_props['effort'][i] = self.torque_limit
+                if self.torque_control:
+                    linker_hand_dof_props['stiffness'][i] = 0.
+                    linker_hand_dof_props['damping'][i] = 0.
+                    linker_hand_dof_props['driveMode'][i] = gymapi.DOF_MODE_EFFORT
+                else:
+                    linker_hand_dof_props['stiffness'][i] = self.config['env']['controller']['pgain']
+                    linker_hand_dof_props['damping'][i] = self.config['env']['controller']['dgain']
+                linker_hand_dof_props['friction'][i] = 0.01
+                linker_hand_dof_props['armature'][i] = 0.001
 
         self.linker_hand_dof_lower_limits = to_torch(self.linker_hand_dof_lower_limits, device=self.device)
         self.linker_hand_dof_upper_limits = to_torch(self.linker_hand_dof_upper_limits, device=self.device)
+        
+        # ============================================================
+        # 相对限位范围张量 (Relative Limit Range Tensor)
+        # ============================================================
+        # 定义每个 DOF 相对于初始位置的对称移动范围
+        # 最终限位 = max(absolute_lower, init - relative) ~ min(absolute_upper, init + relative)
+        # ============================================================
+        if self.flying_hand_enabled and self.use_relative_limit:
+            # Flying base 的相对限位范围 (6 DoF)
+            flying_relative_range = [
+                self.flying_relative_xy_limit,   # px
+                self.flying_relative_xy_limit,   # py
+                self.flying_relative_z_limit,    # pz
+                self.flying_relative_rot_limit,  # rx (Roll)
+                self.flying_relative_rot_limit,  # ry (Pitch)
+                self.flying_relative_rot_limit,  # rz (Yaw)
+            ]
+            # 手部关节使用较大的范围（基本不限制，由绝对限位控制）
+            hand_relative_range = [10.0] * len(hand_dof_lower_limits)  # 足够大，实际由绝对限位控制
+            all_relative_range = flying_relative_range + hand_relative_range
+        else:
+            # 不使用相对限位时，范围设为足够大（由绝对限位控制）
+            all_relative_range = [10.0] * self.num_linker_hand_dofs
+        
+        self.dof_relative_range = to_torch(all_relative_range, device=self.device)
+        
+        # 打印 DOF 配置信息
+        if self.flying_hand_enabled:
+            print("\n" + "-"*60)
+            print("Flying Hand DOF 配置:")
+            print("-"*60)
+            for i in range(NUM_FLYING_DOF):
+                abs_lower = all_dof_lower_limits[i]
+                abs_upper = all_dof_upper_limits[i]
+                rel_range = all_relative_range[i]
+                print(f"  [{i}] {FLYING_DOF_NAMES[i]}: 绝对[{abs_lower:.3f}, {abs_upper:.3f}], 相对±{rel_range:.3f}")
+            print(f"  [6-26] 手部关节: 原有配置 (相对限位不限制)")
+            print("-"*60 + "\n")
+        
         return linker_hand_dof_props
 
     def _init_object_pose(self):
         linker_hand_start_pose = gymapi.Transform()
-        
         linker_hand_start_pose.p = gymapi.Vec3(0, 0, 0)
-        linker_hand_start_pose.r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), math.radians(-75))
-        # TODO 为什么要这样？待验证。这应该也只是加载物体，真正初始化在
-        pose_dx, pose_dy, pose_dz = 0.00, -0.04, 0.15
+        
+        # ====================================================================
+        # 手部初始 Transform 设置
+        # ====================================================================
+        # Flying Hand 模式：手的位置和旋转完全由 DOF 控制（前 6 个 DOF）
+        #   - DOF[0-2]: virtual_px, virtual_py, virtual_pz (位置)
+        #   - DOF[3-5]: virtual_rx, virtual_ry, virtual_rz (旋转，欧拉角)
+        #   - Transform 必须是单位变换，否则 DOF 控制的旋转会叠加到 Transform 上
+        #   - 这与 interactive_tune.py 保持一致
+        # 普通模式：手固定在底座上，使用旧的 Transform 旋转
+        # ====================================================================
+        if self.flying_hand_enabled:
+            # Flying Hand: 使用单位四元数，所有变换由 DOF 控制
+            linker_hand_start_pose.r = gymapi.Quat(0, 0, 0, 1)
+        else:
+            # 普通模式: 保持原有的绕 Y 轴旋转 -75°
+            linker_hand_start_pose.r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), math.radians(-75))
+        
+        # ====================================================================
+        # 物体初始位置设置
+        # ====================================================================
+        # 注意：物体的初始位置只是占位用，实际位置在 reset_idx 中设置
+        # ====================================================================
+        if self.flying_hand_enabled:
+            # Flying Hand: 物体放置在手的默认高度附近
+            pose_dx, pose_dy, pose_dz = 0.00, -0.04, self.flying_default_height
+        else:
+            # 普通模式: 使用原来的设置
+            pose_dx, pose_dy, pose_dz = 0.00, -0.04, 0.15
+        
         object_start_pose = gymapi.Transform()
         object_start_pose.p = gymapi.Vec3()
-        object_start_pose.p.x = linker_hand_start_pose.p.x
         object_start_pose.p.x = linker_hand_start_pose.p.x + pose_dx
         object_start_pose.p.y = linker_hand_start_pose.p.y + pose_dy
         object_start_pose.p.z = linker_hand_start_pose.p.z + pose_dz
 
         object_start_pose.p.y = linker_hand_start_pose.p.y - 0.01
-        # TODO: this weird thing is an unknown issue
-        if self.save_init_pose:
-            object_start_pose.p.z = (self.reset_z_threshold + 0.015)
+        
+        # ====================================================================
+        # 物体初始 Z 高度设置
+        # ====================================================================
+        # 说明：
+        # - 对于 RL Policy：不重要。Policy 看到的永远是 reset_idx 后从 Cache 取出的状态
+        # - 对于代码运行：重要。防止 create_env 时的物理碰撞报错
+        # 
+        # 注意：relative_z_drop_threshold 现在是相对阈值（允许下降的最大距离）
+        # Termination 检查是基于 (init_object_z_buf - current_z) > threshold
+        # 因此这里只需要设置一个合理的初始高度，不需要依赖 threshold 值
+        # 
+        # 重要：物体初始位置要避开手的初始位置，防止碰撞导致物体飞出
+        # Flying Hand 模式下手悬浮在 flying_default_height，所以物体放在更高处
+        # ====================================================================
+        if self.flying_hand_enabled:
+            # Flying Hand: 物体放在手上方 0.3m 处，避免与手碰撞
+            # 手悬浮在 ~0.35m，物体放在 0.65m 安全位置
+            object_start_pose.p.z = self.flying_default_height + 0.1
         else:
-            object_start_pose.p.z = (self.reset_z_threshold + 0.005)
+            # 普通模式: 使用原来的设置
+            if self.save_init_pose:
+                object_start_pose.p.z = 0.08  # 生成缓存时略高一点
+            else:
+                object_start_pose.p.z = 0.07  # 正常运行时
+        
         return linker_hand_start_pose, object_start_pose
 
 

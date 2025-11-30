@@ -10,7 +10,12 @@
 # https://github.com/Denys88/rl_games/
 # --------------------------------------------------------
 
-# 要改维度 TODO
+# ================================================================
+# 注意：此文件是 Allegro Hand (16 DoF) 部署代码
+# 如需 Linker Hand (21 DoF) 版本，请参考 robot_config.py 中的
+# PrivInfoLayout 类来计算 priv_info 索引
+# ================================================================
+
 import os
 import time
 import torch
@@ -26,6 +31,8 @@ else:
 
 from penspin.algo.models.models import ActorCritic
 from penspin.algo.models.running_mean_std import RunningMeanStd
+# 导入 priv_info 布局管理
+from penspin.utils.robot_config import PrivInfoLayout, FINGERTIP_POS_DIM
 
 def _action_hora2allegro(actions):
     cmd_act = actions.clone()
@@ -82,7 +89,10 @@ class FinetunePPO(object):
         processed_obs = self.running_mean_std(obs)
         proprio_hist = proprio_hist
         priv_info = torch.zeros((obs.shape[0], 61)).cuda()
-        priv_info[..., 16:28] = finger_tip_pos
+        # 注意：此处使用旧版 Allegro Hand 的索引 [16:28]
+        # 对于 Linker Hand，应使用 PrivInfoLayout 计算正确索引
+        # 示例：layout = PrivInfoLayout(...); ft_slice = layout.get_slice('fingertip_position')
+        priv_info[..., 16:28] = finger_tip_pos  # Allegro Hand: 4 fingers × 3D = 12
         input_dict = {
             'priv_info': priv_info,
             'obs': processed_obs,

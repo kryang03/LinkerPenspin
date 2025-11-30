@@ -43,6 +43,6 @@ train.ppo.enable_latent_loss=False \
 train.ppo.use_l1=True \
 train.ppo.learning_rate=1e-3 \
 task.env.initPoseMode=low \
-task.env.reset_height_threshold=0.12 \
+task.env.relative_z_drop_threshold=0.12 \
 task.env.enable_obj_ends=True \
 ${EXTRA_ARGS}

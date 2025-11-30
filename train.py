@@ -104,8 +104,8 @@ def main(config: DictConfig):
         print(f"{'名称':<30} {'索引范围':<15} {'维度':<8} {'状态'}")
         print("-"*80)
         
-        # 固定部分
-        fixed_privs = ['obj_position', 'obj_scale', 'obj_mass', 'obj_friction', 'obj_com']
+        # 固定部分（新版：移除 obj_scale）
+        fixed_privs = ['obj_position', 'obj_mass', 'obj_friction', 'obj_com']
         for name in fixed_privs:
             if name in env.priv_info_dict:
                 s, e = env.priv_info_dict[name]
@@ -113,7 +113,7 @@ def main(config: DictConfig):
         
         print("-"*80)
         
-        # 可选部分
+        # 可选部分（包含新增的 obj_linvel 和 fingertip_linvel）
         optional_privs = ['obj_orientation', 'obj_linvel', 'obj_angvel', 
                          'fingertip_position', 'fingertip_orientation', 
                          'fingertip_linvel', 'fingertip_angvel', 

@@ -37,6 +37,6 @@ train.ppo.max_agent_steps=10000000000 \
 train.ppo.bc_loss_coef=1.0 \
 train.ppo.enable_latent_loss=False \
 task.env.initPoseMode=low \
-task.env.reset_height_threshold=0.12 \
+task.env.relative_z_drop_threshold=0.12 \
 task.env.enable_obj_ends=True \
 ${EXTRA_ARGS}
