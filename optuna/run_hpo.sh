@@ -3,7 +3,16 @@
 # RL Teacher 超参数优化 - 快速启动脚本
 # ========================================
 # 使用方法:
-#   bash optuna/run_hpo.sh 
+#   bash optuna/run_hpo.sh [GPU_ID] [N_TRIALS] [MAX_STEPS]
+# 例如:
+#   bash optuna/run_hpo.sh 0 40 250000000
+# ========================================
+# 配置说明：
+# - 与 scripts/train_rl_teacher.sh 保持参数一致
+# - grasp_cache_name: 3_30000_61
+# - 动作空间: disableRingLittleFinger=True (21 -> 13 DoF)
+# - Flying base: 启用
+# - 早期终止: relative_z_drop_threshold=0.12, pencil_tilt_threshold=0.12
 # ========================================
 
 set -e
@@ -11,7 +20,7 @@ set -e
 # ========================================
 # 可配置参数
 # ========================================
-STUDY_NAME="teacher_reproduce_trial_04"  # Study名称（同时用作输出目录）
+STUDY_NAME="teacher_hpo_v1"  # Study名称（同时用作输出目录）
 
 GPU_ID=${1:-0}
 N_TRIALS=${2:-40}
@@ -26,6 +35,12 @@ echo "每次训练步数: $MAX_STEPS"
 echo "Study名称:    $STUDY_NAME (同时用作输出目录)"
 echo "数据库:       sqlite:///optuna/hpo_${STUDY_NAME}.db"
 echo "输出目录:     outputs/${STUDY_NAME}/optuna_trial_*"
+echo ""
+echo "固定配置 (与 train_rl_teacher.sh 一致):"
+echo "  grasp_cache_name:      3_30000_61"
+echo "  disableRingLittleFinger: True"
+echo "  relative_z_drop_threshold: 0.12"
+echo "  pencil_tilt_threshold:    0.12"
 echo "========================================"
 echo ""
 

@@ -17,7 +17,7 @@
 
 # CHECKLIST: 
 # 1. 命令的最后一个参数对应OUTPUT_NAME，测reward时用tmp，开训时标注信息
-# 2. task.env.grasp_cache_name = 所使用的canonical pose文件名
+# 2. task.env.grasp_cache_name = 缓存文件名前缀（如 3_30000_61 对应 cache/3_30000_61_grasp_cache.npy）
 # 3. 早期终止阈值：task.env.relative_z_drop_threshold (物体下降阈值)
 #                  task.env.pencil_tilt_threshold (铅笔倾倒阈值)
 # 4. 确定命令的GPU参数
@@ -26,12 +26,16 @@
 # 7. 奖励权重可通过修改脚本中的 REWARD_* 变量或 EXTRA_ARGS 传递来调整
 # 8. 可通过环境变量覆盖早期终止阈值：
 #    RELATIVE_Z_DROP_THRESHOLD=0.15 PENCIL_TILT_THRESHOLD=0.10 scripts/train_rl_teacher.sh 0 42 test
+# 9. Flying base 配置:
+#    - FLYING_LINEAR_VELOCITY: 线速度上限 (m/s)
+#    - FLYING_ANGULAR_VELOCITY: 角速度上限 (rad/s)
+#    - REWARD_FLYING_BASE_PENALTY: 移动惩罚权重（负值，如 -0.1）
 
 set -e  # 遇到错误立即退出
 
-GPUS=$1        # GPU ID
-SEED=$2        # 随机种子
-OUTPUT_NAME=$3 # 输出目录名称
+GPUS=${1:-0}        # GPU ID
+SEED=${2:-42}  # 随机种子 (默认42)
+OUTPUT_NAME=${3:-debug_teacher} # 输出目录名称
 
 # 获取额外参数
 array=( $@ )
@@ -99,6 +103,11 @@ Grasp Cache:     3pose
   rotate_penalty:       ${REWARD_ROTATE_PENALTY}
   pencil_z_dist:        ${REWARD_PENCIL_Z_DIST_PENALTY}
   position_penalty:     ${REWARD_POSITION_PENALTY}
+  flying_base_penalty:  ${REWARD_FLYING_BASE_PENALTY}
+
+Flying base 配置:
+  linearVelocity:       ${FLYING_LINEAR_VELOCITY}
+  angularVelocity:      ${FLYING_ANGULAR_VELOCITY}
 
 ========================================
 EOF
@@ -115,7 +124,7 @@ EOF
     echo "python train.py task=LinkerHandHora headless=True seed=${SEED} \\"
     echo "  train.ppo.output_name=LinkerHandHora/${UNIQUE_OUTPUT_NAME} \\"
     echo "  train.algo=PPOTeacher \\"
-    echo "  task.env.grasp_cache_name=3pose \\"
+    echo "  task.env.grasp_cache_name=3_30000_61 \\"
     echo "  train.ppo.max_agent_steps=10000000000 \\"
     echo "  task.env.initPoseMode=low \\"
     echo "  task.env.relative_z_drop_threshold=${RELATIVE_Z_DROP_THRESHOLD} \\"
@@ -222,6 +231,17 @@ ANGVEL_PENALTY_THRES_LOW=-0.5          # 角速度惩罚阈值（下限）
 # 例如: scripts/train_rl_teacher.sh 0 42 test task.env.actionSpace.disableRingLittleFinger=True
 DISABLE_RING_LITTLE=True              # 默认使用完整21 DoF
 # FLYING_HAND 默认开启，在configs/task/LinkerHandHora.yaml中
+
+# ========================================
+# Flying base 配置
+# ========================================
+# Flying base (6 DoF 浮空底座) 速度限制和惩罚配置
+# 速度限制防止策略利用惯性"甩手腕"作弊
+# 移动惩罚鼓励策略依赖手指技巧而非手腕运动
+FLYING_LINEAR_VELOCITY=0.1            # 线速度上限 (m/s)，默认 0.1
+FLYING_ANGULAR_VELOCITY=2.0           # 角速度上限 (rad/s)，默认 2.0
+REWARD_FLYING_BASE_PENALTY=-0.1       # Flying base 移动惩罚权重（负值）
+
 # ========================================
 # 奖励权重配置（合并后的最终值）
 # ========================================
@@ -249,7 +269,7 @@ ARGS=(
     "seed=${SEED}"
     "train.ppo.output_name=LinkerHandHora/${UNIQUE_OUTPUT_NAME}"
     "train.algo=PPOTeacher"
-    "task.env.grasp_cache_name=3pose"
+    "task.env.grasp_cache_name='3_30000_61'"
     "train.ppo.max_agent_steps=500000000"
     "task.env.initPoseMode=low"
     # 早期终止阈值（新命名）
@@ -257,6 +277,9 @@ ARGS=(
     "task.env.pencil_tilt_threshold=${PENCIL_TILT_THRESHOLD}"
     # 动作空间配置
     "task.env.actionSpace.disableRingLittleFinger=${DISABLE_RING_LITTLE}"
+    # Flying base 配置
+    "task.env.flyingHand.linearVelocity=${FLYING_LINEAR_VELOCITY}"
+    "task.env.flyingHand.angularVelocity=${FLYING_ANGULAR_VELOCITY}"
     # 角速度参数
     "task.env.reward.angvelClipMin=${ANGVEL_CLIP_MIN}"
     "task.env.reward.angvelClipMax=${ANGVEL_CLIP_MAX}"
@@ -271,6 +294,7 @@ ARGS=(
     "task.env.reward.rotate_penalty_scale=${REWARD_ROTATE_PENALTY}"
     "task.env.reward.pencil_z_dist_penalty_scale=${REWARD_PENCIL_Z_DIST_PENALTY}"
     "task.env.reward.position_penalty_scale=${REWARD_POSITION_PENALTY}"
+    "task.env.reward.flying_base_movement_penalty_scale=${REWARD_FLYING_BASE_PENALTY}"
 )
 
 # 添加额外参数

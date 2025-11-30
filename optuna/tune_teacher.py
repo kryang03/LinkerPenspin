@@ -45,16 +45,21 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     """
     
     # =====================================================
-    # 1. 固定的基础参数
+    # 1. 固定的基础参数（与 scripts/train_rl_teacher.sh 保持一致）
     # =====================================================
     base_overrides = [
         "task=LinkerHandHora",
         "headless=True",
         "train.algo=PPOTeacher",
         f"train.ppo.max_agent_steps={args.max_steps}",
-        "task.env.grasp_cache_name=3pose",
+        # Grasp cache 配置
+        "task.env.grasp_cache_name='3_30000_61'",
         "task.env.initPoseMode=low",
-        "task.env.reset_height_threshold=0.12",
+        # 早期终止阈值
+        "task.env.relative_z_drop_threshold=0.12",
+        "task.env.pencil_tilt_threshold=0.12",
+        # 动作空间配置：禁用无名指和小拇指 (21 -> 13 DoF)
+        "task.env.actionSpace.disableRingLittleFinger=True",
     ]
     
     # =====================================================
@@ -137,7 +142,15 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     horizon_length = trial.suggest_categorical("horizon_length", [16, 24 ,32])
     hpo_overrides.append(f"train.ppo.horizon_length={horizon_length}")
     
-    # --- E. 奖励参数 (基于 Best Values 重新中心化) ---
+    # --- E. Flying base 配置 ---
+    # Flying base (6 DoF 浮空底座) 速度限制配置
+    flying_linear_velocity = trial.suggest_float("flying_linear_velocity", 0.05, 0.2)
+    hpo_overrides.append(f"task.env.flyingHand.linearVelocity={flying_linear_velocity}")
+    
+    flying_angular_velocity = trial.suggest_float("flying_angular_velocity", 1.0, 3.0)
+    hpo_overrides.append(f"task.env.flyingHand.angularVelocity={flying_angular_velocity}")
+    
+    # --- F. 奖励参数 (基于 Best Values 重新中心化) ---
     
     # 1. 角速度相关
     # Clip Min (Best: -0.22) -> Range: -0.4 ~ -0.1
@@ -192,6 +205,11 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 调整：-0.3 ~ -0.1
     position_penalty_scale = trial.suggest_float("position_penalty_scale", -0.3, -0.1)
     hpo_overrides.append(f"task.env.reward.position_penalty_scale={position_penalty_scale}")
+    
+    # Flying base 移动惩罚
+    # 鼓励策略依赖手指技巧而非手腕运动
+    flying_base_penalty_scale = trial.suggest_float("flying_base_movement_penalty_scale", -0.2, -0.05)
+    hpo_overrides.append(f"task.env.reward.flying_base_movement_penalty_scale={flying_base_penalty_scale}")
     
     # --- 3. 创建唯一输出目录 ---
     # 使用 study_name 作为输出目录的基础

@@ -50,9 +50,10 @@ env:
     linearVelocity: 0.1        # 线速度限制 (m/s)
     angularVelocity: 2.0       # 角速度限制 (rad/s)
     # Flying base 的 PD 增益 (位置控制模式下)
-    # 需要足够高以实现刚性位控 (参考 interactive_tune.py: stiffness=1000, damping=50)
-    basePgain: 1000.0          # 位置增益 (提高以实现精确位控)
-    baseDgain: 50.0            # 速度增益
+    # 使用非常高的增益实现严格位置控制，不受外力干扰
+    # 注意: 增益过高可能导致数值不稳定，需要平衡
+    basePgain: 10000.0         # 位置增益 (极高以实现刚性位控)
+    baseDgain: 200.0           # 速度增益 (配合高P增益的阻尼)
   asset:
     # Flying Hand URDF (带 6 DoF 浮空底座)
     # 原始 URDF: 'assets/linker_hand/L25_dof_urdf.urdf' (21 DoF, 固定底座)
@@ -136,6 +137,11 @@ env:
     pencil_z_dist_penalty_scale: -1.5     # -1.0 × 1.5 = -1.5
     # canonical position
     position_penalty_scale: -0.1          # -0.1 × 1 = -0.1
+    # Flying base 移动惩罚 (仅当 flyingHand.enabled=True 时生效)
+    # 惩罚 Flying base 的频繁移动，鼓励策略依赖手指技巧而非手腕运动
+    # 支持 curriculum: [init scale, final scale, curriculum start, curriculum end]
+    # 例如 [-0.1, -0.5, 0, 10000000] 表示从 -0.1 逐渐增加到 -0.5
+    flying_base_movement_penalty_scale: -0.1  # 默认固定值，可通过命令行调整
   # Modified
   baseObjScale: 1.0
   randomization:

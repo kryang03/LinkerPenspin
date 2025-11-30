@@ -117,8 +117,9 @@ class PPOTeacher(object):
         self.running_mean_std = RunningMeanStd(self.obs_shape).to(self.device)
         # 初始化 RunningMeanStd 用于标准化特权信息
         self.priv_mean_std = RunningMeanStd(self.priv_info_dim).to(self.device)
-        # 本体感觉维度（使用配置常量）
-        self.proprio_dim = PROPRIO_DIM
+        # 本体感觉维度：从环境动态获取（支持 Flying Hand 等不同 DOF 配置）
+        # 优先使用环境的 actual_proprio_dim，如果不存在则回退到默认 PROPRIO_DIM
+        self.proprio_dim = getattr(self.env, 'actual_proprio_dim', PROPRIO_DIM)
         # Teacher模型使用3维点云标准化
         self.point_cloud_mean_std = RunningMeanStd(3,).to(self.device)
         # 初始化 RunningMeanStd 用于标准化价值函数输出

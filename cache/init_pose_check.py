@@ -1,12 +1,13 @@
 """
-python cache/init_pose_vis.py
-初始化姿态可视化 - 读取 grasp_cache 并在 Viewer 中显示初始化姿态
+python cache/init_pose_check.py
+初始化姿态成功率检测 - Headless 模式批量验证 grasp_cache 质量
 
 支持两种缓存格式:
 - 61维格式 (推荐): [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
 - 34维格式 (旧版): [hand_dof(27) + obj_pos(3) + obj_rot(4)]
 
-用于检验抓取缓存中的初始化姿态是否会因为高度差或碰撞导致第一帧仿真失败。
+用于批量检验抓取缓存中的初始化姿态成功率，输出详细统计信息。
+与 init_pose_vis.py 使用相同的检测逻辑，但运行在 headless 模式下，适合大规模验证。
 """
 
 # 添加项目根目录到Python路径
@@ -20,11 +21,12 @@ import argparse
 # 重要参数配置 - 可通过命令行覆盖
 DEFAULT_CONFIG = {
     # 缓存文件配置
-    'cache_file': 'cache/3_30000_grasp_cache.npy',  # 默认缓存文件路径
-    
+    'cache_file': 'cache/3_30000_grasp_61_cache.npy',  # 默认缓存文件路径
+    #'cache_file': 'cache/SLIP_3_30000_34_grasp_cache.npy',
+    #'cache_file': 'cache/HIT_3_30000_34_grasp_cache.npy',
     # 仿真配置
-    'headless': False,                  # 默认显示GUI（用于可视化）
-    'num_envs': 8,                      # 显示的环境数量
+    'num_envs': 8192,                    # 并行环境数量
+    'num_batches': 0,                   # 批次数量，0 表示自动计算以覆盖整个缓存
     
     # 检验配置
     'stability_steps': 200,             # 运行仿真的步数，用于检查稳定性
@@ -38,21 +40,24 @@ DEFAULT_CONFIG = {
     
     # 物体配置
     'pen_length': 0.18,                 # LinkerPen长度（米）
+    
+    # 输出配置
+    'verbose': False,                   # 是否输出每个批次的详细信息
 }
 
 def parse_args():
     """解析命令行参数"""
-    parser = argparse.ArgumentParser(description='抓取缓存初始化姿态可视化工具')
+    parser = argparse.ArgumentParser(description='抓取缓存初始化姿态成功率检测（Headless）')
     
     # 缓存文件
     parser.add_argument('--cache-file', type=str, default=DEFAULT_CONFIG['cache_file'],
                        help=f'缓存文件路径，默认: {DEFAULT_CONFIG["cache_file"]}')
     
     # 仿真配置
-    parser.add_argument('--headless', action='store_true', default=DEFAULT_CONFIG['headless'],
-                       help='启用无头模式（无GUI）')
     parser.add_argument('--num-envs', type=int, default=DEFAULT_CONFIG['num_envs'],
-                       help=f'显示的环境数量，默认: {DEFAULT_CONFIG["num_envs"]}')
+                       help=f'并行环境数量，默认: {DEFAULT_CONFIG["num_envs"]}')
+    parser.add_argument('--num-batches', type=int, default=DEFAULT_CONFIG['num_batches'],
+                       help=f'批次数量（0=自动覆盖整个缓存），默认: {DEFAULT_CONFIG["num_batches"]}')
     
     # 检验配置
     parser.add_argument('--stability-steps', type=int, default=DEFAULT_CONFIG['stability_steps'],
@@ -73,6 +78,10 @@ def parse_args():
     # 物体配置
     parser.add_argument('--pen-length', type=float, default=DEFAULT_CONFIG['pen_length'],
                        help=f'LinkerPen长度（米），默认: {DEFAULT_CONFIG["pen_length"]}')
+    
+    # 输出配置
+    parser.add_argument('--verbose', '-v', action='store_true', default=DEFAULT_CONFIG['verbose'],
+                       help='输出每个批次的详细信息')
     
     args = parser.parse_args()
     return args
@@ -106,11 +115,11 @@ from penspin.utils.robot_config import (
 NUM_OBJECT_DIMS = 7
 
 
-class InitPoseVisualizer(LinkerHandHora):
+class InitPoseChecker(LinkerHandHora):
     """
-    初始化姿态可视化器
+    初始化姿态成功率检测器（Headless）
     
-    从 grasp_cache 中随机加载姿态并在 Viewer 中显示
+    从 grasp_cache 中加载姿态并批量验证成功率
     """
     
     def __init__(self, config, sim_device, graphics_device_id, headless, cache_data):
@@ -135,12 +144,12 @@ class InitPoseVisualizer(LinkerHandHora):
         self.is_new_format = (self.cache_dim == NUM_TOTAL_DOF_FLYING * 2 + NUM_OBJECT_DIMS)  # 61维
         format_str = "61维(actual+target)" if self.is_new_format else "34维(旧格式)"
         
-        print(f"[InitPoseVisualizer] 加载缓存: {self.num_cached_poses} 个姿态, 维度: {self.cache_dim} ({format_str})")
+        print(f"[InitPoseChecker] 加载缓存: {self.num_cached_poses} 个姿态, 维度: {self.cache_dim} ({format_str})")
         
         # 当前显示的姿态索引
         self.current_pose_indices = None
         
-    def reset_with_cache(self, env_ids, pose_indices=None):
+    def reset_with_cache(self, env_ids, pose_indices):
         """
         使用缓存中的姿态重置环境
         
@@ -149,10 +158,6 @@ class InitPoseVisualizer(LinkerHandHora):
         num_envs_to_reset = len(env_ids)
         if num_envs_to_reset == 0:
             return
-        
-        # 选择姿态
-        if pose_indices is None:
-            pose_indices = torch.randint(0, self.num_cached_poses, (num_envs_to_reset,), device=self.device)
         
         self.current_pose_indices = pose_indices
         selected_poses = self.cache_data[pose_indices]  # [num_envs, 61 or 34]
@@ -233,9 +238,9 @@ class InitPoseVisualizer(LinkerHandHora):
 @hydra.main(version_base="1.2", config_path="../configs", config_name="config")
 def main(config):
     """
-    初始化姿态可视化主函数
+    初始化姿态成功率检测主函数（Headless）
     
-    从 grasp_cache 中随机加载姿态并运行仿真检查稳定性
+    从 grasp_cache 中按顺序/随机加载姿态并批量验证成功率
     """
     from penspin.utils.misc import set_seed
     from penspin.utils.reformat import omegaconf_to_dict
@@ -261,16 +266,16 @@ def main(config):
     cfg_task['env']['pencil_tilt_threshold'] = args.pencil_tilt_threshold
     cfg_task['env']['numEnvs'] = args.num_envs
     
-    # 创建环境
-    env = InitPoseVisualizer(
+    # 创建环境（Headless 模式）
+    env = InitPoseChecker(
         config=cfg_task,
         sim_device=config.sim_device,
         graphics_device_id=config.graphics_device_id,
-        headless=args.headless,
+        headless=True,  # 强制 headless
         cache_data=cache_data,
     )
     
-    print(f"[main] 创建了 {env.num_envs} 个环境")
+    print(f"[main] 创建了 {env.num_envs} 个环境 (Headless 模式)")
     print(f"[main] 早期终止阈值: z_drop={env.relative_z_drop_threshold:.3f}m, tilt={env.pencil_tilt_threshold:.3f}m")
     
     # ================================================================
@@ -278,112 +283,212 @@ def main(config):
     # ================================================================
     stability_steps = args.stability_steps
     pen_length = args.pen_length
+    num_envs = env.num_envs
+    num_cached_poses = env.num_cached_poses
+    
+    # 计算批次数量
+    if args.num_batches > 0:
+        num_batches = args.num_batches
+    else:
+        # 自动计算以覆盖整个缓存
+        num_batches = int(np.ceil(num_cached_poses / num_envs))
+    
+    total_samples = min(num_batches * num_envs, num_cached_poses)
+    
+    print(f"[main] 检测配置:")
+    print(f"       - 稳定步数: {stability_steps}")
+    print(f"       - 批次数量: {num_batches}")
+    print(f"       - 每批环境: {num_envs}")
+    print(f"       - 总样本数: {total_samples}")
     
     # 预计算笔端点偏移（本地坐标系）
     pencil_end_offset_neg = torch.tensor([0, 0, -pen_length / 2], device=env.device)
     pencil_end_offset_pos = torch.tensor([0, 0, pen_length / 2], device=env.device)
     
     # ================================================================
-    # 初始化：重置所有环境到随机缓存姿态
+    # 统计信息
     # ================================================================
+    total_tested = 0
+    total_success = 0
+    total_fail_z_drop = 0
+    total_fail_tilt = 0
+    
+    # 失败的姿态索引记录
+    failed_pose_indices = []
+    
+    # 用于记录每个姿态首次失败的步数
+    first_fail_steps = []
+    
     all_env_ids = torch.arange(env.num_envs, device=env.device)
-    pose_indices = env.reset_with_cache(all_env_ids)
     
-    print(f"\n[main] 已加载 {env.num_envs} 个随机姿态")
-    print(f"[main] 姿态索引: {pose_indices.cpu().numpy()}")
-    print(f"[main] 开始运行 {stability_steps} 步仿真检查稳定性...")
-    print(f"[main] 按 ESC 或关闭窗口退出\n")
+    print(f"\n[main] 开始批量检测...")
+    print("=" * 70)
+    
+    for batch_idx in range(num_batches):
+        # 计算本批次的姿态索引
+        start_idx = batch_idx * num_envs
+        end_idx = min(start_idx + num_envs, num_cached_poses)
+        batch_size = end_idx - start_idx
+        
+        if batch_size == 0:
+            break
+        
+        # 生成姿态索引
+        pose_indices = torch.arange(start_idx, end_idx, device=env.device)
+        
+        # 如果批次不满，用随机索引填充（但不计入统计）
+        if batch_size < num_envs:
+            padding_indices = torch.randint(0, num_cached_poses, (num_envs - batch_size,), device=env.device)
+            pose_indices = torch.cat([pose_indices, padding_indices])
+        
+        # 重置环境
+        env.reset_with_cache(all_env_ids, pose_indices)
+        
+        # 状态跟踪
+        env_step_counters = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
+        failed_mask = torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
+        first_fail_step = torch.full((env.num_envs,), -1, dtype=torch.long, device=env.device)
+        
+        # 运行仿真
+        for step in range(stability_steps):
+            # 物理仿真步进（零动作，保持姿态）
+            actions = torch.zeros((env.num_envs, env.num_actions), device=env.device)
+            env.actions = actions
+            
+            # 更新目标（保持当前位置）
+            env.cur_targets[:, :env.num_linker_hand_dofs] = env.prev_targets[:, :env.num_linker_hand_dofs]
+            
+            # 物理仿真
+            for _ in range(env.control_freq_inv):
+                env.update_low_level_control(0)
+                env.gym.simulate(env.sim)
+                env.gym.fetch_results(env.sim, True)
+            
+            # 刷新状态
+            env._refresh_gym()
+            
+            # 更新计数器
+            env_step_counters += 1
+            
+            # 检测失败条件
+            object_pos = env.root_state_tensor[env.object_indices, 0:3]
+            object_rot = env.root_state_tensor[env.object_indices, 3:7]
+            
+            # 1. 物体高度偏离超过阈值
+            z_deviation = torch.abs(env.init_object_z_buf - object_pos[:, 2])
+            failed_z = torch.greater(z_deviation, env.relative_z_drop_threshold)
+            
+            # 2. LinkerPen 端点高度差（检测倾倒）
+            pencil_end_1 = object_pos + quat_apply(object_rot, pencil_end_offset_neg.unsqueeze(0).expand(env.num_envs, -1))
+            pencil_end_2 = object_pos + quat_apply(object_rot, pencil_end_offset_pos.unsqueeze(0).expand(env.num_envs, -1))
+            z_diff = torch.abs(pencil_end_1[:, 2] - pencil_end_2[:, 2])
+            failed_tilt = torch.greater(z_diff, env.pencil_tilt_threshold)
+            
+            # 记录首次失败步数
+            newly_failed = (failed_z | failed_tilt) & ~failed_mask
+            first_fail_step[newly_failed] = step + 1
+            
+            # 更新失败 mask
+            failed_mask |= failed_z | failed_tilt
+        
+        # 统计本批次结果（只统计有效样本）
+        valid_mask = torch.arange(env.num_envs, device=env.device) < batch_size
+        valid_failed = failed_mask[:batch_size]
+        valid_success = ~valid_failed
+        
+        batch_success = int(valid_success.sum().item())
+        batch_fail = int(valid_failed.sum().item())
+        
+        # 统计失败原因
+        batch_fail_z = 0
+        batch_fail_tilt = 0
+        for i in range(batch_size):
+            if failed_mask[i]:
+                # 检查最终状态的失败原因
+                if failed_z[i]:
+                    batch_fail_z += 1
+                elif failed_tilt[i]:
+                    batch_fail_tilt += 1
+        
+        # 记录失败的姿态索引
+        failed_in_batch = torch.where(valid_failed)[0]
+        for idx in failed_in_batch:
+            failed_pose_indices.append(pose_indices[idx].item())
+            first_fail_steps.append(first_fail_step[idx].item())
+        
+        # 累计统计
+        total_tested += batch_size
+        total_success += batch_success
+        total_fail_z_drop += batch_fail_z
+        total_fail_tilt += batch_fail_tilt
+        
+        # 输出批次信息
+        batch_success_rate = batch_success / batch_size * 100
+        if args.verbose:
+            print(f"[Batch {batch_idx+1:3d}/{num_batches}] "
+                  f"样本 {start_idx:5d}-{end_idx-1:5d} | "
+                  f"成功: {batch_success:4d}/{batch_size} ({batch_success_rate:5.1f}%) | "
+                  f"失败: z_drop={batch_fail_z}, tilt={batch_fail_tilt}")
+        else:
+            # 简洁进度输出
+            if (batch_idx + 1) % 10 == 0 or batch_idx == 0 or batch_idx == num_batches - 1:
+                current_rate = total_success / total_tested * 100 if total_tested > 0 else 0
+                print(f"[Progress] {total_tested:5d}/{total_samples} ({total_tested/total_samples*100:5.1f}%) | "
+                      f"累计成功率: {current_rate:5.1f}%")
     
     # ================================================================
-    # 状态跟踪
+    # 输出最终统计
     # ================================================================
-    env_step_counters = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
-    fail_counts = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
+    print("=" * 70)
+    print(f"\n[main] ========== 检测完成 ==========")
+    print(f"[main] 缓存文件: {cache_file}")
+    print(f"[main] 检测参数:")
+    print(f"       - 稳定步数: {stability_steps}")
+    print(f"       - z_drop 阈值: {args.relative_z_drop_threshold:.3f}m")
+    print(f"       - tilt 阈值: {args.pencil_tilt_threshold:.3f}m")
+    print()
     
-    step_count = 0
-    while step_count < stability_steps:
-        step_count += 1
-        
-        # 检查 Viewer 是否关闭
-        if not args.headless and env.viewer is not None:
-            if env.gym.query_viewer_has_closed(env.viewer):
-                print("[main] Viewer 已关闭，退出...")
-                break
-        
-        # ============================================================
-        # 物理仿真步进（零动作，保持姿态）
-        # ============================================================
-        actions = torch.zeros((env.num_envs, env.num_actions), device=env.device)
-        env.actions = actions
-        
-        # 更新目标（保持当前位置）
-        env.cur_targets[:, :env.num_linker_hand_dofs] = env.prev_targets[:, :env.num_linker_hand_dofs]
-        
-        # 物理仿真
-        for _ in range(env.control_freq_inv):
-            env.update_low_level_control(0)
-            env.gym.simulate(env.sim)
-            env.gym.fetch_results(env.sim, True)
-        
-        # 刷新状态
-        env._refresh_gym()
-        
-        # Viewer 渲染
-        if not args.headless and env.viewer is not None:
-            env.gym.step_graphics(env.sim)
-            env.gym.draw_viewer(env.viewer, env.sim, True)
-            env.gym.sync_frame_time(env.sim)
-        
-        # ============================================================
-        # 更新计数器
-        # ============================================================
-        env_step_counters += 1
-        
-        # ============================================================
-        # 检测失败条件（与训练时相同的逻辑）
-        # ============================================================
-        object_pos = env.root_state_tensor[env.object_indices, 0:3]
-        object_rot = env.root_state_tensor[env.object_indices, 3:7]
-        
-        # 1. 物体高度偏离超过阈值（上升或下降都算）
-        z_deviation = torch.abs(env.init_object_z_buf - object_pos[:, 2])
-        failed_z_deviation = torch.greater(z_deviation, env.relative_z_drop_threshold)
-        
-        # 2. LinkerPen 端点高度差（检测倾倒）
-        pencil_end_1 = object_pos + quat_apply(object_rot, pencil_end_offset_neg.unsqueeze(0).expand(env.num_envs, -1))
-        pencil_end_2 = object_pos + quat_apply(object_rot, pencil_end_offset_pos.unsqueeze(0).expand(env.num_envs, -1))
-        z_diff = torch.abs(pencil_end_1[:, 2] - pencil_end_2[:, 2])
-        failed_tilt = torch.greater(z_diff, env.pencil_tilt_threshold)
-        
-        # 记录失败
-        failed_any = torch.logical_or(failed_z_deviation, failed_tilt)
-        fail_counts += failed_any.long()
-        
-        # ============================================================
-        # 输出进度
-        # ============================================================
-        if step_count % 50 == 0 or step_count == 1:
-            num_failed = (fail_counts > 0).sum().item()
-            num_stable = env.num_envs - num_failed
-            print(f"[main] 步数: {step_count:4d}/{stability_steps} | "
-                  f"稳定: {num_stable}/{env.num_envs} | "
-                  f"失败: {num_failed} (z_dev: {failed_z_deviation.sum().item()}, tilt: {failed_tilt.sum().item()})")
+    success_rate = total_success / total_tested * 100 if total_tested > 0 else 0
+    print(f"[结果] 总测试数: {total_tested}")
+    print(f"[结果] 成功数量: {total_success}")
+    print(f"[结果] 失败数量: {total_tested - total_success}")
+    print(f"[结果] 成功率:   {success_rate:.2f}%")
+    print()
+    print(f"[失败原因分析]")
+    print(f"       - 高度偏离 (z_drop): {total_fail_z_drop} ({total_fail_z_drop/total_tested*100:.1f}%)")
+    print(f"       - 倾倒 (tilt):       {total_fail_tilt} ({total_fail_tilt/total_tested*100:.1f}%)")
     
-    # ================================================================
-    # 完成：输出统计
-    # ================================================================
-    print(f"\n[main] ========== 检验完成 ==========")
-    num_failed_total = (fail_counts > 0).sum().item()
-    num_stable_total = env.num_envs - num_failed_total
-    print(f"[main] 稳定姿态数: {num_stable_total}/{env.num_envs}")
-    print(f"[main] 失败姿态数: {num_failed_total}/{env.num_envs}")
+    # 失败步数分析
+    if first_fail_steps:
+        fail_steps_arr = np.array(first_fail_steps)
+        print()
+        print(f"[失败时机分析]")
+        print(f"       - 首步失败 (step 1):    {np.sum(fail_steps_arr == 1)} ({np.mean(fail_steps_arr == 1)*100:.1f}%)")
+        print(f"       - 前10步失败:           {np.sum(fail_steps_arr <= 10)} ({np.mean(fail_steps_arr <= 10)*100:.1f}%)")
+        print(f"       - 平均失败步数:         {np.mean(fail_steps_arr):.1f}")
+        print(f"       - 中位数失败步数:       {np.median(fail_steps_arr):.1f}")
     
-    if num_failed_total > 0:
-        failed_indices = torch.where(fail_counts > 0)[0]
-        failed_pose_ids = pose_indices[failed_indices]
-        print(f"[main] 失败的缓存索引: {failed_pose_ids.cpu().numpy()}")
+    # 输出部分失败索引（用于调试）
+    if failed_pose_indices and args.verbose:
+        print()
+        print(f"[失败姿态索引 (前20个)]")
+        sample_indices = failed_pose_indices[:20]
+        sample_steps = first_fail_steps[:20]
+        for idx, step in zip(sample_indices, sample_steps):
+            print(f"       - 索引 {idx:5d}, 失败步数: {step}")
     
+    print()
     print("[main] 完成!")
+    
+    # 返回结果供程序化调用
+    return {
+        'total_tested': total_tested,
+        'total_success': total_success,
+        'success_rate': success_rate,
+        'fail_z_drop': total_fail_z_drop,
+        'fail_tilt': total_fail_tilt,
+        'failed_indices': failed_pose_indices,
+    }
 
 
 if __name__ == "__main__":

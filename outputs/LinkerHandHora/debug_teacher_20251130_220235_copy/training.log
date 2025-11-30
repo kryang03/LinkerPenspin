@@ -1,0 +1,580 @@
+==========================================
+启动命令
+==========================================
+完整命令:
+CUDA_VISIBLE_DEVICES=0 \
+python train.py task=LinkerHandHora headless=True seed=42 \
+  train.ppo.output_name=LinkerHandHora/debug_teacher_20251130_220235 \
+  train.algo=PPOTeacher \
+  task.env.grasp_cache_name=3_30000_61 \
+  train.ppo.max_agent_steps=10000000000 \
+  task.env.initPoseMode=low \
+  task.env.relative_z_drop_threshold= \
+  task.env.pencil_tilt_threshold= \
+  
+==========================================
+
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+Using /home/user/.cache/torch_extensions/py38_cu121 as PyTorch extensions root...
+Emitting ninja build file /home/user/.cache/torch_extensions/py38_cu121/gymtorch/build.ninja...
+Building extension module gymtorch...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module gymtorch...
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: False
+checkpoint: 
+headless: True
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 8192
+        numObservations: 126
+        numActions: 27
+        envSpacing: 0.5
+        flyingHand: 
+            enabled: True
+            defaultHeight: 0.35
+            heightLower: 0.3
+            heightUpper: 0.4
+            xyLimit: 0.05
+            linearVelocity: 0.1
+            angularVelocity: 2.0
+            basePgain: 10000.0
+            baseDgain: 200.0
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf_flying.urdf
+        actionSpace: 
+            disableRingLittleFinger: True
+        episodeLength: 400
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 6
+            dgain: 0.2
+            action_scale: 0.04167
+            torque_limit: 1.5
+        rotation_axis: +z
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        relative_z_drop_threshold: 0.12
+        pencil_tilt_threshold: 0.12
+        grasp_cache_name: 3_30000_61
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThresHigh: 1.0
+            angvelPenaltyThresLow: -0.5
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            waypoint_sparse_reward_scale: 0.0
+            torque_penalty_scale: -0.01
+            hand_pose_consistency_penalty_scale: -0.05
+            rotate_penalty_scale: 0.0
+            pencil_z_dist_penalty_scale: -1.5
+            position_penalty_scale: -0.1
+            flying_base_movement_penalty_scale: -0.1
+        baseObjScale: 1.0
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.035
+            randomizeMassUpper: 0.048
+            randomizeCOM: True
+            randomizeCOMLower: -0.002
+            randomizeCOMUpper: 0.002
+            randomizeFriction: True
+            randomizeFrictionLower: 0.4
+            randomizeFrictionUpper: 1.2
+            randomizeRestitution: True
+            randomizeRestitutionLower: 0.1
+            randomizeRestitutionUpper: 0.5
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [1.0]
+            randomizeScaleLower: 1.0
+            randomizeScaleUpper: 1.0
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            contact_form: gpu_contact
+            contact_input: binary
+            enable_obj_linvel: True
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_obj_orientation: True
+            enable_ft_orientation: False
+            enable_ft_linvel: True
+            enable_ft_angvel: False
+            enable_hand_scale: False
+        object: 
+            type: cylinder_linkerpen
+            evalObjectType: None
+            sampleProb: [1.0]
+        useVHACD: False
+        enableCameraSensors: False
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPOTeacher
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: 
+    demon_path: None
+    ppo: 
+        output_name: LinkerHandHora/debug_teacher_20251130_220235
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 8192
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        weight_decay: 0.0001
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 12
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 50000000
+        save_frequency: 500
+        max_agent_steps: 500000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+Hand asset file: assets/linker_hand/L25_dof_urdf_flying.urdf
+---- Object Setup (LinkerPen) ----
+Object type: cylinder_linkerpen
+---- Object List ----
+using 1 training objects: ['linkerpen']
+
+======================================================================
+Flying Hand 配置 (6 DoF Floating Base)
+======================================================================
+  启用状态: True
+  默认高度: 0.35m
+  高度范围: [0.3, 0.4]m
+  XY 限制 (绝对): ±0.05m
+  线速度限制: 0.1 m/s
+  角速度限制: 2.0 rad/s
+  PD 增益: P=10000.0, D=200.0
+----------------------------------------------------------------------
+  相对限位启用: True
+    XY 相对限位: ±0.05m
+    Z 相对限位: ±0.05m
+    旋转相对限位: ±0.5 rad
+======================================================================
+
+
+======================================================================
+动作空间配置 (Action Space Configuration)
+======================================================================
+Flying Hand 启用:     True
+禁用无名指和小拇指:   True
+策略动作维度:         19
+仿真 DOF 总数:        27
+----------------------------------------------------------------------
+Flying Base 维度:     6
+  策略索引 [0-5] -> 仿真 DOF [0-5]
+手部动作维度:         13
+  策略索引 [6-9]  -> middle [仿真 6-9]
+  策略索引 [10-13]  -> index  [仿真 14-17]
+  策略索引 [14-18] -> thumb  [仿真 22-26]
+禁用的仿真 DOF:       [10, 11, 12, 13, 18, 19, 20, 21]
+======================================================================
+
+[PrivInfo Verify] OK: priv_info_dim=64, total_span=64, slices=11
+
+================================================================================
+启用的特权信息 (Privileged Information) 配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定启用]
+obj_mass                       [ 3: 4]         1        [固定启用]
+obj_friction                   [ 4: 5]         1        [固定启用]
+obj_com                        [ 5: 8]         3        [固定启用]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓ 已启用
+obj_linvel                     [12:15]         3        ✓ 已启用
+obj_angvel                     [15:18]         3        ✓ 已启用
+fingertip_position             [18:33]         15       ✓ 已启用
+fingertip_linvel               [33:48]         15       ✓ 已启用
+obj_restitution                [48:49]         1        ✓ 已启用
+tactile                        [49:64]         15       ✓ 已启用
+--------------------------------------------------------------------------------
+未启用的可选特权信息:
+fingertip_orientation                                   ✗ 未启用
+fingertip_angvel                                        ✗ 未启用
+hand_scale                                              ✗ 未启用
+--------------------------------------------------------------------------------
+总计: 12 项启用, 总维度 = 64
+priv_info_dim (缓冲区大小) = 64
+================================================================================
+
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+
+============================================================
+Flying Hand 模式已启用
+============================================================
+  URDF 文件: assets/linker_hand/L25_dof_urdf_flying.urdf
+  总 DOF: 27 = 6 (base) + 21 (hand)
+  默认高度: 0.35m
+  高度范围: 0.3m ~ 0.4m
+  XY 限制: ±0.05m
+============================================================
+
+[Asset] Using submesh convex decomposition for hand collision
+LinkerPen loaded: radius=0.009m, length=0.18m (no scale applied)
+
+------------------------------------------------------------
+Flying Hand DOF 配置:
+------------------------------------------------------------
+  [0] virtual_px: 绝对[-0.050, 0.050], 相对±0.050
+  [1] virtual_py: 绝对[-0.050, 0.050], 相对±0.050
+  [2] virtual_pz: 绝对[0.300, 0.400], 相对±0.050
+  [3] virtual_rx: 绝对[-1.570, 1.570], 相对±0.500
+  [4] virtual_ry: 绝对[-1.570, 1.570], 相对±0.500
+  [5] virtual_rz: 绝对[-3.140, 3.140], 相对±0.500
+  [6-26] 手部关节: 原有配置 (相对限位不限制)
+------------------------------------------------------------
+
+
+================================================================================
+环境初始化 - 显存相关参数
+================================================================================
+num_envs (环境数量):        8192
+环境间距 (spacing):         0.5
+每行环境数 (num_per_row):   90
+手部刚体数量:               28
+物体刚体数量:               1
+总刚体数/环境:              29
+================================================================================
+开始创建 8192 个并行环境...
+================================================================================
+
+环境创建进度: 0/8192 (0.0%)
+======================================================================
+物体物理属性（随机化后的最终值）
+======================================================================
+随机化配置:
+  - 质量随机化: True [0.035, 0.048]
+  - 质心随机化: True [-0.002, 0.002]
+  - 摩擦随机化: True [0.4, 1.2]
+  - 恢复系数随机化: True [0.1, 0.5]
+本环境实际值:
+  - 总质量: 0.0454 kg (45.38 g)
+  - 摩擦系数: 0.8091
+  - 恢复系数: 0.3006
+  - 质心偏移: [0.0012404535787167228, 0.0014682892743204147, 0.0016529622102258853]
+
+====================================================================================================
+IsaacGym 物体物理属性验证 (Object Physical Properties Verification)
+====================================================================================================
+
+--- 刚体属性 (Rigid Body Properties) ---
+刚体数量: 1
+
+  [Link 0]
+    质量 (mass):           0.045378 kg (45.38 g)
+    质心 (COM):            (0.001240, 0.001468, 0.001653) m
+    惯量 (inertia):
+      Ixx: 1.77093738e-04, Ixy: 0.00000000e+00, Ixz: 0.00000000e+00
+      Iyx: 0.00000000e+00, Iyy: 1.77093738e-04, Iyz: 0.00000000e+00
+      Izx: 0.00000000e+00, Izy: 0.00000000e+00, Izz: 2.47233288e-06
+    flags:                 0
+
+  总质量 (Total Mass): 0.045378 kg (45.38 g)
+
+--- 形状属性 (Shape Properties) ---
+形状数量: 3
+
+  [Shape 0]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 1]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 2]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+--- 自由度属性 (DOF Properties) ---
+自由度数量: 0
+
+--- 预期值对比 (Expected from pen_gen.py) ---
+  预期尼龙主体质量:  24.39 g
+  预期铝头质量 (x2): 8.27 g × 2 = 16.54 g
+  预期总质量:        40.93 g
+  预期半径:          9 mm
+  预期总长度:        180 mm (150 + 15×2)
+环境创建进度: 2048/8192 (25.0%)环境创建进度: 4096/8192 (50.0%)环境创建进度: 6144/8192 (75.0%)环境创建进度: 8191/8192 (100.0%)动作空间已更新: (19,) (策略输出维度: 19)
+观察空间已更新: (162,) (实际维度: 162)
+Contact Tensor Dimension [1, numRigidBody, 3] torch.Size([8192, 29, 3])
+[LinkerHandHora] 加载缓存: cache/3_30000_61_grasp_cache.npy
+  缓存形状: torch.Size([30000, 61])
+  缓存格式: 61维(actual+target)
+
+================================================================================
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+显存相关配置参数 (Memory-Critical Configuration)
+================================================================================
+环境数量 (num_actors):        8,192
+Horizon 长度:                 12
+Batch Size:                   98,304 = 8,192 × 12
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+-----------------------
+episode rewards: 3.48 | episode lengths: 18.51
+episode rot angle(rad): 1.59
+epsode sparse reward: 0.00
+success rate (rot>6): 0.0000 (0/5030)
+best success rate: 0.0000
+Terminations: Fall=4503 | Drop=234 | Overspeed=293
+Agent Steps: 0009M | FPS: 49756.2 | Last FPS: 51158.1 | Collect Time: 2.7 min | Train RL Time: 0.6 min | Current Best: -10000.00
+-----------------------
+episode rewards: 14.31 | episode lengths: 61.81
+episode rot angle(rad): 2.62
+epsode sparse reward: 0.00
+success rate (rot>6): 0.0000 (0/1426)
+best success rate: 0.0000
+Terminations: Fall=1315 | Drop=40 | Overspeed=71
+Agent Steps: 0019M | FPS: 50892.4 | Last FPS: 52767.5 | Collect Time: 5.2 min | Train RL Time: 1.2 min | Current Best: -10000.00
+-----------------------
+episode rewards: 23.07 | episode lengths: 93.50
+episode rot angle(rad): 3.55
+epsode sparse reward: 0.00
+success rate (rot>6): 0.0000 (0/1078)
+best success rate: 0.0000
+Terminations: Fall=975 | Drop=28 | Overspeed=75
+Agent Steps: 0029M | FPS: 51051.6 | Last FPS: 53813.4 | Collect Time: 7.8 min | Train RL Time: 1.8 min | Current Best: -10000.00
+-----------------------
+episode rewards: 27.96 | episode lengths: 113.10
+episode rot angle(rad): 4.06
+epsode sparse reward: 0.00
+success rate (rot>6): 0.0000 (0/835)
+best success rate: 0.0000
+Terminations: Fall=755 | Drop=24 | Overspeed=56
+Agent Steps: 0039M | FPS: 51371.7 | Last FPS: 51515.2 | Collect Time: 10.3 min | Train RL Time: 2.4 min | Current Best: -10000.00
+-----------------------
+episode rewards: 31.87 | episode lengths: 126.17
+episode rot angle(rad): 4.40
+epsode sparse reward: 0.00
+success rate (rot>6): 0.0000 (0/713)
+best success rate: 0.0000
+Terminations: Fall=659 | Drop=19 | Overspeed=35
+Agent Steps: 0049M | FPS: 51497.4 | Last FPS: 53012.4 | Collect Time: 12.9 min | Train RL Time: 3.1 min | Current Best: -10000.00
+-----------------------
+episode rewards: 49.62 | episode lengths: 201.59
+episode rot angle(rad): 5.97
+epsode sparse reward: 0.00
+success rate (rot>6): 0.5270 (166/315)
+best success rate: 0.5270
+Terminations: Fall=63 | Drop=22 | Overspeed=15
+Agent Steps: 0059M | FPS: 51538.7 | Last FPS: 53527.4 | Collect Time: 15.4 min | Train RL Time: 3.7 min | Current Best: 49.21
+-----------------------
+episode rewards: 83.34 | episode lengths: 297.02
+episode rot angle(rad): 8.89
+epsode sparse reward: 0.00
+success rate (rot>6): 0.7681 (255/332)
+best success rate: 0.8392
+Terminations: Fall=51 | Drop=13 | Overspeed=12
+Agent Steps: 0068M | FPS: 50852.6 | Last FPS: 52390.0 | Collect Time: 18.2 min | Train RL Time: 4.3 min | Current Best: 83.15
+-----------------------
+episode rewards: 96.81 | episode lengths: 321.65
+episode rot angle(rad): 9.87
+epsode sparse reward: 0.00
+success rate (rot>6): 0.8074 (285/353)
+best success rate: 0.8624
+Terminations: Fall=49 | Drop=7 | Overspeed=12
+Agent Steps: 0078M | FPS: 50656.5 | Last FPS: 52239.1 | Collect Time: 20.9 min | Train RL Time: 4.9 min | Current Best: 96.71
+-----------------------
+episode rewards: 101.91 | episode lengths: 326.93
+episode rot angle(rad): 10.11
+epsode sparse reward: 0.00
+success rate (rot>6): 0.8299 (283/341)
+best success rate: 0.8624
+Terminations: Fall=46 | Drop=8 | Overspeed=6
+Agent Steps: 0088M | FPS: 50759.2 | Last FPS: 53111.1 | Collect Time: 23.5 min | Train RL Time: 5.6 min | Current Best: 101.80
+-----------------------
+episode rewards: 104.54 | episode lengths: 329.34
+episode rot angle(rad): 10.21
+epsode sparse reward: 0.00
+success rate (rot>6): 0.8024 (264/329)
+best success rate: 0.8665
+Terminations: Fall=36 | Drop=15 | Overspeed=15
+Agent Steps: 0098M | FPS: 50943.8 | Last FPS: 53105.2 | Collect Time: 25.9 min | Train RL Time: 6.2 min | Current Best: 104.57

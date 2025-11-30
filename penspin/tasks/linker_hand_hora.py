@@ -1,10 +1,3 @@
-# --------------------------------------------------------
-# Lessons from Learning to Spin “Pens”
-# Written by Paper Authors
-# Copyright (c) 2024 All Authors
-# Licensed under The MIT License [see LICENSE for details]
-# --------------------------------------------------------
-
 import os
 from typing import Optional
 import torch
@@ -132,6 +125,22 @@ class LinkerHandHora(VecTask):
             )
             print(f"动作空间已更新: {self.act_space.shape} (策略输出维度: {self.actual_action_dim})")
 
+        # ============================================================
+        # 覆盖观察空间（当 DOF 数量与默认配置不同时）
+        # ============================================================
+        # obs_buf 维度 = 6 * num_dofs（3个时间步 × 2（位置+目标））
+        # 默认配置 numObservations=126 (21 DOF × 6)，Flying Hand 需要 162 (27 DOF × 6)
+        # 注意：此时 self.num_dofs 尚未设置，使用 num_linker_hand_dofs 替代
+        actual_num_obs = 6 * self.num_linker_hand_dofs
+        if actual_num_obs != self.config['env']['numObservations']:
+            from gym import spaces
+            self.num_observations = actual_num_obs
+            self.obs_space = spaces.Box(
+                np.ones(actual_num_obs, dtype=np.float32) * -np.Inf,
+                np.ones(actual_num_obs, dtype=np.float32) * np.Inf
+            )
+            print(f"观察空间已更新: {self.obs_space.shape} (实际维度: {actual_num_obs})")
+
         self.eval_done_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
 
         self.debug_viz = self.config['env']['enableDebugVis']
@@ -219,22 +228,31 @@ class LinkerHandHora(VecTask):
         self.last_contacts = torch.zeros((self.num_envs, self.num_contacts), dtype=torch.float, device=self.device)
         self.contact_thresh = torch.zeros((self.num_envs, self.num_contacts), dtype=torch.float, device=self.device)
 
-        if self.randomize_scale and self.scale_list_init:
-            self.saved_grasping_states = {}
-            for s in self.randomize_scale_list:
-                cache_name = '_'.join([self.grasp_cache_name, 'grasp', self.canonical_pose_category,
-                                       self.num_pose_per_cache, f's{str(s).replace(".", "")}'])
-                cache_name_tmp = '/'.join([self.grasp_cache_name, self.canonical_pose_category,
-                                           f's{str(s).replace(".", "")}_{self.num_pose_per_cache}'])
-                print(cache_name_tmp)
-                if os.path.exists(f'cache/{cache_name_tmp}.npy'):
-                    self.saved_grasping_states[str(s)] = torch.from_numpy(np.load(f'cache/{cache_name_tmp}.npy')).float().to(self.device)
-                    print(cache_name_tmp)
-                else:
-                    self.saved_grasping_states[str(s)] = torch.from_numpy(np.load(f'cache/{cache_name}.npy')).float().to(self.device)
-                    print(cache_name)
-        else:
-            assert self.save_init_pose
+        # ================================================================
+        # 加载抓取缓存 (Grasp Cache)
+        # ================================================================
+        # 缓存命名格式: {num_poses}_{total_samples}_{cache_dim}_grasp_cache.npy
+        # 例如: 3_30000_61_grasp_cache.npy
+        # 
+        # 支持两种缓存格式:
+        # - 61维(新): [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
+        # - 34维(旧): [hand_dof(27) + obj_pos(3) + obj_rot(4)]
+        # ================================================================
+        if not self.save_init_pose:  # 正常训练模式（非缓存生成模式）
+            cache_path = f'cache/{self.grasp_cache_name}_grasp_cache.npy'
+            if not os.path.exists(cache_path):
+                raise FileNotFoundError(f"[LinkerHandHora] 缓存文件不存在: {cache_path}")
+            
+            self.saved_grasping_states = torch.from_numpy(np.load(cache_path)).float().to(self.device)
+            cache_dim = self.saved_grasping_states.shape[1]
+            
+            # 检测缓存格式: 61维(新) vs 34维(旧)
+            self.cache_is_new_format = (cache_dim == self.num_linker_hand_dofs * 2 + 7)  # 27*2 + 7 = 61
+            format_str = "61维(actual+target)" if self.cache_is_new_format else "34维(旧格式)"
+            
+            print(f"[LinkerHandHora] 加载缓存: {cache_path}")
+            print(f"  缓存形状: {self.saved_grasping_states.shape}")
+            print(f"  缓存格式: {format_str}")
 
         self.rot_axis_buf = torch.zeros((self.num_envs, 3), device=self.device, dtype=torch.float)
         self.rot_axis_task = None
@@ -258,7 +276,8 @@ class LinkerHandHora(VecTask):
             self.env_dof_lower_limits = self.linker_hand_dof_lower_limits.unsqueeze(0).expand(self.num_envs, -1).clone()
             self.env_dof_upper_limits = self.linker_hand_dof_upper_limits.unsqueeze(0).expand(self.num_envs, -1).clone()
         # there is an extra dim [self.control_freq_inv] because we want to get a mean over multiple control steps
-        self.torques = torch.zeros((self.num_envs, self.control_freq_inv, self.num_actions), device=self.device, dtype=torch.float)
+        # 注意：torques 是 PD 控制计算的输出，维度应该是 num_dofs（而不是 num_actions）
+        self.torques = torch.zeros((self.num_envs, self.control_freq_inv, self.num_dofs), device=self.device, dtype=torch.float)
         self.dof_vel_finite_diff = torch.zeros((self.num_envs, self.control_freq_inv, self.num_dofs), device=self.device, dtype=torch.float)
 
         # --- calculate velocity at control frequency instead of simulated frequency
@@ -267,6 +286,10 @@ class LinkerHandHora(VecTask):
         self.ft_pos_prev = self.fingertip_pos.clone()
         self.ft_rot_prev = self.fingertip_orientation.clone()
         self.dof_vel_prev = self.dof_vel_finite_diff.clone()
+        
+        # Flying base 位置历史，用于计算速度惩罚
+        if self.flying_hand_enabled:
+            self.flying_base_pos_prev = self.linker_hand_dof_pos[:, :NUM_FLYING_DOF].clone()
 
         self.obj_linvel_at_cf = torch.zeros((self.num_envs, 3), device=self.device, dtype=torch.float)
         self.obj_angvel_at_cf = torch.zeros((self.num_envs, 3), device=self.device, dtype=torch.float)
@@ -573,46 +596,89 @@ class LinkerHandHora(VecTask):
         # reset rigid body forces
         self.rb_forces[env_ids, :, :] = 0.0
 
-        num_scales = len(self.randomize_scale_list)
-        for n_s in range(num_scales):
-            s_ids = env_ids[(env_ids % num_scales == n_s).nonzero(as_tuple=False).squeeze(-1)]
-            if len(s_ids) == 0:
-                continue
-            obj_scale = self.randomize_scale_list[n_s]
-            scale_key = str(obj_scale)
-            # single object (category) case:
-            sampled_pose_idx = np.random.randint(self.saved_grasping_states[scale_key].shape[0], size=len(s_ids))
-            sampled_pose = self.saved_grasping_states[scale_key][sampled_pose_idx].clone()
-            object_pose_noise = torch.normal(0, self.random_pose_noise, size=(sampled_pose.shape[0], 7), device=self.device, dtype=torch.float)
-            object_pose_noise[:, 3:] = 0  # disable rotation noise
-            self.root_state_tensor[self.object_indices[s_ids], :7] = sampled_pose[:, self.num_linker_hand_dofs:] + object_pose_noise
-            self.root_state_tensor[self.object_indices[s_ids], 7:RIGID_BODY_STATES] = 0
-            pos = sampled_pose[:, :self.num_linker_hand_dofs]
-            self.linker_hand_dof_pos[s_ids, :] = pos
-            self.linker_hand_dof_vel[s_ids, :] = 0
-            self.prev_targets[s_ids, :self.num_linker_hand_dofs] = pos
-            self.cur_targets[s_ids, :self.num_linker_hand_dofs] = pos
-            self.init_pose_buf[s_ids, :] = pos
-            
-            # ============================================================
-            # 更新每个环境的相对限位
-            # ============================================================
-            # 根据初始位置和相对范围，计算每个环境的动作限位
-            # 确保动作空间在初始位置两侧对称
-            # ============================================================
-            if self.use_relative_limit:
-                # 计算相对限位: init_pose ± relative_range
-                relative_lower = pos - self.dof_relative_range.unsqueeze(0)
-                relative_upper = pos + self.dof_relative_range.unsqueeze(0)
-                # 与绝对限位取交集
-                self.env_dof_lower_limits[s_ids] = torch.max(relative_lower, self.linker_hand_dof_lower_limits.unsqueeze(0))
-                self.env_dof_upper_limits[s_ids] = torch.min(relative_upper, self.linker_hand_dof_upper_limits.unsqueeze(0))
+        # ================================================================
+        # 从缓存中采样初始姿态
+        # ================================================================
+        sampled_pose_idx = np.random.randint(self.saved_grasping_states.shape[0], size=len(env_ids))
+        sampled_pose = self.saved_grasping_states[sampled_pose_idx].clone()
+        
+        # ================================================================
+        # 解析缓存数据（支持新旧两种格式）
+        # ================================================================
+        # 新格式 (61维): [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
+        #   - hand_actual: 仿真稳定后的实际位置（用于物理状态，避免穿模）
+        #   - hand_target: 原始目标位置（用于PD控制，产生抓握力）
+        # 旧格式 (34维): [hand_dof(27) + obj_pos(3) + obj_rot(4)]
+        #   - 物理位置 = 控制目标（零力矩陷阱）
+        # ================================================================
+        if self.cache_is_new_format:
+            # 新格式: 分别提取 actual 和 target
+            hand_actual = sampled_pose[:, :self.num_linker_hand_dofs]
+            hand_target = sampled_pose[:, self.num_linker_hand_dofs:self.num_linker_hand_dofs*2]
+            obj_pose_start = self.num_linker_hand_dofs * 2
+        else:
+            # 旧格式: actual = target（向后兼容）
+            hand_actual = sampled_pose[:, :self.num_linker_hand_dofs]
+            hand_target = hand_actual.clone()
+            obj_pose_start = self.num_linker_hand_dofs
+        
+        # 物体位姿（添加位置噪声）
+        object_pose_noise = torch.normal(0, self.random_pose_noise, size=(sampled_pose.shape[0], 7), device=self.device, dtype=torch.float)
+        object_pose_noise[:, 3:] = 0  # disable rotation noise
+        self.root_state_tensor[self.object_indices[env_ids], :7] = sampled_pose[:, obj_pose_start:obj_pose_start+7] + object_pose_noise
+        self.root_state_tensor[self.object_indices[env_ids], 7:RIGID_BODY_STATES] = 0
+        
+        # ================================================================
+        # 分别设置物理位置和控制目标
+        # ================================================================
+        # 物理位置: 使用 actual（避免穿模爆炸）
+        self.linker_hand_dof_pos[env_ids, :] = hand_actual
+        self.linker_hand_dof_vel[env_ids, :] = 0
+        
+        # 控制目标: 使用 target（产生抓握力）
+        # PD 误差 = target - actual ≠ 0，产生持续夹紧力矩
+        self.prev_targets[env_ids, :self.num_linker_hand_dofs] = hand_target
+        self.cur_targets[env_ids, :self.num_linker_hand_dofs] = hand_target
+        self.init_pose_buf[env_ids, :] = hand_target  # 用 target 作为初始参考
+        
+        # ============================================================
+        # 更新每个环境的相对限位
+        # ============================================================
+        if self.use_relative_limit:
+            # 计算相对限位: init_pose ± relative_range (基于 target)
+            relative_lower = hand_target - self.dof_relative_range.unsqueeze(0)
+            relative_upper = hand_target + self.dof_relative_range.unsqueeze(0)
+            # 与绝对限位取交集
+            self.env_dof_lower_limits[env_ids] = torch.max(relative_lower, self.linker_hand_dof_lower_limits.unsqueeze(0))
+            self.env_dof_upper_limits[env_ids] = torch.min(relative_upper, self.linker_hand_dof_upper_limits.unsqueeze(0))
 
         object_indices = torch.unique(self.object_indices[env_ids]).to(torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.root_state_tensor), gymtorch.unwrap_tensor(object_indices), len(object_indices))
         hand_indices = self.hand_indices[env_ids].to(torch.int32)
-        if not self.torque_control:
-            self.gym.set_dof_position_target_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.prev_targets), gymtorch.unwrap_tensor(hand_indices), len(env_ids))
+        
+        # ============================================================
+        # Flying Hand 混合控制模式下的 Reset：
+        # - Flying base 使用 DOF_MODE_POS，需要设置位置目标
+        # - 手部使用 DOF_MODE_EFFORT，由力矩控制（reset时不需要额外操作）
+        # ============================================================
+        # 无论是否 torque_control，Flying base 都需要设置位置目标
+        # 因为它始终是 DOF_MODE_POS 模式
+        if self.flying_hand_enabled:
+            self.gym.set_dof_position_target_tensor_indexed(
+                self.sim, 
+                gymtorch.unwrap_tensor(self.prev_targets), 
+                gymtorch.unwrap_tensor(hand_indices), 
+                len(env_ids)
+            )
+        elif not self.torque_control:
+            # 非 Flying Hand 且非力矩控制模式
+            self.gym.set_dof_position_target_tensor_indexed(
+                self.sim, 
+                gymtorch.unwrap_tensor(self.prev_targets), 
+                gymtorch.unwrap_tensor(hand_indices), 
+                len(env_ids)
+            )
+        
         self.gym.set_dof_state_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.dof_state), gymtorch.unwrap_tensor(hand_indices), len(env_ids))
 
         # 记录初始物体高度用于相对 relative_z_drop_threshold
@@ -1078,6 +1144,37 @@ class LinkerHandHora(VecTask):
         # 累计旋转角度（用于统计圈数）
         rot_angle = vec_dot * self.dt * self.control_freq_inv # 当前时间步旋转角度
         self.total_rot_angle += rot_angle
+        
+        # ============================================================
+        # DEBUG: total_rad 计算逻辑调试输出
+        # ============================================================
+        if self.viewer is not None and hasattr(self, '_debug_spin_counter'):
+            self._debug_spin_counter += 1
+            # 每50步输出一次，避免刷屏
+            if self._debug_spin_counter % 50 == 0:
+                # 笔的长轴是 local Z，用四元数旋转 [0,0,1] 得到世界坐标系下的笔长轴方向
+                local_z = torch.tensor([[0., 0., 1.]], device=self.device)
+                pen_long_axis_world = quat_apply(self.object_rot[0:1], local_z)  # 只取 env 0
+                
+                print("\n" + "="*60)
+                print(f"[DEBUG spin_check] Step {self._debug_spin_counter}")
+                print("="*60)
+                print(f"  total_rot_angle (rad): {self.total_rot_angle[0].item():.4f}")
+                print(f"  total_rot_angle (deg): {self.total_rot_angle[0].item() * 180 / 3.14159:.2f}")
+                print(f"  total_rot_angle (圈): {self.total_rot_angle[0].item() / (2*3.14159):.3f}")
+                print(f"  当前 rot_angle (this step): {rot_angle[0].item():.6f} rad")
+                print(f"  vec_dot (angvel·rot_axis): {vec_dot[0].item():.4f} rad/s")
+                print(f"  object_angvel (3D): [{object_angvel[0, 0].item():.4f}, {object_angvel[0, 1].item():.4f}, {object_angvel[0, 2].item():.4f}]")
+                print(f"  rot_axis_buf (目标轴): [{self.rot_axis_buf[0, 0].item():.1f}, {self.rot_axis_buf[0, 1].item():.1f}, {self.rot_axis_buf[0, 2].item():.1f}]")
+                print(f"  pen_long_axis_world (笔长轴在世界坐标): [{pen_long_axis_world[0, 0].item():.4f}, {pen_long_axis_world[0, 1].item():.4f}, {pen_long_axis_world[0, 2].item():.4f}]")
+                print(f"  object_rot (四元数): [{self.object_rot[0, 0].item():.4f}, {self.object_rot[0, 1].item():.4f}, {self.object_rot[0, 2].item():.4f}, {self.object_rot[0, 3].item():.4f}]")
+                print(f"  rotate_reward: {rotate_reward[0].item():.4f}")
+                print(f"  angvel_clip_min: {self.angvel_clip_min}, angvel_clip_max: {self.angvel_clip_max}")
+                print("="*60)
+        elif self.viewer is not None and not hasattr(self, '_debug_spin_counter'):
+            self._debug_spin_counter = 0
+            print("\n[DEBUG] spin_check 调试模式已启用，将每50步输出一次详细信息")
+        
         # 计算物体线速度惩罚，这里不使用self.object_linvel，而是用位置差分计算
         # 在仿真中，物理计算频率（Physics Freq, e.g., 1000Hz）通常远高于控制频率（Control Freq, e.g., 50Hz）。 self.object_linvel 只是这 20 个物理步中最后一步的速度。如果物体刚好在那一步发生了碰撞（Contact），瞬时速度可能会剧烈抖动（高频噪声），而位置差分则平滑了这一过程。
         object_linvel = ((self.object_pos - self.object_pos_prev) / (self.control_freq_inv * self.dt)).clone()
@@ -1105,6 +1202,24 @@ class LinkerHandHora(VecTask):
         # 新增奖励：当每圈旋转180-360度时，根据手部姿态与初始状态的差异给出惩罚
         hand_pose_consistency_penalty = self._compute_hand_pose_consistency_penalty()
 
+        # ============================================================
+        # Flying base 移动惩罚
+        # ============================================================
+        # 惩罚 Flying base 的频繁移动，鼓励策略依赖手指技巧而非手腕运动
+        # 计算方式：基于位置差分计算速度 L1 范数
+        # - 线速度惩罚 (前3个 DOF: px, py, pz)
+        # - 角速度惩罚 (后3个 DOF: rx, ry, rz)
+        # ============================================================
+        if self.flying_hand_enabled:
+            flying_base_vel = (self.linker_hand_dof_pos[:, :NUM_FLYING_DOF] - self.flying_base_pos_prev) / (self.control_freq_inv * self.dt)
+            # 分别计算线速度和角速度的 L1 范数
+            flying_linear_vel = torch.abs(flying_base_vel[:, :3]).sum(dim=-1)   # px, py, pz
+            flying_angular_vel = torch.abs(flying_base_vel[:, 3:6]).sum(dim=-1)  # rx, ry, rz
+            # 综合惩罚：线速度 + 角速度（可以考虑不同权重）
+            flying_base_movement_penalty = flying_linear_vel + flying_angular_vel
+        else:
+            flying_base_movement_penalty = torch.zeros(self.num_envs, device=self.device)
+
         self.rew_buf[:] = compute_hand_reward(
             object_linvel_penalty, self._get_reward_scale_by_name('obj_linvel_penalty'),
             rotate_reward, self._get_reward_scale_by_name('rotate_reward'),
@@ -1113,7 +1228,8 @@ class LinkerHandHora(VecTask):
             z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty'),
             position_penalty, self._get_reward_scale_by_name('position_penalty'),
             rotate_penalty, self._get_reward_scale_by_name('rotate_penalty'),
-            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty')
+            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty'),
+            flying_base_movement_penalty, self._get_reward_scale_by_name('flying_base_movement_penalty')
         )
         self.reset_buf[:] = self.check_termination(self.object_pos)
         
@@ -1131,6 +1247,7 @@ class LinkerHandHora(VecTask):
         self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty')).mean()
         self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty')).mean()
         self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty')).mean()
+        self.extras['penalty/flying_base_movement_penalty'] = (flying_base_movement_penalty * self._get_reward_scale_by_name('flying_base_movement_penalty')).mean()
         self.extras['finger_obj_penalty(NOT USED)'] = finger_obj_penalty.mean()
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
         self.extras['vel/pitch_angvel'] = torch.abs(object_angvel[:, 1]).mean()
@@ -1251,7 +1368,7 @@ class LinkerHandHora(VecTask):
                         fx = self.debug_contacts[env, i, 0]
                         fy = self.debug_contacts[env, i, 1]
                         fz = self.debug_contacts[env, i, 2]
-                        print(f"Fx: {fx:.4f}, Fy: {fy:.4f}, Fz: {fz:.4f}, Norm: {contact_norm:.4f}")
+                        # print(f"Fx: {fx:.4f}, Fy: {fy:.4f}, Fz: {fz:.4f}, Norm: {contact_norm:.4f}")
                         self.gym.set_rigid_body_color(self.envs[env], self.hand_actors[env],
                                                       contact_idx, gymapi.MESH_VISUAL_AND_COLLISION,
                                                       gymapi.Vec3(0.0, 1.0, 0.0)) # RGB 颜色向量 (R, G, B)，这里是绿色
@@ -1293,6 +1410,29 @@ class LinkerHandHora(VecTask):
         
         targets = self.prev_targets + self.action_scale * self.actions
         # targets = self.actions.clone()
+        
+        # ============================================================
+        # Flying base 速度限制
+        # ============================================================
+        # 限制 Flying base 每一步的最大位移，防止过快移动
+        # - 线速度限制 (前3个 DOF: px, py, pz) -> 最大位移 = linearVelocity * control_dt
+        # - 角速度限制 (后3个 DOF: rx, ry, rz) -> 最大位移 = angularVelocity * control_dt
+        # ============================================================
+        if self.flying_hand_enabled:
+            control_dt = self.control_freq_inv * self.dt  # 控制步长时间
+            max_linear_disp = self.flying_linear_velocity * control_dt  # 最大线位移
+            max_angular_disp = self.flying_angular_velocity * control_dt  # 最大角位移
+            
+            # 计算 Flying base 的位移 (相对于上一步的目标)
+            flying_base_delta = targets[:, :NUM_FLYING_DOF] - self.prev_targets[:, :NUM_FLYING_DOF]
+            
+            # 分别限制线位移和角位移
+            flying_base_delta[:, :3] = torch.clamp(flying_base_delta[:, :3], -max_linear_disp, max_linear_disp)
+            flying_base_delta[:, 3:6] = torch.clamp(flying_base_delta[:, 3:6], -max_angular_disp, max_angular_disp)
+            
+            # 应用限制后的位移
+            targets[:, :NUM_FLYING_DOF] = self.prev_targets[:, :NUM_FLYING_DOF] + flying_base_delta
+        
         # ============================================================
         # 使用每个环境独立的限位（相对限位）
         # ============================================================
@@ -1309,6 +1449,9 @@ class LinkerHandHora(VecTask):
         self.ft_rot_prev[:] = self.fingertip_orientation
         self.ft_pos_prev[:] = self.fingertip_pos
         self.dof_vel_prev[:] = self.dof_vel_finite_diff
+        # 保存 Flying base 的当前位置用于下一步速度计算
+        if self.flying_hand_enabled:
+            self.flying_base_pos_prev[:] = self.linker_hand_dof_pos[:, :NUM_FLYING_DOF]
 
     def reset(self):
         super().reset() # 直接对所有env调用了self.reset_idx(env_ids)
@@ -1404,6 +1547,20 @@ class LinkerHandHora(VecTask):
             torques = self.p_gain * (noise_action - dof_pos) - self.d_gain * dof_vel
             torques = torch.clip(torques, -self.torque_limit, self.torque_limit).clone()
             self.torques[:, step_id] = torques
+            
+            # ============================================================
+            # Flying Hand 混合控制模式：
+            # - Flying base (前6个DOF): DOF_MODE_POS，使用 IsaacGym 内置 PD
+            # - 手部关节 (后21个DOF): DOF_MODE_EFFORT，使用自定义力矩
+            # ============================================================
+            if self.flying_hand_enabled:
+                # Flying base: 通过 set_dof_position_target_tensor 设置位置目标
+                # IsaacGym 内置 PD 控制器会自动执行位置跟踪
+                self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.cur_targets))
+                
+                # 手部关节: Flying base 的力矩设为 0（它们由位置控制器驱动）
+                torques[:, :NUM_FLYING_DOF] = 0.0
+            
             self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(torques))
         else:
             self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(noise_action))
@@ -2117,12 +2274,13 @@ class LinkerHandHora(VecTask):
             
             # Flying base 使用位置控制模式（PD 控制器）
             if self.flying_hand_enabled and i < NUM_FLYING_DOF:
-                linker_hand_dof_props['effort'][i] = 1000.0  # 高力矩限制以支持刚性位控
+                # 极高力矩限制以支持刚性位控（匹配高P增益）
+                linker_hand_dof_props['effort'][i] = 100000.0
                 linker_hand_dof_props['stiffness'][i] = self.flying_base_pgain
                 linker_hand_dof_props['damping'][i] = self.flying_base_dgain
                 linker_hand_dof_props['driveMode'][i] = gymapi.DOF_MODE_POS
                 linker_hand_dof_props['friction'][i] = 0.0
-                linker_hand_dof_props['armature'][i] = 0.01
+                linker_hand_dof_props['armature'][i] = 0.001  # 极小惯量，提高响应速度
                 # 设置速度限制
                 if i < 3:  # 平移关节
                     linker_hand_dof_props['velocity'][i] = self.flying_linear_velocity
@@ -2244,11 +2402,8 @@ class LinkerHandHora(VecTask):
             # 手悬浮在 ~0.35m，物体放在 0.65m 安全位置
             object_start_pose.p.z = self.flying_default_height + 0.1
         else:
-            # 普通模式: 使用原来的设置
-            if self.save_init_pose:
-                object_start_pose.p.z = 0.08  # 生成缓存时略高一点
-            else:
-                object_start_pose.p.z = 0.07  # 正常运行时
+            # 普通模式: 使用固定高度
+            object_start_pose.p.z = 0.07
         
         return linker_hand_start_pose, object_start_pose
 
@@ -2261,7 +2416,8 @@ def compute_hand_reward(
     z_dist_penalty, z_dist_penalty_scale: float,
     position_penalty, position_penalty_scale: float,
     rotate_penalty, rotate_penalty_scale: float,
-    hand_pose_consistency_penalty, hand_pose_consistency_penalty_scale: float
+    hand_pose_consistency_penalty, hand_pose_consistency_penalty_scale: float,
+    flying_base_movement_penalty, flying_base_movement_penalty_scale: float
 ):
     reward = rotate_reward_scale * rotate_reward
     reward = reward + object_linvel_penalty * object_linvel_penalty_scale
@@ -2271,6 +2427,7 @@ def compute_hand_reward(
     reward = reward + position_penalty * position_penalty_scale
     reward = reward + rotate_penalty * rotate_penalty_scale
     reward = reward + hand_pose_consistency_penalty * hand_pose_consistency_penalty_scale
+    reward = reward + flying_base_movement_penalty * flying_base_movement_penalty_scale
     return reward
 
 
