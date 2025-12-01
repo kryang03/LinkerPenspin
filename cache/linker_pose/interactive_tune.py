@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+python cache/linker_pose/interactive_tune.py
 交互式姿态调试工具 - 适配 27 DoF Flying Hand (L25_dof_urdf_flying.urdf)
 
 整合 find_pos, find_rot, gravity_sim 功能于一体
@@ -27,6 +28,10 @@ URDF 结构 (27 DoF):
 物体旋转控制:
   J/L - Yaw 左/右
 
+旋转轴可视化控制:
+  V   - 切换旋转轴可视化 (显示/隐藏)
+  B   - 循环切换旋转轴方向 (+Z/-Z/+X/-X/+Y/-Y)
+  
 功能控制:
   Space - 开启/关闭重力
   R     - 重置物体位置
@@ -47,15 +52,38 @@ Author: Auto-generated for LinkerPenspin project
 import isaacgym
 from isaacgym import gymapi
 from isaacgym import gymtorch
+from isaacgym import gymutil
 import torch
 import numpy as np
 import os
 import math
 import time
 import argparse
+import yaml
 
 
 # ==================== 配置区域 ====================
+# 配置文件路径（相对于脚本）
+TASK_CONFIG_PATH = "../../configs/task/LinkerHandHora.yaml"
+
+def load_rotation_axis_from_config():
+    """从配置文件加载旋转轴设置"""
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    config_path = os.path.normpath(os.path.join(script_dir, TASK_CONFIG_PATH))
+    
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        rot_axis = config.get('env', {}).get('rotation_axis', [0, 0, 1])
+        if isinstance(rot_axis, str):
+            # 转换旧格式字符串为向量
+            sign = 1 if rot_axis[0] == '+' else -1
+            axis = rot_axis[1]
+            axis_map = {'x': [1, 0, 0], 'y': [0, 1, 0], 'z': [0, 0, 1]}
+            rot_axis = [sign * v for v in axis_map.get(axis, [0, 0, 1])]
+        return rot_axis
+    return [0, 0, 1]
+
 CONFIG = {
     # --- 资源路径 (相对于当前脚本) ---
     "hand_urdf": "../../assets/linker_hand/L25_dof_urdf_flying.urdf",
@@ -73,6 +101,18 @@ CONFIG = {
     "hand_base_init_pos": [0.0, 0.0, 0.35],  # 与 virtual_pz 的 limit 匹配
     # 让手平躺，手心朝上: 绕 Y 轴旋转 -75 度 (约 -1.31 弧度)
     "hand_base_init_rot": [0.0, -1.31, 0.0],  # Euler (Roll, Pitch, Yaw) - Pitch = -75°
+    
+    # --- 旋转轴设置 (从配置文件加载或使用默认值) ---
+    "rotation_axis": load_rotation_axis_from_config(),
+    # 预定义的旋转轴选项（用于交互式切换）
+    "rotation_axis_presets": [
+        {"name": "+Z (CCW)", "axis": [0, 0, 1]},
+        {"name": "-Z (CW)", "axis": [0, 0, -1]},
+        {"name": "+X", "axis": [1, 0, 0]},
+        {"name": "-X", "axis": [-1, 0, 0]},
+        {"name": "+Y", "axis": [0, 1, 0]},
+        {"name": "-Y", "axis": [0, -1, 0]},
+    ],
     
     # --- 场景预设 (完整状态: 手部27 DoF + 物体位置旋转) ---
     # 每个预设包含: hand_dof (27个值), object_pos (3个值), object_rot (4个四元数)
@@ -147,6 +187,11 @@ class InteractivePoseTuner:
         # 手部基座控制量 (6 DoF)
         self.hand_base_pos = np.array(CONFIG["hand_base_init_pos"], dtype=np.float32)
         self.hand_base_rot = np.array(CONFIG["hand_base_init_rot"], dtype=np.float32)
+        
+        # 旋转轴可视化相关状态
+        self.show_rotation_axis = True  # 是否显示旋转轴
+        self.current_rotation_axis = np.array(CONFIG["rotation_axis"], dtype=np.float32)
+        self.rotation_axis_preset_idx = 0  # 当前预设索引
         
         # 物体位置控制量 (用于交互调整)
         self.obj_pos = np.array(CONFIG["obj_init_pos"], dtype=np.float32)
@@ -386,6 +431,10 @@ class InteractivePoseTuner:
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_T, "toggle_finger_preset")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_F, "toggle_help")
         
+        # 旋转轴可视化控制
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_V, "toggle_axis_viz")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_B, "cycle_axis")
+        
         # 手指关节单独控制 (数字键增加, Shift+数字键减少)
         # IsaacGym 按字母顺序: index[6-9], little[10-13], middle[14-17], ring[18-21], thumb[22-26]
         # 食指 (index): joint0-3 -> DoF 6, 7, 8, 9
@@ -434,6 +483,8 @@ class InteractivePoseTuner:
 
     def _print_help(self):
         """打印帮助信息"""
+        # 获取当前旋转轴信息
+        axis_str = f"[{self.current_rotation_axis[0]:.1f}, {self.current_rotation_axis[1]:.1f}, {self.current_rotation_axis[2]:.1f}]"
         help_text = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                    交互式姿态调试工具 - 快捷键说明                              ║
@@ -443,6 +494,10 @@ class InteractivePoseTuner:
 ║                                                                               ║
 ║  物体旋转控制:                                                                 ║
 ║    J/L - Yaw 左/右 (绕Z轴)                                                    ║
+║                                                                               ║
+║  旋转轴可视化控制:                                                             ║
+║    V - 显示/隐藏旋转轴 (当前: {axis_viz})                                      ║
+║    B - 循环切换旋转轴方向 (当前: {axis})                                       ║
 ║                                                                               ║
 ║  功能键:                                                                       ║
 ║    Space - 开启/关闭重力    R - 重置物体位置    P - 打印可复制姿态            ║
@@ -458,7 +513,9 @@ class InteractivePoseTuner:
 ║  步长: 位置={pos_step:.4f}m  旋转={rot_step:.4f}rad  关节={finger_step:.4f}rad║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """.format(pos_step=self.step_size_pos, rot_step=self.step_size_rot, 
-           finger_step=CONFIG["step_size_finger"])
+           finger_step=CONFIG["step_size_finger"],
+           axis_viz="ON" if self.show_rotation_axis else "OFF",
+           axis=axis_str)
         print(help_text)
 
     def _process_events(self):
@@ -512,6 +569,12 @@ class InteractivePoseTuner:
                     self._print_help()
                 else:
                     print("帮助已隐藏 (按 F 重新显示)")
+            
+            # --- 旋转轴可视化控制 ---
+            elif action == "toggle_axis_viz":
+                self._toggle_rotation_axis_viz()
+            elif action == "cycle_axis":
+                self._cycle_rotation_axis()
             
             # --- 手指关节单独控制 ---
             # IsaacGym 按字母顺序: index[6-9], little[10-13], middle[14-17], ring[18-21], thumb[22-26]
@@ -673,6 +736,73 @@ class InteractivePoseTuner:
         self._apply_scene_preset(next_preset)
         print(f"场景预设切换为: {next_preset}")
 
+    def _toggle_rotation_axis_viz(self):
+        """切换旋转轴可视化开关"""
+        self.show_rotation_axis = not self.show_rotation_axis
+        status = "ON" if self.show_rotation_axis else "OFF"
+        axis_str = f"[{self.current_rotation_axis[0]:.2f}, {self.current_rotation_axis[1]:.2f}, {self.current_rotation_axis[2]:.2f}]"
+        print(f"旋转轴可视化: {status} (当前轴: {axis_str})")
+    
+    def _cycle_rotation_axis(self):
+        """循环切换旋转轴预设"""
+        presets = CONFIG["rotation_axis_presets"]
+        self.rotation_axis_preset_idx = (self.rotation_axis_preset_idx + 1) % len(presets)
+        preset = presets[self.rotation_axis_preset_idx]
+        self.current_rotation_axis = np.array(preset["axis"], dtype=np.float32)
+        print(f"旋转轴切换为: {preset['name']} = {preset['axis']}")
+        print(f"  提示: 如需保存此轴，请编辑 configs/task/LinkerHandHora.yaml 中的 rotation_axis")
+    
+    def _draw_rotation_axis(self):
+        """绘制旋转轴可视化"""
+        if not self.show_rotation_axis:
+            return
+        
+        # 获取物体当前位置作为旋转轴的中心点
+        obj_pos = self.root_states[1, 0:3].cpu().numpy()
+        
+        # 旋转轴线段的长度和颜色
+        axis_length = 0.3  # 30cm
+        
+        # 计算轴线段的两个端点
+        axis_dir = self.current_rotation_axis / (np.linalg.norm(self.current_rotation_axis) + 1e-8)
+        start_point = obj_pos - axis_dir * axis_length / 2
+        end_point = obj_pos + axis_dir * axis_length / 2
+        
+        # 绘制旋转轴 (黄色虚线)
+        # IsaacGym 使用 add_lines API
+        lines = np.array([
+            [start_point[0], start_point[1], start_point[2], end_point[0], end_point[1], end_point[2]]
+        ], dtype=np.float32)
+        
+        # 颜色: 黄色 (RGB)
+        colors = np.array([[1.0, 1.0, 0.0]], dtype=np.float32)
+        
+        self.gym.add_lines(self.viewer, self.env, 1, lines, colors)
+        
+        # 在轴的正方向端点绘制一个小箭头指示方向
+        # 箭头由两条短线组成
+        arrow_length = 0.03  # 3cm
+        # 找一个垂直于旋转轴的向量
+        if abs(axis_dir[2]) < 0.9:
+            perp1 = np.cross(axis_dir, np.array([0, 0, 1]))
+        else:
+            perp1 = np.cross(axis_dir, np.array([1, 0, 0]))
+        perp1 = perp1 / (np.linalg.norm(perp1) + 1e-8)
+        perp2 = np.cross(axis_dir, perp1)
+        
+        # 箭头的两个分支
+        arrow_base = end_point - axis_dir * arrow_length
+        arrow1 = arrow_base + perp1 * arrow_length * 0.5
+        arrow2 = arrow_base - perp1 * arrow_length * 0.5
+        
+        arrow_lines = np.array([
+            [end_point[0], end_point[1], end_point[2], arrow1[0], arrow1[1], arrow1[2]],
+            [end_point[0], end_point[1], end_point[2], arrow2[0], arrow2[1], arrow2[2]]
+        ], dtype=np.float32)
+        arrow_colors = np.array([[1.0, 0.8, 0.0], [1.0, 0.8, 0.0]], dtype=np.float32)
+        
+        self.gym.add_lines(self.viewer, self.env, 2, arrow_lines, arrow_colors)
+
     def _adjust_finger_group(self, finger_name, delta):
         """调整指定手指组的弯曲程度"""
         # 重要: IsaacGym 加载 URDF 后的关节顺序是按字母顺序排列的！
@@ -805,7 +935,14 @@ class InteractivePoseTuner:
                       f"重力={'ON' if self.gravity_active else 'OFF'}")
                 print(f"       食指: {[f'{v:.2f}' for v in idx_vals]} | 中指: {[f'{v:.2f}' for v in mid_vals]} | "
                       f"拇指: {[f'{v:.2f}' for v in thumb_vals]}")
+                # 打印旋转轴状态
+                if self.show_rotation_axis:
+                    axis_str = f"[{self.current_rotation_axis[0]:.2f}, {self.current_rotation_axis[1]:.2f}, {self.current_rotation_axis[2]:.2f}]"
+                    print(f"       旋转轴: {axis_str} (按V隐藏/B切换)")
                 last_status_time = current_time
+            
+            # 绘制旋转轴可视化
+            self._draw_rotation_axis()
             
             # 渲染
             self.gym.step_graphics(self.sim)

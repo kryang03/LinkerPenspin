@@ -254,12 +254,37 @@ class LinkerHandHora(VecTask):
             print(f"  缓存形状: {self.saved_grasping_states.shape}")
             print(f"  缓存格式: {format_str}")
 
+        # ================================================================
+        # 旋转轴初始化 (Rotation Axis Initialization)
+        # ================================================================
+        # 支持两种配置格式:
+        # 1. 旧格式 (字符串): '+z', '-z', '+x' 等
+        # 2. 新格式 (三维向量): [0, 0, 1], [0, 0, -1], [1, 0, 0] 等
+        #
+        # 旋转轴定义: 期望笔绕此轴旋转（右手螺旋法则）
+        # 正值分量表示逆时针旋转为正奖励，负值分量表示顺时针旋转为正奖励
+        # ================================================================
         self.rot_axis_buf = torch.zeros((self.num_envs, 3), device=self.device, dtype=torch.float)
         self.rot_axis_task = None
-        sign, axis = self.rotation_axis[0], self.rotation_axis[1]
-        axis_index = ['x', 'y', 'z'].index(axis)
-        self.rot_axis_buf[:, axis_index] = 1
-        self.rot_axis_buf[:, axis_index] = -self.rot_axis_buf[:, axis_index] if sign == '-' else self.rot_axis_buf[:, axis_index]
+        
+        # 检查是否为列表/元组格式 (包括 OmegaConf 的 ListConfig)
+        is_list_format = hasattr(self.rotation_axis, '__iter__') and not isinstance(self.rotation_axis, str)
+        
+        if is_list_format:
+            # 新格式: 三维向量 [x, y, z]
+            rot_axis_vec = torch.tensor(list(self.rotation_axis), device=self.device, dtype=torch.float)
+            # 归一化旋转轴
+            rot_axis_norm = torch.norm(rot_axis_vec) + 1e-8
+            rot_axis_vec = rot_axis_vec / rot_axis_norm
+            self.rot_axis_buf[:] = rot_axis_vec.unsqueeze(0).expand(self.num_envs, -1)
+            print(f"[旋转轴] 使用三维向量格式: {list(self.rotation_axis)} (归一化后: {rot_axis_vec.tolist()})")
+        else:
+            # 旧格式: 字符串 '+z', '-z' 等
+            sign, axis = self.rotation_axis[0], self.rotation_axis[1]
+            axis_index = ['x', 'y', 'z'].index(axis)
+            self.rot_axis_buf[:, axis_index] = 1
+            self.rot_axis_buf[:, axis_index] = -self.rot_axis_buf[:, axis_index] if sign == '-' else self.rot_axis_buf[:, axis_index]
+            print(f"[旋转轴] 使用字符串格式: {self.rotation_axis} -> {self.rot_axis_buf[0].tolist()}")
 
         # useful buffers
         self.init_pose_buf = torch.zeros((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float)
@@ -1125,15 +1150,67 @@ class LinkerHandHora(VecTask):
         waypoint_sparse_reward = torch.zeros(self.num_envs, device=self.device)
         # torque penalty
         torque_penalty = (self.torques[:, -1] ** 2).sum(-1)
-        # Compute offset in radians. Radians -> radians / sec
-        angdiff = quat_to_axis_angle(quat_mul(self.object_rot, quat_conjugate(self.object_rot_prev)))
-        object_angvel = angdiff / (self.control_freq_inv * self.dt)
-        # vec_dot > 0 表示与期望方向一致的旋转
-        # vec_dot < 0 表示与期望方向相反的旋转 (逆向旋转)   
-        vec_dot = (object_angvel * self.rot_axis_buf).sum(-1)
+        
+        # ================================================================
+        # Triangle Pass 旋转奖励计算（基于笔长轴投影的扫过角度）
+        # ================================================================
+        # 原理说明：
+        # - 原逻辑计算的是刚体角速度在旋转轴上的投影，无法区分"公转"和"自转"
+        # - 策略会利用"搓笔"（自转）来 Hack 高奖励，而不是真正的 Triangle Pass
+        # - 新逻辑计算笔的长轴在旋转轴垂直平面上的投影向量的扫过角度
+        # - 如果只是自转（搓笔），投影向量不会变化，奖励为 0
+        # ================================================================
+        
+        # 1. 获取笔的长轴向量 (蓝线 = 局部 Z 轴 [0, 0, 1])
+        local_axis_z = torch.zeros((self.num_envs, 3), device=self.device)
+        local_axis_z[:, 2] = 1.0  # 笔的长轴是局部 Z 轴
+        
+        # 将局部向量旋转到世界坐标系，self.object_rot是物体当前帧的旋转四元数
+        current_long_axis = quat_apply(self.object_rot, local_axis_z)      # 当前帧笔的长轴方向
+        prev_long_axis = quat_apply(self.object_rot_prev, local_axis_z)    # 上一帧笔的长轴方向
+        
+        # 2. 将长轴投影到旋转轴的垂直平面
+        # 投影公式: v_proj = v - (v · n) * n，其中 n 是旋转轴的单位向量
+        # rot_axis_buf 已经在初始化时归一化
+        rot_axis_normalized = self.rot_axis_buf / (torch.norm(self.rot_axis_buf, dim=-1, keepdim=True) + 1e-8)
+        
+        # 计算当前帧投影
+        dot_curr = (current_long_axis * rot_axis_normalized).sum(dim=-1, keepdim=True)
+        vec_curr_3d = current_long_axis - dot_curr * rot_axis_normalized
+        
+        # 计算上一帧投影
+        dot_prev = (prev_long_axis * rot_axis_normalized).sum(dim=-1, keepdim=True)
+        vec_prev_3d = prev_long_axis - dot_prev * rot_axis_normalized
+        
+        # 3. 归一化投影向量（关键步骤，防止长度变化影响叉乘结果）
+        # 添加 epsilon 防止除零（当笔与旋转轴平行时）
+        vec_curr_norm = torch.norm(vec_curr_3d, dim=-1, keepdim=True) + 1e-6
+        vec_prev_norm = torch.norm(vec_prev_3d, dim=-1, keepdim=True) + 1e-6
+        vec_curr_3d = vec_curr_3d / vec_curr_norm
+        vec_prev_3d = vec_prev_3d / vec_prev_norm
+        
+        # 4. 计算 3D 叉乘获取旋转角
+        # cross = prev × curr，结果向量与旋转轴平行时表示绕该轴的旋转
+        # 叉乘结果与旋转轴的点积 = |prev||curr|sin(theta) * sign
+        # 由于 prev 和 curr 已归一化，结果 ≈ sin(theta)
+        cross_product = torch.cross(vec_prev_3d, vec_curr_3d, dim=-1)
+        # 与旋转轴点积得到有符号的角度变化（正值=与旋转轴同向旋转）
+        angle_delta = (cross_product * rot_axis_normalized).sum(dim=-1)
+        
+        # 5. 计算这一帧的"公转"速度 (rad/s)
+        spin_velocity = angle_delta / (self.control_freq_inv * self.dt)
+        
+        # 6. 计算奖励
+        # 旋转轴的模长表示期望的旋转方向强度（已归一化为1）
+        # angle_delta 已经包含了方向信息（与旋转轴同向为正）
+        vec_dot = spin_velocity  # 与旋转轴同向旋转时为正
         
         # 保存当前角速度用于early termination判断
         self.current_angvel = vec_dot.clone()
+        
+        # 同时计算刚体角速度用于日志输出（保留原逻辑用于对比分析）
+        angdiff = quat_to_axis_angle(quat_mul(self.object_rot, quat_conjugate(self.object_rot_prev)))
+        object_angvel = angdiff / (self.control_freq_inv * self.dt)
         
         # 奖励只针对与期望方向一致的旋转，且不超过设定的最大速度
         rotate_reward = torch.clip(vec_dot, max=self.angvel_clip_max, min=self.angvel_clip_min)
@@ -1142,38 +1219,42 @@ class LinkerHandHora(VecTask):
         penalty_reverse_rotation = torch.relu(self.angvel_penalty_threshold_low-vec_dot)
         rotate_penalty = penalty_overspeed + penalty_reverse_rotation
         # 累计旋转角度（用于统计圈数）
-        rot_angle = vec_dot * self.dt * self.control_freq_inv # 当前时间步旋转角度
+        # 使用 angle_delta（投影角度变化量）
+        # angle_delta 已经包含方向信息（与旋转轴同向为正）
+        rot_angle = angle_delta  # 与旋转轴同向旋转时为正
         self.total_rot_angle += rot_angle
         
         # ============================================================
-        # DEBUG: total_rad 计算逻辑调试输出
+        # DEBUG: total_rad 计算逻辑调试输出（已更新为新的投影角度算法）
         # ============================================================
         if self.viewer is not None and hasattr(self, '_debug_spin_counter'):
             self._debug_spin_counter += 1
             # 每50步输出一次，避免刷屏
             if self._debug_spin_counter % 50 == 0:
-                # 笔的长轴是 local Z，用四元数旋转 [0,0,1] 得到世界坐标系下的笔长轴方向
-                local_z = torch.tensor([[0., 0., 1.]], device=self.device)
-                pen_long_axis_world = quat_apply(self.object_rot[0:1], local_z)  # 只取 env 0
-                
-                print("\n" + "="*60)
-                print(f"[DEBUG spin_check] Step {self._debug_spin_counter}")
-                print("="*60)
+                print("\n" + "="*75)
+                print(f"[DEBUG spin_check] Step {self._debug_spin_counter} (新算法: 任意轴投影)")
+                print("="*75)
                 print(f"  total_rot_angle (rad): {self.total_rot_angle[0].item():.4f}")
                 print(f"  total_rot_angle (deg): {self.total_rot_angle[0].item() * 180 / 3.14159:.2f}")
                 print(f"  total_rot_angle (圈): {self.total_rot_angle[0].item() / (2*3.14159):.3f}")
-                print(f"  当前 rot_angle (this step): {rot_angle[0].item():.6f} rad")
-                print(f"  vec_dot (angvel·rot_axis): {vec_dot[0].item():.4f} rad/s")
-                print(f"  object_angvel (3D): [{object_angvel[0, 0].item():.4f}, {object_angvel[0, 1].item():.4f}, {object_angvel[0, 2].item():.4f}]")
-                print(f"  rot_axis_buf (目标轴): [{self.rot_axis_buf[0, 0].item():.1f}, {self.rot_axis_buf[0, 1].item():.1f}, {self.rot_axis_buf[0, 2].item():.1f}]")
-                print(f"  pen_long_axis_world (笔长轴在世界坐标): [{pen_long_axis_world[0, 0].item():.4f}, {pen_long_axis_world[0, 1].item():.4f}, {pen_long_axis_world[0, 2].item():.4f}]")
-                print(f"  object_rot (四元数): [{self.object_rot[0, 0].item():.4f}, {self.object_rot[0, 1].item():.4f}, {self.object_rot[0, 2].item():.4f}, {self.object_rot[0, 3].item():.4f}]")
+                print("-"*75)
+                print(f"  当前帧角度变化 angle_delta: {angle_delta[0].item():.6f} rad")
+                print(f"  当前帧有效角度 rot_angle: {rot_angle[0].item():.6f} rad")
+                print(f"  spin_velocity (投影公转速度): {spin_velocity[0].item():.4f} rad/s")
+                print(f"  vec_dot (奖励用): {vec_dot[0].item():.4f} rad/s")
+                print("-"*75)
+                print(f"  旋转轴 rot_axis_buf: [{self.rot_axis_buf[0, 0].item():.3f}, {self.rot_axis_buf[0, 1].item():.3f}, {self.rot_axis_buf[0, 2].item():.3f}]")
+                print(f"  笔长轴 (世界坐标): [{current_long_axis[0, 0].item():.4f}, {current_long_axis[0, 1].item():.4f}, {current_long_axis[0, 2].item():.4f}]")
+                print(f"  笔长轴投影 (当前): [{vec_curr_3d[0, 0].item():.4f}, {vec_curr_3d[0, 1].item():.4f}, {vec_curr_3d[0, 2].item():.4f}]")
+                print(f"  笔长轴投影 (上帧): [{vec_prev_3d[0, 0].item():.4f}, {vec_prev_3d[0, 1].item():.4f}, {vec_prev_3d[0, 2].item():.4f}]")
+                print("-"*75)
+                print(f"  [对比] 刚体角速度 (3D): [{object_angvel[0, 0].item():.4f}, {object_angvel[0, 1].item():.4f}, {object_angvel[0, 2].item():.4f}]")
+                print(f"  [对比] 原 vec_dot (会被自转污染): {(object_angvel * self.rot_axis_buf).sum(-1)[0].item():.4f}")
                 print(f"  rotate_reward: {rotate_reward[0].item():.4f}")
-                print(f"  angvel_clip_min: {self.angvel_clip_min}, angvel_clip_max: {self.angvel_clip_max}")
-                print("="*60)
+                print("="*75)
         elif self.viewer is not None and not hasattr(self, '_debug_spin_counter'):
             self._debug_spin_counter = 0
-            print("\n[DEBUG] spin_check 调试模式已启用，将每50步输出一次详细信息")
+            print("\n[DEBUG] spin_check 调试模式已启用（新算法: 任意轴投影），将每50步输出一次详细信息")
         
         # 计算物体线速度惩罚，这里不使用self.object_linvel，而是用位置差分计算
         # 在仿真中，物理计算频率（Physics Freq, e.g., 1000Hz）通常远高于控制频率（Control Freq, e.g., 50Hz）。 self.object_linvel 只是这 20 个物理步中最后一步的速度。如果物体刚好在那一步发生了碰撞（Contact），瞬时速度可能会剧烈抖动（高频噪声），而位置差分则平滑了这一过程。
@@ -1252,6 +1333,9 @@ class LinkerHandHora(VecTask):
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
         self.extras['vel/pitch_angvel'] = torch.abs(object_angvel[:, 1]).mean()
         self.extras['vel/yaw_angvel(NEED)'] = torch.abs(object_angvel[:, 2]).mean()
+        # 新增：投影角度算法相关日志（用于对比分析）
+        self.extras['vel/spin_velocity(NEW)'] = spin_velocity.mean()  # 新算法：投影公转速度
+        self.extras['vel/old_vec_dot(HACK)'] = (object_angvel * self.rot_axis_buf).sum(-1).mean()  # 原算法：会被自转污染
         # sparse，不能在每个时间步直接对所有环境取平均值
         self.extras['rot_angle'] = rot_angle
         self.extras['reward/waypoint_sparse_reward'] = waypoint_sparse_reward * self._get_reward_scale_by_name('waypoint_sparse_reward')

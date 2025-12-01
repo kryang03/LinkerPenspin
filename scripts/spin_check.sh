@@ -1,10 +1,8 @@
 #!/bin/bash
 # chmod -R u+x ../../Code
 
-# scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0039/teacher_nn
 # scripts/visualize.sh outputs/LinkerHandHora/debug_teacher_20251130_220235_copy/teacher_nn
-#best:
-# scripts/visualize.sh outputs/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
+
 # CHECKLIST
 # 1. 命令的最后一个参数指向output文件夹的名称，三维力信息是否重定向到正确的文件夹
 # 2. 检查checkpoint的名称
