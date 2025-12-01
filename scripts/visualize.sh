@@ -2,7 +2,7 @@
 # chmod -R u+x ../../Code
 
 # scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0039/teacher_nn
-# scripts/visualize.sh outputs/LinkerHandHora/debug_teacher_20251130_220235_copy/teacher_nn
+# scripts/visualize.sh outputs/LinkerHandHora/debug_teacher_20251201_142420/teacher_nn
 #best:
 # scripts/visualize.sh outputs/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
 # CHECKLIST
