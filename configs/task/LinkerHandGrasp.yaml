@@ -1,7 +1,0 @@
-name: LinkerHandGrasp
-defaults:
-  - LinkerHandHora
-
-env:
-  genGrasps: True
-  genGraspCategory: 'hora'
