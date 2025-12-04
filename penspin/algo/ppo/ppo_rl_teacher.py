@@ -213,7 +213,7 @@ class PPOTeacher(object):
         # 初始化 AverageScalarMeter 用于记录 episode 长度
         self.episode_lengths = AverageScalarMeter(20000)
         self.total_rot_angle = AverageScalarMeter(20000)
-        self.total_sparse_reward = AverageScalarMeter(20000)
+        self.total_waypoint_tracking_reward = AverageScalarMeter(20000)
         # 追踪成功案例（旋转角度>10）的数量和比例
         self.success_count = 0
         self.total_episodes = 0
@@ -254,7 +254,7 @@ class PPOTeacher(object):
         current_rewards_shape = (batch_size, 1)
         self.current_rewards = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
         self.current_rot_angle = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
-        self.current_sparse_reward = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
+        self.current_waypoint_tracking_reward = torch.zeros(current_rewards_shape, dtype=torch.float32, device=self.device)
         self.current_lengths = torch.zeros(batch_size, dtype=torch.float32, device=self.device)
         # 初始化 dones 标志，最初所有环境都标记为 done
         self.dones = torch.ones((batch_size,), dtype=torch.uint8, device=self.device)
@@ -412,7 +412,7 @@ class PPOTeacher(object):
             mean_rewards = self.episode_rewards.get_mean()
             mean_lengths = self.episode_lengths.get_mean()
             mean_rot_angle = self.total_rot_angle.get_mean()
-            mean_sparse_reward = self.total_sparse_reward.get_mean()
+            mean_waypoint_tracking_reward = self.total_waypoint_tracking_reward.get_mean()
             # 计算成功率（旋转角度>10）
             current_success_rate = self.success_count / max(self.total_episodes, 1)
             if current_success_rate > self.best_success_rate:
@@ -423,10 +423,10 @@ class PPOTeacher(object):
                 print('-----------------------')
                 print(f'episode rewards: {mean_rewards:.2f} | episode lengths: {mean_lengths:.2f}')
                 print(f'episode rot angle(rad): {mean_rot_angle:.2f}')
-                print(f'epsode sparse reward: {mean_sparse_reward:.2f}')
+                print(f'episode waypoint tracking reward: {mean_waypoint_tracking_reward:.2f}')
                 print(f'success rate (rot>6): {current_success_rate:.4f} ({self.success_count}/{self.total_episodes})')
                 print(f'best success rate: {self.best_success_rate:.4f}')
-                print(f'Terminations: Fall={self.env.termination_counts["pencil_fall"]} | '
+                print(f'Terminations: Fall={self.env.termination_counts["pencil_tilt"]} | '
                       f'Drop={self.env.termination_counts["object_below_threshold"]} | '
                       f'Overspeed={self.env.termination_counts["angular_velocity_too_high"]}')
                 # 打印额外信息
@@ -451,7 +451,7 @@ class PPOTeacher(object):
             self.writer.add_scalar('episode_rewards/step', mean_rewards, self.agent_steps)
             self.writer.add_scalar('episode_lengths/step', mean_lengths, self.agent_steps)
             self.writer.add_scalar('total_rot_angle(rad)/step', mean_rot_angle, self.agent_steps)
-            self.writer.add_scalar('total_sparse_reward/step', mean_sparse_reward, self.agent_steps)
+            self.writer.add_scalar('total_waypoint_tracking_reward/step', mean_waypoint_tracking_reward, self.agent_steps)
             self.writer.add_scalar('success_rate/step', current_success_rate, self.agent_steps)
             self.writer.add_scalar('success_count/step', self.success_count, self.agent_steps)
 
@@ -828,14 +828,14 @@ class PPOTeacher(object):
             # 将奖励 reshape 为 (batch_size, 1)
             rewards = rewards.unsqueeze(1)
             rot_angle = infos['rot_angle'].unsqueeze(1)
-            sparse_reward = infos['reward/waypoint_sparse_reward'].unsqueeze(1)
+            waypoint_tracking_reward = infos['reward/waypoint_tracking_reward_per_env'].unsqueeze(1)
             # update dones and rewards after env step # 注释
             # 收集 done 标志到 storage
             self.storage.update_data('dones', n, self.dones)
             # 将奖励移动到指定设备
             rewards = rewards.to(self.device)
             rot_angle = rot_angle.to(self.device)
-            sparse_reward = sparse_reward.to(self.device)
+            waypoint_tracking_reward = waypoint_tracking_reward.to(self.device)
             # 计算 shaped rewards，这里简单乘以 0.01，可能根据具体环境设计 reward shaping
             shaped_rewards = 0.01 * rewards.clone()
             # 如果使用 value bootstrap 且 info 中包含 time_outs 信息，则在 shaped rewards 中加入 bootstrap 项
@@ -847,7 +847,7 @@ class PPOTeacher(object):
             # 累加当前 episode 的奖励和长度
             self.current_rewards += rewards
             self.current_rot_angle += rot_angle
-            self.current_sparse_reward += sparse_reward
+            self.current_waypoint_tracking_reward += waypoint_tracking_reward
             self.current_lengths += 1
             # 找到 episode 结束的环境索引
             done_indices = self.dones.nonzero(as_tuple=False)
@@ -855,7 +855,7 @@ class PPOTeacher(object):
             self.episode_rewards.update(self.current_rewards[done_indices])
             self.episode_lengths.update(self.current_lengths[done_indices])
             self.total_rot_angle.update(self.current_rot_angle[done_indices])
-            self.total_sparse_reward.update(self.current_sparse_reward[done_indices])
+            self.total_waypoint_tracking_reward.update(self.current_waypoint_tracking_reward[done_indices])
             # 统计成功案例（旋转角度>10）
             if len(done_indices) > 0:
                 success_mask = self.current_rot_angle[done_indices] > 10.0
@@ -872,7 +872,7 @@ class PPOTeacher(object):
             # 重置已结束环境的当前奖励和长度计数器
             self.current_rewards = self.current_rewards * not_dones.unsqueeze(1)
             self.current_rot_angle = self.current_rot_angle * not_dones.unsqueeze(1)
-            self.current_sparse_reward = self.current_sparse_reward * not_dones.unsqueeze(1)    
+            self.current_waypoint_tracking_reward = self.current_waypoint_tracking_reward * not_dones.unsqueeze(1)    
             self.current_lengths = self.current_lengths * not_dones
 
         # rollout 结束后，使用最后一个状态的价值估计来计算 GAE 和 Returns

@@ -149,20 +149,46 @@ env:
     # reward scale: [init scale, final scale, curriculum start, curriculum end]
     # single scalar means no curriculum
     # 注意：这些值是合并后的最终权重（原 yaml 值 × 原 REWARD_SCALE_DICT 值）
-    rotate_reward_scale: 1.0              # 1.0 × 1.0 = 1.0
-    obj_linvel_penalty_scale: -0.3        # -0.3 × 1.0 = -0.3
-    waypoint_sparse_reward_scale: 0.0     # 1.0 × 0 = 0.0
-    torque_penalty_scale: -0.01           # -0.1 × 0.1 = -0.01
-    hand_pose_consistency_penalty_scale: -0.05  # -1.0 × 0.05 = -0.05
-    rotate_penalty_scale: 0.0             # -0.3 × 0 = 0.0
-    pencil_z_dist_penalty_scale: -1.5     # -1.0 × 1.5 = -1.5
+    rotate_reward_scale: 1.0              # 旋转奖励
+    obj_linvel_penalty_scale: -0.3        # 物体线速度惩罚
+    torque_penalty_scale: -0.01           # 力矩惩罚
+    rotate_penalty_scale: 0.0             # 旋转惩罚（逆向/超速）
+    # 轴向倾斜惩罚 (Axial Tilt Penalty)
+    # 惩罚物体在旋转轴方向的高度差，鼓励笔与旋转轴垂直
+    axial_tilt_penalty_scale: -1.5        # 轴向倾斜惩罚权重
+    axial_tilt_threshold: 0.03            # 倾斜阈值（米），低于此值不惩罚
     # canonical position
-    position_penalty_scale: -0.1          # -0.1 × 1 = -0.1
+    position_penalty_scale: -0.1          # 位置惩罚
     # Flying base 移动惩罚 (仅当 flyingHand.enabled=True 时生效)
     # 惩罚 Flying base 的频繁移动，鼓励策略依赖手指技巧而非手腕运动
     # 支持 curriculum: [init scale, final scale, curriculum start, curriculum end]
     # 例如 [-0.1, -0.5, 0, 10000000] 表示从 -0.1 逐渐增加到 -0.5
     flying_base_movement_penalty_scale: -0.1  # 默认固定值，可通过命令行调整
+    
+    # ============================================================
+    # Waypoint 跟踪奖励 (Triangle Pass)
+    # ============================================================
+    # 基于笔相位的指尖位置跟踪奖励
+    # 使用高斯核函数: r = exp(-||q_curr - q_target||^2 / sigma)
+    # 
+    # 参数说明:
+    # - waypoint_tracking_reward_scale: 奖励权重 (默认 0.0 禁用)
+    # - waypoint_sigma: 高斯核带宽，越小奖励越"陡峭" (默认 0.05)
+    # - waypoint_half_period_symmetric: 是否使用180°对称性扩展 (默认 True)
+    #   - True: 笔具有对称性，只需采集 0~180° 的 waypoint
+    #   - False: 物体无对称性，需采集完整 0~360° 的 waypoint
+    #
+    # 使用前提:
+    # 1. 需要在 penspin/utils/tp_waypoints.py 中填充 TP_WAYPOINTS_RAW 数据
+    # 2. 使用 cache/linker_pose/interactive_tune.py 采集 waypoint
+    # 3. 至少需要 2 个 waypoint 才能启用
+    #
+    # 推荐值: 
+    # - waypoint_tracking_reward_scale: 0.1 ~ 1.0 (根据与 rotate_reward 的相对重要性调整)
+    # - waypoint_sigma: 0.05 ~ 0.1 (越小要求越精确)
+    waypoint_tracking_reward_scale: 0.0       # 默认禁用，填充 waypoint 数据后启用
+    waypoint_sigma: 0.05                      # 高斯核带宽
+    waypoint_half_period_symmetric: True      # 笔具有180°对称性
   # Modified
   baseObjScale: 1.0
   randomization:

@@ -2,7 +2,7 @@
 # chmod -R u+x ../../Code
 
 # scripts/visualize.sh outputs/teacher_reproduce_trial_03/optuna_trial_0039/teacher_nn
-# scripts/visualize.sh outputs/LinkerHandHora/debug_teacher_20251201_142420/teacher_nn
+# scripts/visualize.sh outputs/TP_V1/optuna_trial_0013/teacher_nn
 #best:
 # scripts/visualize.sh outputs/pose3_50k_cfg2/stage1_nn > contacts/pose3_50k_cfg2.txt
 # CHECKLIST
@@ -39,8 +39,8 @@ task.env.numEnvs=1 test=True checkpoint="${CACHE}"/best*.pth \
 task.env.episodeLength=4000 \
 "task.env.grasp_cache_name='3_30000_61'" \
 task.env.initPoseMode=low \
-task.env.relative_z_drop_threshold=0.12 \
-task.env.pencil_tilt_threshold=0.12 \
+task.env.relative_z_drop_threshold=0.05 \
+task.env.pencil_tilt_threshold=0.06 \
 task.env.actionSpace.disableRingLittleFinger=True \
 task.env.flyingHand.linearVelocity=0.1 \
 task.env.flyingHand.angularVelocity=2.0 \

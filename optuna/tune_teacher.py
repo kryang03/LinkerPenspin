@@ -56,8 +56,8 @@ def objective(trial: optuna.trial.Trial, args) -> float:
         "task.env.grasp_cache_name='3_30000_61'",
         "task.env.initPoseMode=low",
         # 早期终止阈值
-        "task.env.relative_z_drop_threshold=0.12",
-        "task.env.pencil_tilt_threshold=0.12",
+        "task.env.relative_z_drop_threshold=0.05",
+        "task.env.pencil_tilt_threshold=0.06",
         # 动作空间配置：禁用无名指和小拇指 (21 -> 13 DoF)
         "task.env.actionSpace.disableRingLittleFinger=True",
     ]
@@ -187,19 +187,20 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     torque_penalty_scale = trial.suggest_float("torque_penalty_scale", -0.04, -0.01)
     hpo_overrides.append(f"task.env.reward.torque_penalty_scale={torque_penalty_scale}")
     
-    # 姿态一致性惩罚 (Best: -0.03) -> 偏向小惩罚
-    hand_pose_consistency_penalty_scale = trial.suggest_float("hand_pose_consistency_penalty_scale", -0.06, -0.01)
-    hpo_overrides.append(f"task.env.reward.hand_pose_consistency_penalty_scale={hand_pose_consistency_penalty_scale}")
-    
     # 旋转惩罚 (Best: -0.005) -> 非常小，几乎忽略不计
     # 调整：-0.1 ~ 0.0
     rotate_penalty_scale = trial.suggest_float("rotate_penalty_scale", -0.1, 0.0)
     hpo_overrides.append(f"task.env.reward.rotate_penalty_scale={rotate_penalty_scale}")
     
-    # 铅笔高度差惩罚 (Best: -1.5) -> 中间值
+    # 轴向倾斜惩罚 (Best: -1.5) -> 中间值
     # 调整：-2.0 ~ -1.0
-    pencil_z_dist_penalty_scale = trial.suggest_float("pencil_z_dist_penalty_scale", -2.0, -1.0)
-    hpo_overrides.append(f"task.env.reward.pencil_z_dist_penalty_scale={pencil_z_dist_penalty_scale}")
+    axial_tilt_penalty_scale = trial.suggest_float("axial_tilt_penalty_scale", -2.0, -1.0)
+    hpo_overrides.append(f"task.env.reward.axial_tilt_penalty_scale={axial_tilt_penalty_scale}")
+    
+    # 轴向倾斜阈值（米），低于此值不惩罚
+    # 调整：0.02 ~ 0.05
+    axial_tilt_threshold = trial.suggest_float("axial_tilt_threshold", 0.02, 0.05)
+    hpo_overrides.append(f"task.env.reward.axial_tilt_threshold={axial_tilt_threshold}")
     
     # 位置惩罚 (Best: -0.22) -> 中间偏高
     # 调整：-0.3 ~ -0.1
@@ -210,6 +211,17 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 鼓励策略依赖手指技巧而非手腕运动
     flying_base_penalty_scale = trial.suggest_float("flying_base_movement_penalty_scale", -0.2, -0.05)
     hpo_overrides.append(f"task.env.reward.flying_base_movement_penalty_scale={flying_base_penalty_scale}")
+    
+    # Waypoint 跟踪奖励 (Triangle Pass)
+    # 默认禁用，仅在填充 waypoint 数据后启用
+    # 调整：0.0 ~ 1.0
+    waypoint_tracking_reward_scale = trial.suggest_float("waypoint_tracking_reward_scale", 5.0, 10.0)
+    hpo_overrides.append(f"task.env.reward.waypoint_tracking_reward_scale={waypoint_tracking_reward_scale}")
+    
+    # Waypoint 高斯核带宽
+    # 调整：0.03 ~ 0.1
+    waypoint_sigma = trial.suggest_float("waypoint_sigma", 0.03, 0.5)
+    hpo_overrides.append(f"task.env.reward.waypoint_sigma={waypoint_sigma}")
     
     # --- 3. 创建唯一输出目录 ---
     # 使用 study_name 作为输出目录的基础

@@ -20,7 +20,7 @@ import argparse
 # 重要参数配置 - 可通过命令行覆盖
 DEFAULT_CONFIG = {
     # 缓存文件配置
-    'cache_file': 'cache/3_30000_grasp_cache.npy',  # 默认缓存文件路径
+    'cache_file': 'cache/3_30000_61_grasp_cache.npy',  # 默认缓存文件路径
     
     # 仿真配置
     'headless': False,                  # 默认显示GUI（用于可视化）

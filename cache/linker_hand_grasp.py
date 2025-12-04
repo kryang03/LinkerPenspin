@@ -33,8 +33,8 @@ import argparse
 # 重要参数配置 - 可通过命令行覆盖
 DEFAULT_CONFIG = {
     # 早期终止阈值
-    'relative_z_drop_threshold': 0.06,  # 物体下降超过此值则重置（米）
-    'pencil_tilt_threshold': 0.04,      # LinkerPen两端高度差超过此值视为倾倒（米）
+    'relative_z_drop_threshold': 0.012,  # 物体下降超过此值则重置（米）这个值较小，因为Flying Hand抓取比较精细，要避免差的初始化
+    'pencil_tilt_threshold': 0.015,      # LinkerPen两端高度差超过此值视为倾倒（米）
     
     # 仿真配置
     'headless': True,                   # 是否无头模式（无GUI）

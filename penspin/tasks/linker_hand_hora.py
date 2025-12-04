@@ -14,6 +14,13 @@ from isaacgym.torch_utils import quat_conjugate, quat_mul, to_torch, quat_apply,
 from penspin.utils.point_cloud_prep import sample_cylinder
 from .base.vec_task import VecTask
 from penspin.utils.misc import tprint
+# Import waypoint tracking utilities for Triangle Pass
+from penspin.utils.tp_waypoints import (
+    initialize_waypoints,
+    compute_phase_from_object_rotation,
+    get_target_fingertip_by_phase,
+    compute_waypoint_tracking_reward,
+)
 # Import centralized robot dimension constants
 from penspin.utils.robot_config import (
     NUM_DOF,
@@ -50,18 +57,10 @@ RIGID_BODY_STATES = 13
 # 用于查找生成的初始化抓取状态文件夹
 NUM_POSE_PER_CACHE = '50k'
 # 物体平均位置
-OBJ_CANON_POS = [-0.12593473494052887, 0.027405261993408203, 0.16902321577072144] # 3pose
+OBJ_CANON_POS = [-0.12593473494052887, 0.027405261993408203, 0.5] # 3pose
 # [-0.11722512543201447, 0.006986482068896294, 0.1717524379491806] # 4pose
 # [-0.12593473494052887, 0.027405261993408203, 0.16902321577072144] # 3pose
 # [-0.13216303288936615, 0.022801531478762627, 0.16341765224933624] # 6pose
-WAYPOINTS = [{'hand': [0.09058664739131927, -1.1684951782226562, -0.3523995876312256, -0.5262272953987122, -0.13673382997512817, -1.0198190212249756, -0.9558137059211731, -1.2512168884277344, -3.8383831224564346e-07, -1.3491917848587036, -0.5089983940124512, -0.3240099549293518, -0.05116431415081024, -0.9247583150863647, -1.2445602416992188, -0.9097212553024292, -0.020588409155607224, -1.1557494401931763, -0.7035709023475647, -0.2180664837360382, -0.001244630548171699],
-            'object': [-0.11762521415948868, 0.023072263225913048, 0.18054848909378052, 0.708649218082428, 0.021436162292957306, 0.03619061037898064, -0.7043059468269348]},
-            {'hand': [0.17996101081371307, -1.2075750827789307, -0.3885318338871002, -0.4472368657588959, -0.17998147010803223, -1.030931830406189, -0.910559356212616, -1.1463258266448975, -1.9397666051190754e-07, -1.2313501834869385, -0.6338013410568237, -0.4614178240299225, -0.08347102254629135, -0.8618580102920532, -1.1939127445220947, -0.8964090943336487, 0.17496797442436218, -1.3870528936386108, -0.6740223169326782, -0.21953974664211273, -0.0016594172921031713],
-            'object': [-0.10668071359395981, 0.021574808284640312, 0.17717039585113525, 0.21597789227962494, -0.6708014011383057, 0.2683640122413635, -0.6567798256874084]},
-            {'hand': [0.12977235019207, -0.9924959540367126, -0.3606451451778412, -0.4871084988117218, -0.17996357381343842, -1.1815704107284546, -1.0074188709259033, -1.063124179840088, -1.3303166213063378e-07, -1.1750483512878418, -0.5964861512184143, -0.7107267379760742, -0.0033535510301589966, -0.8607388734817505, -1.2455166578292847, -0.8664445281028748, -0.02050342597067356, -1.1381360292434692, -0.7652751803398132, -0.32268959283828735, -0.03381062299013138],
-            'object': [-0.1360439658164978, 0.02780270390212536, 0.16825813055038452, -0.3405953049659729, -0.6889249086380005, 0.5953956842422485, -0.23426729440689087]}]
-HAND_SIMILARITY_SCALE_FACTOR = 0.5 
-ORIENTATION_SIMILARITY_THRESHOLD = 0.9
 
 # Contact上下界
 CONTACT_THRESH = 0.02
@@ -349,29 +348,62 @@ class LinkerHandHora(VecTask):
         self.total_rot_angle = torch.zeros(self.num_envs, device=self.device)  # 累计旋转角度
         self.current_angvel = torch.zeros(self.num_envs, device=self.device)  # 当前角速度（用于early termination）
 
-        # 初始化为全0，表示所有环境开始时都没有达成任何参考帧
-        self.waypoint_achievement_mask = torch.zeros(
-            (self.num_envs, len(WAYPOINTS)), dtype=torch.bool, device=self.device
-        )
-
         # 添加终止原因记录计数器
         self.termination_counts = {
             'max_episode_length': 0,
             'object_below_threshold': 0,
             'angular_velocity_too_high': 0,
-            'pencil_fall': 0,
+            'pencil_tilt': 0,
             'total_episodes': 0
         }
         
         # 为每个环境记录当前episode的终止原因
         self.current_termination_reason = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
-        # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_fall, 4: angular_velocity_too_high
+        # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_tilt, 4: angular_velocity_too_high
         
         # 初始化物体高度缓冲区，用于相对 relative_z_drop_threshold 计算
         self.init_object_z_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         
         # 为每个环境记录终止时的实际值（用于调试输出）
         self.termination_actual_values = torch.zeros(self.num_envs, device=self.device)
+        
+        # ============================================================
+        # Waypoint 跟踪奖励初始化 (Triangle Pass)
+        # ============================================================
+        # 从 tp_waypoints.py 加载密集插值后的 waypoint 数据
+        # 如果数据不足，waypoint 奖励将被禁用 (scale=0)
+        self.waypoint_sigma = self.config['env']['reward'].get('waypoint_sigma', 0.05)
+        self.axial_tilt_threshold = self.config['env']['reward'].get('axial_tilt_threshold', 0.03)
+        self.waypoint_half_period_symmetric = self.config['env']['reward'].get('waypoint_half_period_symmetric', True)
+        self.dense_waypoint_pos, self.dense_phases = initialize_waypoints(
+            device=self.device,
+            half_period_symmetric=self.waypoint_half_period_symmetric
+        )
+        self.waypoint_tracking_enabled = (self.dense_waypoint_pos is not None)
+        
+        # 创建 waypoint finger mask
+        # 指尖顺序: [little(3), ring(3), middle(3), index(3), thumb(3)]
+        # 如果禁用了无名指和小拇指，只比较中指、食指、大拇指
+        if self.disable_ring_little:
+            # 禁用 little 和 ring，只保留 middle, index, thumb (后9维)
+            self.waypoint_finger_mask = torch.tensor(
+                [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                dtype=torch.float32, device=self.device
+            )
+            waypoint_fingers_str = "middle, index, thumb (9维)"
+        else:
+            # 使用全部5指
+            self.waypoint_finger_mask = torch.ones(15, dtype=torch.float32, device=self.device)
+            waypoint_fingers_str = "全部5指 (15维)"
+        
+        if self.waypoint_tracking_enabled:
+            print(f"[Waypoint Tracking] 已启用，sigma={self.waypoint_sigma}, 180°对称={self.waypoint_half_period_symmetric}")
+            print(f"[Waypoint Tracking] 密集点数: {self.dense_waypoint_pos.shape[0]}, 比较手指: {waypoint_fingers_str}")
+        else:
+            print("[Waypoint Tracking] 未启用 (waypoint 数据不足)")
+        
+        # 当前相位缓冲区 (用于 debug 输出)
+        self.current_phase_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
 
     def _create_envs(self, num_envs, spacing, num_per_row):
         self._create_ground_plane()
@@ -723,8 +755,6 @@ class LinkerHandHora(VecTask):
         self.dof_vel_finite_diff[:] = 0
         self.at_reset_buf[env_ids] = 1
 
-        self.waypoint_achievement_mask[env_ids, :] = False
-
     def compute_observations(self):
         """
         计算当前时间步的环境观测（Observations）。
@@ -1004,150 +1034,7 @@ class LinkerHandHora(VecTask):
         # 5. 根据进度线性插值计算当前的奖励权重
         return init_scale + (final_scale - init_scale) * curr_progress
 
-    def _compute_waypoint_reward(self):
-        """
-        计算并返回当前时间步基于路径点（waypoint）的稀疏奖励。
-
-        奖励机制设计核心：
-        1. 奖励是稀疏的：仅在环境“新”达成一个路径点时才可能触发。
-        2. 奖励是连续的：奖励大小与姿态和手部位置的相似度成正比。
-        3. 豁免初始状态：对于初始状态（满足的第一个路径点），不会给予奖励。
-        4. 支持周期任务：当一个环境完成所有路径点后，除最近完成的的所有路径点状态会被重置以开始下一轮。
-        """
-        # 初始化一个零张量，用于存储本步中每个环境获得的稀疏奖励
-        # shape: [num_envs]
-        waypoint_sparse_reward_this_step = torch.zeros(self.num_envs, device=self.device)
-
-        # 遍历每一个预先定义的路径点（waypoint）
-        for wp_idx, wp_data in enumerate(WAYPOINTS):
-
-            # === 步骤 1 & 2: 筛选姿态合格的环境 ===
-            # 目标: 找到所有当前物体姿态与当前路径点目标姿态足够接近的环境。
-
-            # 从路径点数据中提取目标物体姿态（四元数），并增加一个维度以进行广播计算
-            # shape: [1, 4]
-            wp_obj_rot = to_torch(wp_data['object'][3:7], device=self.device).unsqueeze(0)
-
-            # 计算当前所有环境的物体姿态与目标姿态的相似度。
-            # 对于四元数 q 和 -q 代表相同旋转，因此我们用点积的绝对值来衡量相似性。
-            # 相似度范围 [0, 1]，值越接近 1 表示姿态越接近。
-            # self.object_rot shape: [num_envs, 4], wp_obj_rot shape: [1, 4] -> 广播后乘积 shape: [num_envs, 4]
-            # shape: [num_envs]
-            orientation_similarity = torch.abs(torch.sum(self.object_rot * wp_obj_rot, dim=1))
-
-            # 创建一个布尔掩码，标记那些姿态相似度超过阈值的环境
-            # shape: [num_envs]
-            orientation_eligible_mask = (orientation_similarity > ORIENTATION_SIMILARITY_THRESHOLD)
-
-            # 优化：如果没有任何环境的姿态合格，则直接跳到下一个路径点的检查
-            if not torch.any(orientation_eligible_mask):
-                continue
-
-            # 获取所有姿态合格环境的索引
-            # shape: [num_orientation_eligible], 其中 num_orientation_eligible <= num_envs
-            orientation_eligible_indices = torch.where(orientation_eligible_mask)[0]
-
-            # === 步骤 3: 计算手部姿态相似度 ===
-            # 目标: 对于姿态合格的环境，进一步计算它们当前的手部姿态与目标姿态的相似度。
-
-            num_orientation_eligible = len(orientation_eligible_indices)
-
-            # 提取路径点定义的目标手部姿态，并扩展以匹配姿态合格环境的数量
-            # to_torch(...) shape: [N] -> unsqueeze(0) shape: [1, N] -> expand(...) shape: [num_orientation_eligible, N]
-            wp_hand_pos = to_torch(wp_data['hand'], device=self.device).unsqueeze(0).expand(num_orientation_eligible, -1)
-
-            # 筛选出姿态合格环境的当前手部姿态
-            # shape: [num_orientation_eligible, N]
-            eligible_hand_pos = self.linker_hand_dof_pos[orientation_eligible_indices]
-
-            # 计算当前手部姿态与目标姿态之间的欧氏距离
-            # (eligible_hand_pos - wp_hand_pos) shape: [num_orientation_eligible, N]
-            # shape: [num_orientation_eligible]
-            hand_pos_diff = torch.norm(eligible_hand_pos - wp_hand_pos, dim=1)
-
-            # 使用指数衰减函数将距离转换为相似度分数，范围 (0, 1]
-            # shape: [num_orientation_eligible]
-            hand_similarity = torch.exp(-hand_pos_diff / HAND_SIMILARITY_SCALE_FACTOR)
-
-            # === 步骤 4: 识别“新达成”的路径点并更新状态 ===
-            # 目标: 在姿态合格的环境中，找到那些在本轮周期内首次达成此路径点的环境，并立即更新它们的成就状态。
-
-            # 检查在这些姿态合格的环境中，哪些在成就掩码中仍为 False，即“新达成”
-            # self.waypoint_achievement_mask[orientation_eligible_indices, wp_idx] shape: [num_orientation_eligible]
-            # shape: [num_orientation_eligible] (布尔类型)
-            is_wp_idx_newly_achieved_mask = (self.waypoint_achievement_mask[orientation_eligible_indices, wp_idx] == False)
-
-            # 优化：如果在姿态合格的环境中，没有一个是新达成的，则跳到下一个路径点
-            if not torch.any(is_wp_idx_newly_achieved_mask):
-                continue
-
-            # 获取所有“新达成”此路径点的环境的全局索引
-            # shape: [num_newly_achieved], 其中 num_newly_achieved <= num_orientation_eligible
-            newly_achieved_indices = orientation_eligible_indices[is_wp_idx_newly_achieved_mask]
-
-            # === 步骤 5: 筛选并计算应得的奖励 ===
-            # 目标: 在“新达成”的环境中，排除掉那些处于“初始状态”的环境，然后为剩下的环境计算并累加奖励。
-
-            # a. 检查新达成的环境是否是首次达成 *任何* 路径点
-            # 计算在达成此 wp_idx 之前，每个环境已达成的路径点总数，若某个环境已达成的路径点总数为0，它不应该被给予奖励。
-            # self.waypoint_achievement_mask[newly_achieved_indices, :] shape: [num_newly_achieved, num_waypoints]
-            # torch.sum(...) shape: [num_newly_achieved]
-            # shape: [num_newly_achieved] (布尔类型)
-            is_initial_achievement_mask = (torch.sum(self.waypoint_achievement_mask[newly_achieved_indices, :].int(), dim=1) == 0) 
-
-            # b. 筛选出真正应该给予奖励的环境（即非初始状态达成的环境）
-            # shape: [num_newly_achieved] (布尔类型)
-            should_grant_reward_mask = ~is_initial_achievement_mask
-
-            # 【关键逻辑】无论后续是否给予奖励，只要是新达成的，就必须立刻更新其状态掩码。
-            # 防止一直停滞在初始状态
-            self.waypoint_achievement_mask[newly_achieved_indices, wp_idx] = True
-
-            if torch.any(should_grant_reward_mask):
-                # 获取最终应该被奖励的环境的全局索引
-                # shape: [num_to_reward], 其中 num_to_reward <= num_newly_achieved
-                final_grant_reward_indices = newly_achieved_indices[should_grant_reward_mask]
-
-                # --- 代码可读性优化 ---
-                # 从 `hand_similarity` 中筛选出需要奖励的部分
-                # 原来的实现虽然功能正确，但可读性较差，这里分解为更清晰的步骤：
-                # 1. 先从所有姿态合格的环境中，筛选出“新达成”环境的手部相似度
-                # shape: [num_newly_achieved]
-                hand_sim_for_newly_achieved = hand_similarity[is_wp_idx_newly_achieved_mask]
-                # 2. 再从“新达成”的环境中，筛选出“应该被奖励”的环境的手部相似度
-                # shape: [num_to_reward]
-                hand_sim_for_reward = hand_sim_for_newly_achieved[should_grant_reward_mask]
-                # --- 结束优化 ---
-
-                # 同样地，筛选出对应环境的姿态相似度分数
-                # shape: [num_to_reward]
-                orientation_sim_for_reward = orientation_similarity[final_grant_reward_indices]
-
-                # 计算最终奖励值：姿态相似度 * 手部姿态相似度
-                # shape: [num_to_reward]
-                reward_values = orientation_sim_for_reward * hand_sim_for_reward
-
-                # 将计算出的奖励累加到对应环境的奖励张量中
-                waypoint_sparse_reward_this_step[final_grant_reward_indices] += reward_values
-
-            # === 步骤 6: 周期性重置 ===
-            # 目标: 检查是否有环境完成了所有路径点，如果有，则重置其成就掩码以开始新的周期。
-            # 这个检查应该对所有“新达成”的环境进行。
-            for env_k_idx in newly_achieved_indices:
-                # 如果一个环境的成就掩码全部为 True，说明它已完成一轮任务
-                if torch.all(self.waypoint_achievement_mask[env_k_idx, :]):
-                    # 重置该环境的所有成就记录为 False
-                    self.waypoint_achievement_mask[env_k_idx, :] = False
-                    # 【关键逻辑】将当前刚刚达成的路径点重新设置为 True。
-                    # 这可以防止智能体在重置后的下一步因为还停留在当前状态而立即获得一次“作弊”的奖励。
-                    # 它确保了任务周期的无缝衔接。
-                    self.waypoint_achievement_mask[env_k_idx, wp_idx] = True
-
-        return waypoint_sparse_reward_this_step
-
     def compute_reward(self, actions):
-        # 计算waypoint稀疏奖励
-        waypoint_sparse_reward = torch.zeros(self.num_envs, device=self.device)
         # torque penalty
         torque_penalty = (self.torques[:, -1] ** 2).sum(-1)
         
@@ -1225,6 +1112,43 @@ class LinkerHandHora(VecTask):
         self.total_rot_angle += rot_angle
         
         # ============================================================
+        # Waypoint 跟踪奖励计算 (Triangle Pass)
+        # ============================================================
+        # 基于当前相位获取目标指尖位置，使用高斯核函数计算奖励
+        # 如果 waypoint 数据不足，奖励为 0
+        if self.waypoint_tracking_enabled:
+            # 计算当前相位 (复用已有的投影向量 vec_curr_3d)
+            # 方法: 使用 tp_waypoints.py 中的 compute_phase_from_object_rotation
+            # 注意: 该函数与此处的投影逻辑一致
+            self.current_phase_buf = compute_phase_from_object_rotation(
+                self.object_rot, self.rot_axis_buf
+            )
+            
+            # 根据相位获取目标指尖位置
+            target_fingertip_pos = get_target_fingertip_by_phase(
+                self.current_phase_buf,
+                self.dense_waypoint_pos,
+                self.dense_phases
+            )
+            
+            # 获取当前指尖位置 (相对于手基座，展平为15维)
+            # fingertip_pos 是 (num_envs, 15) 的绝对位置
+            # 需要转换为相对于手基座的位置（与采集时保持一致）
+            # 暂时使用绝对位置，后续可优化
+            current_fingertip_pos = self.fingertip_pos.reshape(self.num_envs, -1)  # (num_envs, 15)
+            
+            # 计算高斯核奖励
+            # 如果禁用了无名指和小拇指，只比较中指、食指、大拇指 (后9维)
+            waypoint_tracking_reward = compute_waypoint_tracking_reward(
+                current_fingertip_pos,
+                target_fingertip_pos,
+                sigma=self.waypoint_sigma,
+                finger_mask=self.waypoint_finger_mask
+            )
+        else:
+            waypoint_tracking_reward = torch.zeros(self.num_envs, device=self.device)
+        
+        # ============================================================
         # DEBUG: total_rad 计算逻辑调试输出（已更新为新的投影角度算法）
         # ============================================================
         if self.viewer is not None and hasattr(self, '_debug_spin_counter'):
@@ -1267,21 +1191,37 @@ class LinkerHandHora(VecTask):
         ft_angdiff = quat_to_axis_angle(quat_mul(self.fingertip_orientation.reshape(-1, 4), quat_conjugate(self.ft_rot_prev.reshape(-1, 4)))).reshape(-1, 3*FINGERTIP_CNT)
         self.ft_angvel_at_cf = ft_angdiff / (self.control_freq_inv * self.dt)
         self.ft_linvel_at_cf = ((self.fingertip_pos - self.ft_pos_prev) / (self.control_freq_inv * self.dt))
-        # 惩罚物体的最高点-最低点的高度差
+        # ============================================================
+        # 轴向倾斜惩罚 (Axial Tilt Penalty)
+        # ============================================================
+        # 惩罚物体在旋转轴方向的高度差（投影长度差）
+        # 当笔与旋转轴平行时，投影长度最大；当笔垂直于旋转轴时，投影长度最小
+        # 这个惩罚鼓励笔保持与旋转轴垂直的姿态
         if self.point_cloud_sampled_dim > 0:
-            point_cloud_z = self.point_cloud_buf[:, :self.point_cloud_sampled_dim, -1]
-            z_dist_penalty = point_cloud_z.max(axis=1)[0] - point_cloud_z.min(axis=1)[0]
-            z_dist_penalty[z_dist_penalty <= 0.03] = 0
+            # 获取点云数据 (num_envs, num_points, 3)
+            point_cloud = self.point_cloud_buf[:, :self.point_cloud_sampled_dim, :]
+            
+            # 将点云投影到旋转轴方向
+            # rot_axis_buf: (num_envs, 3) - 已归一化的旋转轴
+            rot_axis_normalized = self.rot_axis_buf / (torch.norm(self.rot_axis_buf, dim=-1, keepdim=True) + 1e-8)
+            
+            # 计算每个点在旋转轴方向的投影值
+            # point_cloud: (num_envs, num_points, 3), rot_axis: (num_envs, 1, 3)
+            # 结果: (num_envs, num_points)
+            axial_projection = (point_cloud * rot_axis_normalized.unsqueeze(1)).sum(dim=-1)
+            
+            # 计算旋转轴方向的高度差（最大投影 - 最小投影）
+            axial_tilt_penalty = axial_projection.max(dim=1)[0] - axial_projection.min(dim=1)[0]
+            
+            # 设置阈值：只有当倾斜超过一定程度时才惩罚
+            axial_tilt_penalty[axial_tilt_penalty <= self.axial_tilt_threshold] = 0
         else:
-            z_dist_penalty = to_torch([0], device=self.device)
+            axial_tilt_penalty = torch.zeros(self.num_envs, device=self.device)
 
         # 惩罚在z轴上的位置偏离
         position_penalty = (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
         # 未使用，惩罚指尖与物体的距离
         finger_obj_penalty = ((self.fingertip_pos - self.object_pos.repeat(1, FINGERTIP_CNT)) ** 2).sum(-1)
-
-        # 新增奖励：当每圈旋转180-360度时，根据手部姿态与初始状态的差异给出惩罚
-        hand_pose_consistency_penalty = self._compute_hand_pose_consistency_penalty()
 
         # ============================================================
         # Flying base 移动惩罚
@@ -1304,13 +1244,12 @@ class LinkerHandHora(VecTask):
         self.rew_buf[:] = compute_hand_reward(
             object_linvel_penalty, self._get_reward_scale_by_name('obj_linvel_penalty'),
             rotate_reward, self._get_reward_scale_by_name('rotate_reward'),
-            waypoint_sparse_reward, self._get_reward_scale_by_name('waypoint_sparse_reward'),
             torque_penalty, self._get_reward_scale_by_name('torque_penalty'),
-            z_dist_penalty, self._get_reward_scale_by_name('pencil_z_dist_penalty'),
+            axial_tilt_penalty, self._get_reward_scale_by_name('axial_tilt_penalty'),
             position_penalty, self._get_reward_scale_by_name('position_penalty'),
             rotate_penalty, self._get_reward_scale_by_name('rotate_penalty'),
-            hand_pose_consistency_penalty, self._get_reward_scale_by_name('hand_pose_consistency_penalty'),
-            flying_base_movement_penalty, self._get_reward_scale_by_name('flying_base_movement_penalty')
+            flying_base_movement_penalty, self._get_reward_scale_by_name('flying_base_movement_penalty'),
+            waypoint_tracking_reward, self._get_reward_scale_by_name('waypoint_tracking_reward')
         )
         self.reset_buf[:] = self.check_termination(self.object_pos)
         
@@ -1324,10 +1263,9 @@ class LinkerHandHora(VecTask):
         self.extras['penalty/object_linvel_penalty'] = (object_linvel_penalty * self._get_reward_scale_by_name('obj_linvel_penalty')).mean()
         self.extras['rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward')).mean()
         self.extras['penalty/torques'] = (torque_penalty * self._get_reward_scale_by_name('torque_penalty')).mean()
-        self.extras['penalty/z_dist_penalty'] = (z_dist_penalty * self._get_reward_scale_by_name('pencil_z_dist_penalty')).mean()
+        self.extras['penalty/axial_tilt_penalty'] = (axial_tilt_penalty * self._get_reward_scale_by_name('axial_tilt_penalty')).mean()
         self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty')).mean()
         self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty')).mean()
-        self.extras['penalty/hand_pose_consistency_penalty'] = (hand_pose_consistency_penalty * self._get_reward_scale_by_name('hand_pose_consistency_penalty')).mean()
         self.extras['penalty/flying_base_movement_penalty'] = (flying_base_movement_penalty * self._get_reward_scale_by_name('flying_base_movement_penalty')).mean()
         self.extras['finger_obj_penalty(NOT USED)'] = finger_obj_penalty.mean()
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
@@ -1338,14 +1276,18 @@ class LinkerHandHora(VecTask):
         self.extras['vel/old_vec_dot(HACK)'] = (object_angvel * self.rot_axis_buf).sum(-1).mean()  # 原算法：会被自转污染
         # sparse，不能在每个时间步直接对所有环境取平均值
         self.extras['rot_angle'] = rot_angle
-        self.extras['reward/waypoint_sparse_reward'] = waypoint_sparse_reward * self._get_reward_scale_by_name('waypoint_sparse_reward')
+        # Waypoint tracking 奖励日志
+        self.extras['reward/waypoint_tracking_reward'] = (waypoint_tracking_reward * self._get_reward_scale_by_name('waypoint_tracking_reward')).mean()
+        self.extras['reward/waypoint_tracking_reward_per_env'] = waypoint_tracking_reward * self._get_reward_scale_by_name('waypoint_tracking_reward')  # 每个环境的值
+        self.extras['phase/current_phase'] = self.current_phase_buf.mean()  # 平均相位 (0~2π)
+        self.extras['phase/current_phase_deg'] = (self.current_phase_buf * 180 / 3.14159).mean()  # 平均相位 (度)
         
         # 添加终止原因统计信息
 
         self.extras['termination/total_episodes'] = self.termination_counts['total_episodes']
         self.extras['termination/max_episode_length_count'] = self.termination_counts['max_episode_length']
         self.extras['termination/object_below_threshold_count'] = self.termination_counts['object_below_threshold']
-        self.extras['termination/pencil_fall_count'] = self.termination_counts['pencil_fall']
+        self.extras['termination/pencil_tilt_count'] = self.termination_counts['pencil_tilt']
         self.extras['termination/angular_velocity_too_high_count'] = self.termination_counts['angular_velocity_too_high']
 
         if self.evaluate:
@@ -1368,41 +1310,6 @@ class LinkerHandHora(VecTask):
                     info = f'Progress: {self.evaluate_iter} / {self.max_episode_length}'
                     tprint(info)
             self.evaluate_iter += 1
-
-    def _compute_hand_pose_consistency_penalty(self):
-        """
-        计算手部姿态一致性惩罚。
-        当每圈旋转180-360度时，根据当前手部姿态与初始手部姿态的差异给出惩罚。
-        
-        Returns:
-            hand_pose_consistency_penalty: 形状为 (num_envs,) 的张量，表示每个环境的手部姿态一致性惩罚
-        """
-        # 计算当前累计旋转角度在一个完整圈内的相对位置
-        # total_rot_angle 是累计旋转角度，取模得到当前圈内的旋转角度
-        angle_in_circle = torch.fmod(self.total_rot_angle, 2 * math.pi)
-        
-        # 判断是否在惩罚区间内（180-360度，即 π 到 2π 弧度）
-        pi = math.pi
-        penalty_mask = (angle_in_circle >= pi) & (angle_in_circle <= 2 * pi)
-        
-        # 计算权重：在180-360度区间内，权重从0线性增长到1
-        # 当角度为π时权重为0，当角度为2π时权重为1
-        weight = torch.zeros_like(angle_in_circle)
-
-        # 使用一个平滑的凸函数（如二次函数）来计算权重，使得在180度时权重为0，360度时权重为1
-        # 并且在180-360度区间内平滑增长
-        normalized_angle = (angle_in_circle - pi) / pi
-        weight[penalty_mask] = normalized_angle[penalty_mask] ** 2
-        
-        # 计算当前手部姿态与初始手部姿态的差异
-        # self.init_pose_buf 存储了每个环境的初始手部姿态
-        # self.linker_hand_dof_pos 是当前的手部关节位置
-        hand_pose_diff = torch.norm(self.linker_hand_dof_pos - self.init_pose_buf, dim=1)
-
-        # 应用权重，只在指定角度范围内给出惩罚
-        hand_pose_consistency_penalty = weight * hand_pose_diff
-        
-        return hand_pose_consistency_penalty
 
     def post_physics_step(self):
         self.progress_buf += 1
@@ -1709,16 +1616,16 @@ class LinkerHandHora(VecTask):
             pencil_z_min = torch.min(pencil_end_1, pencil_end_2)[:, -1]
             pencil_z_max = torch.max(pencil_end_1, pencil_end_2)[:, -1]
             # LinkerPen 倾倒判定：高度差超过阈值（笔长 0.18m，约 45度倾斜）
-            pencil_fall = torch.greater(pencil_z_max - pencil_z_min, 0.12)  # pencil fall threshold 0.12m
+            pencil_tilt = torch.greater(pencil_z_max - pencil_z_min, 0.12)  # pencil fall threshold 0.12m
 
             # 记录铅笔倾倒的环境 (最高优先级)
-            pencil_fall_envs = torch.where(pencil_fall)[0]
-            self.current_termination_reason[pencil_fall_envs] = 3  # pencil_fall
+            pencil_tilt_envs = torch.where(pencil_tilt)[0]
+            self.current_termination_reason[pencil_tilt_envs] = 3  # pencil_tilt
             # 记录实际的高度差值
             pencil_height_diff = pencil_z_max - pencil_z_min
-            self.termination_actual_values[pencil_fall_envs] = pencil_height_diff[pencil_fall_envs]
+            self.termination_actual_values[pencil_tilt_envs] = pencil_height_diff[pencil_tilt_envs]
             
-            resets = torch.logical_or(resets, pencil_fall)
+            resets = torch.logical_or(resets, pencil_tilt)
 
         # 统计终止原因
         reset_envs = torch.where(resets)[0]
@@ -1729,7 +1636,7 @@ class LinkerHandHora(VecTask):
             elif reason == 2:
                 self.termination_counts['object_below_threshold'] += 1
             elif reason == 3:
-                self.termination_counts['pencil_fall'] += 1
+                self.termination_counts['pencil_tilt'] += 1
             elif reason == 4:
                 self.termination_counts['angular_velocity_too_high'] += 1
             self.termination_counts['total_episodes'] += 1
@@ -1744,7 +1651,7 @@ class LinkerHandHora(VecTask):
             'max_episode_length': 0,
             'object_below_threshold': 0,
             'angular_velocity_too_high': 0,
-            'pencil_fall': 0,
+            'pencil_tilt': 0,
             'total_episodes': 0
         }
     def _refresh_gym(self):
@@ -2495,23 +2402,21 @@ class LinkerHandHora(VecTask):
 def compute_hand_reward(
     object_linvel_penalty, object_linvel_penalty_scale: float,
     rotate_reward, rotate_reward_scale: float,
-    waypoint_sparse_reward, waypoint_sparse_reward_scale: float,
     torque_penalty, torque_pscale: float,
-    z_dist_penalty, z_dist_penalty_scale: float,
+    axial_tilt_penalty, axial_tilt_penalty_scale: float,
     position_penalty, position_penalty_scale: float,
     rotate_penalty, rotate_penalty_scale: float,
-    hand_pose_consistency_penalty, hand_pose_consistency_penalty_scale: float,
-    flying_base_movement_penalty, flying_base_movement_penalty_scale: float
+    flying_base_movement_penalty, flying_base_movement_penalty_scale: float,
+    waypoint_tracking_reward, waypoint_tracking_reward_scale: float
 ):
     reward = rotate_reward_scale * rotate_reward
     reward = reward + object_linvel_penalty * object_linvel_penalty_scale
-    reward = reward + waypoint_sparse_reward * waypoint_sparse_reward_scale
     reward = reward + torque_penalty * torque_pscale
-    reward = reward + z_dist_penalty * z_dist_penalty_scale
+    reward = reward + axial_tilt_penalty * axial_tilt_penalty_scale
     reward = reward + position_penalty * position_penalty_scale
     reward = reward + rotate_penalty * rotate_penalty_scale
-    reward = reward + hand_pose_consistency_penalty * hand_pose_consistency_penalty_scale
     reward = reward + flying_base_movement_penalty * flying_base_movement_penalty_scale
+    reward = reward + waypoint_tracking_reward * waypoint_tracking_reward_scale
     return reward
 
 

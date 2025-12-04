@@ -1,0 +1,44 @@
+========================================
+RL Teacher 训练配置
+========================================
+启动时间:        2025-12-03 14:01:27
+GPU ID:          0
+随机种子:        42
+输出目录:        outputs/LinkerHandHora/debug_teacher_20251203_140127
+输出名称:        debug_teacher_20251203_140127
+额外参数:        
+
+========================================
+训练参数配置
+========================================
+算法:            PPOTeacher
+任务:            LinkerHandHora
+Grasp Cache:     3pose
+初始化模式:      low
+重置高度阈值:    0.12
+最大训练步数:    10000000000
+
+角速度参数:
+  angvelClipMin:           -0.5
+  angvelClipMax:           0.5
+  angvelPenaltyThresHigh:  1.0
+  angvelPenaltyThresLow:   -0.5
+
+奖励权重（合并后的最终值）:
+  rotate_reward:          1.0
+  obj_linvel_penalty:     -0.3
+  torque_penalty:         -0.01
+  rotate_penalty:         0.0
+  axial_tilt_penalty:     -1.5
+  axial_tilt_threshold:   0.03
+  position_penalty:       -0.1
+  waypoint_tracking:      0.2
+  waypoint_sigma:         0.05
+  waypoint_symmetric:     True
+  flying_base_penalty:    -0.1
+
+Flying base 配置:
+  linearVelocity:       0.1
+  angularVelocity:      2.0
+
+========================================
