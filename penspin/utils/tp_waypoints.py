@@ -2,13 +2,15 @@
 """
 Triangle Pass Waypoints 数据文件
 
-用于存储不同相位下的指尖目标位置，供强化学习奖励计算使用。
+用于存储不同相位下的指尖目标位置和手部关节姿态，供强化学习奖励计算和可视化验证使用。
 
 数据结构说明:
 - 每个 waypoint 包含:
   - phase: 相位角 (0 ~ π 或 0 ~ 2π)，表示笔长轴在旋转轴垂平面上的投影方向
   - fingertip_pos: 5个指尖相对于手基座的位置 (15维: 5指 × 3D)
     - 顺序: little, ring, middle, index, thumb (与 FINGERTIP_LINK_NAMES 一致)
+  - hand_dof: 手指关节角度 (21维，可选，用于 debug_waypoints.py 可视化)
+    - 顺序: IsaacGym 字母序 - index(4), little(4), middle(4), ring(4), thumb(5)
   - object_rot: 物体旋转四元数 (xyzw格式，可选，用于验证)
 
 使用方法:
@@ -33,6 +35,7 @@ Triangle Pass Waypoints 数据文件
 - 相位计算暂未考虑 Flying Hand 基座朝向的影响
 - 建议采集 4-8 个均匀分布的 waypoint (在半周期内)
 - 插值后将生成 360 个密集点 (每度一个)
+- hand_dof 字段仅用于 debug_waypoints.py 可视化，不影响奖励计算
 
 当前的插值逻辑通过在 phases_extended 的头部添加 phases_full[-1] - 2π（虚拟头部点）和尾部添加 phases_full[0] + 2π（虚拟尾部点）来正确处理周期性边界，确保了 360°/0° 处的数据由 350° 和 10° 正确插值得出。
 
@@ -48,7 +51,7 @@ from typing import Dict, List, Tuple, Optional
 # 原始 Waypoint 数据 (人工采集)
 # ============================================================
 # 请使用 interactive_tune.py 采集并填充以下数据
-# 格式: {'phase': float, 'fingertip_pos': list[15], 'object_rot': list[4]}
+# 格式: {'phase': float, 'fingertip_pos': list[15], 'hand_dof': list[21], 'object_rot': list[4]}
 
 TP_WAYPOINTS_RAW: List[Dict] = [
 
@@ -162,6 +165,7 @@ TP_WAYPOINTS_RAW: List[Dict] = [
 
 TP_WAYPOINTS_DENSE: Optional[torch.Tensor] = None  # shape: (360, 15)
 TP_PHASES_DENSE: Optional[torch.Tensor] = None     # shape: (360,)
+TP_HAND_DOF_DENSE: Optional[torch.Tensor] = None   # shape: (360, 21) - 用于可视化
 
 
 def generate_dense_waypoints(
@@ -169,7 +173,7 @@ def generate_dense_waypoints(
     num_interpolation_points: int = 360,
     device: str = 'cuda',
     half_period_symmetric: bool = True
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
     """
     对原始 waypoint 进行密集插值，生成连续的相位-指尖位置映射
     
@@ -192,6 +196,7 @@ def generate_dense_waypoints(
     Returns:
         dense_fingertip_pos: 密集插值后的指尖位置 (num_points, 15)
         dense_phases: 对应的相位值 (num_points,)
+        dense_hand_dof: 密集插值后的手指关节角度 (num_points, 21) 或 None (如果原始数据无 hand_dof)
     """
     if len(raw_waypoints) < 2:
         raise ValueError(f"需要至少2个原始waypoint进行插值，当前只有 {len(raw_waypoints)} 个")
@@ -200,10 +205,21 @@ def generate_dense_waypoints(
     phases = np.array([wp['phase'] for wp in raw_waypoints])
     fingertip_positions = np.array([wp['fingertip_pos'] for wp in raw_waypoints])
     
+    # 检查是否有 hand_dof 数据 (可选字段)
+    has_hand_dof = all('hand_dof' in wp and wp['hand_dof'] is not None for wp in raw_waypoints)
+    if has_hand_dof:
+        hand_dof_data = np.array([wp['hand_dof'] for wp in raw_waypoints])
+        print(f"[TP_Waypoints] 检测到 hand_dof 数据 (21维)，将同时进行插值")
+    else:
+        hand_dof_data = None
+        print(f"[TP_Waypoints] 未检测到 hand_dof 数据，仅插值 fingertip_pos")
+    
     # 按相位排序
     sort_idx = np.argsort(phases)
     phases = phases[sort_idx]
     fingertip_positions = fingertip_positions[sort_idx]
+    if has_hand_dof:
+        hand_dof_data = hand_dof_data[sort_idx]
     
     if half_period_symmetric:
         # ============================================================
@@ -221,16 +237,22 @@ def generate_dense_waypoints(
         # 合并原始点和镜像点
         phases_full = np.concatenate([phases, phases_mirrored])
         fingertip_full = np.concatenate([fingertip_positions, fingertip_positions], axis=0)
+        if has_hand_dof:
+            hand_dof_full = np.concatenate([hand_dof_data, hand_dof_data], axis=0)
         
         # 重新排序
         sort_idx = np.argsort(phases_full)
         phases_full = phases_full[sort_idx]
         fingertip_full = fingertip_full[sort_idx]
+        if has_hand_dof:
+            hand_dof_full = hand_dof_full[sort_idx]
         
         print(f"[TP_Waypoints] 扩展后数据点数: {len(phases_full)}")
     else:
         phases_full = phases
         fingertip_full = fingertip_positions
+        if has_hand_dof:
+            hand_dof_full = hand_dof_data
     
     # ============================================================
     # 周期性插值 (考虑 0 和 2π 相连)
@@ -249,11 +271,17 @@ def generate_dense_waypoints(
         fingertip_full,
         [fingertip_full[0]]
     ], axis=0)
+    if has_hand_dof:
+        hand_dof_extended = np.concatenate([
+            [hand_dof_full[-1]],
+            hand_dof_full,
+            [hand_dof_full[0]]
+        ], axis=0)
     
     # 生成密集相位点 [0, 2π)
     dense_phases = np.linspace(0, 2*np.pi, num_interpolation_points, endpoint=False)
     
-    # 对每个维度进行线性插值
+    # 对每个维度进行线性插值 - fingertip_pos (15维)
     dense_fingertip = np.zeros((num_interpolation_points, 15))
     for dim in range(15):
         dense_fingertip[:, dim] = np.interp(
@@ -262,11 +290,23 @@ def generate_dense_waypoints(
             fingertip_extended[:, dim]
         )
     
+    # 对每个维度进行线性插值 - hand_dof (21维, 可选)
+    dense_hand_dof_tensor = None
+    if has_hand_dof:
+        dense_hand_dof = np.zeros((num_interpolation_points, 21))
+        for dim in range(21):
+            dense_hand_dof[:, dim] = np.interp(
+                dense_phases,
+                phases_extended,
+                hand_dof_extended[:, dim]
+            )
+        dense_hand_dof_tensor = torch.tensor(dense_hand_dof, dtype=torch.float32, device=device)
+    
     # 转换为 PyTorch tensor
     dense_phases_tensor = torch.tensor(dense_phases, dtype=torch.float32, device=device)
     dense_fingertip_tensor = torch.tensor(dense_fingertip, dtype=torch.float32, device=device)
     
-    return dense_fingertip_tensor, dense_phases_tensor
+    return dense_fingertip_tensor, dense_phases_tensor, dense_hand_dof_tensor
 
 
 def get_target_fingertip_by_phase(
@@ -318,6 +358,66 @@ def get_target_fingertip_by_phase(
     target_fingertip = (1 - alpha) * fingertip_low + alpha * fingertip_high
     
     return target_fingertip
+
+
+def get_target_hand_dof_by_phase(
+    current_phase: torch.Tensor,
+    dense_hand_dof: torch.Tensor,
+    dense_phases: torch.Tensor
+) -> torch.Tensor:
+    """
+    根据当前相位获取目标手指关节角度 (使用线性插值)
+    
+    此函数用于 debug_waypoints.py 可视化，不影响奖励计算。
+    
+    Args:
+        current_phase: 当前相位 (num_envs,) 或标量，值域 [0, 2π)
+        dense_hand_dof: 密集插值后的手指关节角度 (num_points, 21)
+        dense_phases: 对应的相位值 (num_points,)
+    
+    Returns:
+        target_hand_dof: 目标手指关节角度 (num_envs, 21) 或 (21,)
+    """
+    # 处理标量输入
+    is_scalar = current_phase.dim() == 0
+    if is_scalar:
+        current_phase = current_phase.unsqueeze(0)
+    
+    num_envs = current_phase.shape[0]
+    num_points = dense_phases.shape[0]
+    
+    # 将相位归一化到 [0, 2π)
+    current_phase = torch.fmod(current_phase, 2 * np.pi)
+    current_phase[current_phase < 0] += 2 * np.pi
+    
+    # 计算相位间隔 (假设均匀分布)
+    phase_step = 2 * np.pi / num_points
+    
+    # 找到最近的索引 (向下取整)
+    idx_low = (current_phase / phase_step).long()
+    idx_low = torch.clamp(idx_low, 0, num_points - 1)
+    idx_high = (idx_low + 1) % num_points
+    
+    # 计算插值权重
+    phase_low = dense_phases[idx_low]
+    phase_high = dense_phases[idx_high]
+    
+    # 处理环形边界
+    phase_diff = phase_high - phase_low
+    phase_diff[phase_diff < 0] += 2 * np.pi
+    
+    alpha = (current_phase - phase_low) / (phase_diff + 1e-8)
+    alpha = torch.clamp(alpha, 0, 1).unsqueeze(-1)  # (num_envs, 1)
+    
+    # 线性插值
+    dof_low = dense_hand_dof[idx_low]   # (num_envs, 21)
+    dof_high = dense_hand_dof[idx_high]  # (num_envs, 21)
+    
+    target_dof = (1 - alpha) * dof_low + alpha * dof_high
+    
+    if is_scalar:
+        return target_dof.squeeze(0)  # (21,)
+    return target_dof
 
 
 def compute_phase_from_object_rotation(
@@ -459,7 +559,7 @@ def compute_waypoint_tracking_reward(
 def initialize_waypoints(
     device: str = 'cuda',
     half_period_symmetric: bool = True
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
     """
     初始化 waypoint 数据
     
@@ -471,26 +571,29 @@ def initialize_waypoints(
         half_period_symmetric: 是否使用180°对称性扩展 (默认True，适用于TP等转笔技巧)
     
     Returns:
-        (dense_fingertip_pos, dense_phases) 或 (None, None)
+        (dense_fingertip_pos, dense_phases, dense_hand_dof) 或 (None, None, None)
+        dense_hand_dof 可能为 None (如果原始数据没有 hand_dof 字段)
     """
-    global TP_WAYPOINTS_DENSE, TP_PHASES_DENSE
+    global TP_WAYPOINTS_DENSE, TP_PHASES_DENSE, TP_HAND_DOF_DENSE
     
     if len(TP_WAYPOINTS_RAW) < 2:
         print("[TP_Waypoints] 警告: 原始 waypoint 数据不足，waypoint 奖励将被禁用")
         print("[TP_Waypoints] 请使用 interactive_tune.py 采集至少2个 waypoint")
-        return None, None
+        return None, None, None
     
     mode_str = "180°对称性扩展" if half_period_symmetric else "完整360°周期"
     print(f"[TP_Waypoints] 正在从 {len(TP_WAYPOINTS_RAW)} 个原始点生成密集插值 ({mode_str})...")
-    TP_WAYPOINTS_DENSE, TP_PHASES_DENSE = generate_dense_waypoints(
+    TP_WAYPOINTS_DENSE, TP_PHASES_DENSE, TP_HAND_DOF_DENSE = generate_dense_waypoints(
         TP_WAYPOINTS_RAW,
         num_interpolation_points=360,
         device=device,
         half_period_symmetric=half_period_symmetric
     )
     print(f"[TP_Waypoints] 已生成 {TP_WAYPOINTS_DENSE.shape[0]} 个密集 waypoint")
+    if TP_HAND_DOF_DENSE is not None:
+        print(f"[TP_Waypoints] 同时生成了手指关节角度数据 (21维)")
     
-    return TP_WAYPOINTS_DENSE, TP_PHASES_DENSE
+    return TP_WAYPOINTS_DENSE, TP_PHASES_DENSE, TP_HAND_DOF_DENSE
 
 
 # ============================================================
@@ -502,21 +605,21 @@ if __name__ == '__main__':
     print("Triangle Pass Waypoints 测试")
     print("=" * 60)
     
-    # 测试 1: 180° 对称性扩展 (默认模式)
-    print("\n--- 测试 1: 180° 对称性扩展 ---")
-    # 只提供 0~π 范围的数据
+    # 测试 1: 180° 对称性扩展 (默认模式) - 无 hand_dof
+    print("\n--- 测试 1: 180° 对称性扩展 (无 hand_dof) ---")
     test_waypoints_half = [
         {'phase': 0.0, 'fingertip_pos': [0.0]*15, 'object_rot': [0, 0, 0, 1]},
         {'phase': np.pi/3, 'fingertip_pos': [0.1]*15, 'object_rot': [0, 0, 0, 1]},
         {'phase': 2*np.pi/3, 'fingertip_pos': [0.2]*15, 'object_rot': [0, 0, 0, 1]},
     ]
     
-    dense_pos_half, dense_phases_half = generate_dense_waypoints(
+    dense_pos_half, dense_phases_half, dense_dof_half = generate_dense_waypoints(
         test_waypoints_half, device='cpu', half_period_symmetric=True
     )
     print(f"密集插值结果:")
     print(f"  - 相位数量: {dense_phases_half.shape[0]}")
     print(f"  - 相位范围: [{dense_phases_half.min():.4f}, {dense_phases_half.max():.4f}]")
+    print(f"  - hand_dof: {dense_dof_half}")
     
     # 验证对称性: phase=0 和 phase=π 应该相同
     idx_0 = 0

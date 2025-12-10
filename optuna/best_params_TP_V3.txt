@@ -1,0 +1,39 @@
+Best Trial Number: 1
+Best Composite Score: 4201.52
+
+Best Hyperparameters:
+  alpha_start: 0.6984249841083139
+  learning_rate: 0.0008353610755311764
+  weight_decay: 1.1530645080977555e-05
+  gamma: 0.992
+  tau: 0.95
+  e_clip: 0.3
+  entropy_coef: 0.006615378865278278
+  critic_coef: 1.0
+  kl_threshold: 0.022307529070460415
+  kl_adaptive_factor: 1.15
+  min_lr: 3.487712624545935e-05
+  mini_epochs: 5
+  minibatch_size: 32768
+  grad_norm: 0.5
+  num_envs: 8192
+  horizon_length: 32
+  controller_pgain: 16.02765372775314
+  controller_dgain: 0.20381741067223574
+  controller_torque_limit: 6.2794687233379705
+  controller_action_scale: 0.12607850486168976
+  target_angvel: 5.122554395138993
+  angvel_sigma: 1.6564507699318414
+  rotate_reward_scale: 1.7406933945465861
+  obj_linvel_penalty_scale: -0.1215900755927009
+  torque_penalty_scale: -0.02717376944924351
+  rotate_penalty_scale: -0.09745808732559048
+  axial_tilt_penalty_scale: -1.8921085730066955
+  axial_tilt_threshold: 0.020942875570602027
+  position_penalty_scale: -0.17271791774724393
+  waypoint_tracking_reward_scale: 6.571779905381634
+  waypoint_sigma: 0.2690282248474103
+  log_scale_beta: 4.584049132667419
+  ema_alpha: 0.14985844582977498
+  jitter_penalty_scale: -0.6306553692679333
+  reverse_penalty_scale: -0.866673292185427

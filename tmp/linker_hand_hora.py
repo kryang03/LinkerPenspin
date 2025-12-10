@@ -418,7 +418,7 @@ class LinkerHandHora(VecTask):
         self.waypoint_sigma = self.config['env']['reward'].get('waypoint_sigma', 0.05)
         self.axial_tilt_threshold = self.config['env']['reward'].get('axial_tilt_threshold', 0.03)
         self.waypoint_half_period_symmetric = self.config['env']['reward'].get('waypoint_half_period_symmetric', True)
-        self.dense_waypoint_pos, self.dense_phases = initialize_waypoints(
+        self.dense_waypoint_pos, self.dense_phases, self.dense_hand_dof = initialize_waypoints(
             device=self.device,
             half_period_symmetric=self.waypoint_half_period_symmetric
         )

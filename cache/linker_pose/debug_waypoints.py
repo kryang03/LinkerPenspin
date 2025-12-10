@@ -49,6 +49,7 @@ from penspin.utils.tp_waypoints import (
     TP_WAYPOINTS_RAW,
     generate_dense_waypoints,
     get_target_fingertip_by_phase,
+    get_target_hand_dof_by_phase,
     compute_phase_from_object_rotation,
 )
 from isaacgym.torch_utils import quat_from_euler_xyz, quat_apply
@@ -129,6 +130,8 @@ class WaypointVisualizer:
         print(f"  密集插值点数: {self.dense_fingertip_pos.shape[0]}")
         print(f"  180° 对称性:   {CONFIG['half_period_symmetric']}")
         print(f"  旋转速度:      {CONFIG['rotation_speed']:.2f} rad/s")
+        hand_dof_status = "启用" if self.dense_hand_dof is not None else "未配置"
+        print(f"  Hand DOF 动画: {hand_dof_status}")
         print("="*60)
         print("\n操作说明:")
         print("  Space - 暂停/继续 或 单步前进")
@@ -257,8 +260,8 @@ class WaypointVisualizer:
     
     def _init_waypoints(self):
         """初始化 Waypoint 数据"""
-        # 生成密集插值
-        self.dense_fingertip_pos, self.dense_phases = generate_dense_waypoints(
+        # 生成密集插值 (包括 hand_dof)
+        self.dense_fingertip_pos, self.dense_phases, self.dense_hand_dof = generate_dense_waypoints(
             TP_WAYPOINTS_RAW,
             num_interpolation_points=360,
             device=self.device,
@@ -266,8 +269,15 @@ class WaypointVisualizer:
         )
         
         print(f"\n密集 Waypoint 数据:")
-        print(f"  Shape: {self.dense_fingertip_pos.shape}")
+        print(f"  fingertip_pos Shape: {self.dense_fingertip_pos.shape}")
         print(f"  Phase 范围: [{self.dense_phases.min():.4f}, {self.dense_phases.max():.4f}]")
+        
+        if self.dense_hand_dof is not None:
+            print(f"  hand_dof Shape: {self.dense_hand_dof.shape}")
+            self.has_hand_dof = True
+        else:
+            print(f"  hand_dof: 无 (原始数据中未包含 hand_dof 字段)")
+            self.has_hand_dof = False
         
         # 旋转轴
         self.rotation_axis = torch.tensor(CONFIG["rotation_axis"], dtype=torch.float32, device=self.device)
@@ -340,6 +350,40 @@ class WaypointVisualizer:
             self.dense_phases
         )
         return target[0].numpy()  # (15,)
+    
+    def _get_target_hand_dof(self, phase):
+        """获取当前相位的目标手指关节角度
+        
+        Returns:
+            target_dof: (21,) numpy array 或 None
+        """
+        if not self.has_hand_dof:
+            return None
+        
+        phase_tensor = torch.tensor(phase, dtype=torch.float32, device=self.device)
+        target = get_target_hand_dof_by_phase(
+            phase_tensor,
+            self.dense_hand_dof,
+            self.dense_phases
+        )
+        return target.numpy()  # (21,)
+    
+    def _apply_target_hand_dof(self, target_dof):
+        """将目标手指关节角度应用到手部 Actor
+        
+        Args:
+            target_dof: (21,) numpy array - 手指关节角度
+        """
+        if target_dof is None:
+            return
+        
+        # 设置 DOF 目标位置
+        # 注意: 非 Flying Hand URDF 只有 21 个 DOF (手指关节)
+        target_tensor = torch.tensor(target_dof, dtype=torch.float32, device=self.device)
+        self.gym.set_dof_position_target_tensor(
+            self.sim,
+            gymtorch.unwrap_tensor(target_tensor)
+        )
     
     def _draw_fingertip_spheres(self, fingertip_pos):
         """绘制指尖目标位置球体
@@ -493,6 +537,10 @@ class WaypointVisualizer:
             # 更新物体姿态
             self._update_object_pose(self.current_phase)
             
+            # 获取并应用目标手部姿态 (如果有 hand_dof 数据)
+            target_hand_dof = self._get_target_hand_dof(self.current_phase)
+            self._apply_target_hand_dof(target_hand_dof)
+            
             # 获取目标指尖位置并绘制
             target_fingertip = self._get_target_fingertip_pos(self.current_phase)
             self._draw_fingertip_spheres(target_fingertip)
@@ -501,14 +549,19 @@ class WaypointVisualizer:
             # 定期打印信息
             if time.time() - last_print_time > 1.0:
                 phase_deg = np.degrees(self.current_phase)
+                hand_dof_info = "手部DOF: 已启用" if self.has_hand_dof else "手部DOF: 无数据"
                 print(f"Phase: {self.current_phase:.4f} rad ({phase_deg:.1f}°) | "
                       f"Speed: {self.speed_multiplier:.2f}x | "
+                      f"{hand_dof_info} | "
                       f"{'PAUSED' if self.paused else 'RUNNING'}")
                 last_print_time = time.time()
             
             # 仿真步进
             self.gym.simulate(self.sim)
             self.gym.fetch_results(self.sim, True)
+            
+            # 刷新 DOF 状态
+            self.gym.refresh_dof_state_tensor(self.sim)
             
             # 渲染
             self.gym.step_graphics(self.sim)

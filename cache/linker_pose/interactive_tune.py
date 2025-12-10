@@ -23,39 +23,33 @@ URDF 结构 (27 DoF):
 ================================================================================
 
 【物体位置控制】
-  W/S - 前进/后退 (X轴)
-  A/D - 左/右移动 (Y轴)
-  Q/E - 上升/下降 (Z轴)
+  W/S - 前进/后退 (X轴)    A/D - 左/右移动 (Y轴)    Q/E - 上升/下降 (Z轴)
 
 【物体旋转控制】
   J/L - Yaw 左/右 (绕Z轴旋转)
 
+【手基座旋转控制】(Flying Hand 6DOF 基座的旋转部分)
+  ←/→ - Roll  左/右 (绕X轴，rx)      步长: 0.02 rad
+  ↑/↓ - Pitch 上/下 (绕Y轴，ry)      步长: 0.02 rad
+  [/] - Yaw   左/右 (绕Z轴，rz)      步长: 0.02 rad
+
 【旋转轴角度调整】(旋转轴始终可视化显示)
-  Z/X - 调整轴 X 分量 (+/-)
-  C/V - 调整轴 Y 分量 (+/-)
-  B/N - 调整轴 Z 分量 (+/-)
-  G   - 重置旋转轴为 +Z 方向 [0, 0, 1]
-  
-  说明: 旋转轴自动归一化为单位向量，显示为黄色箭头线
+  Z/X - 调整轴 X 分量 (+/-)    C/V - 调整轴 Y 分量 (+/-)
+  B/N - 调整轴 Z 分量 (+/-)    G   - 重置旋转轴为 +Z 方向
 
 【功能控制】
-  Space - 开启/关闭重力
-  R     - 重置物体位置到当前预设
-  P     - 打印当前姿态 (包含手部DOF、物体位姿、旋转轴、5指尖位置)
-  T     - 切换场景预设 (循环切换不同预设姿态)
+  Space - 开启/关闭重力         R - 重置物体位置到当前预设
+  P     - 打印当前姿态 (含Waypoint格式)    T - 切换场景预设
   F     - 切换显示/隐藏帮助信息
 
 【手指关节控制】(数字键增加，字母键减少)
-  食指 (index):   1/I - j0(侧摆)   2/K - j1   3/U - j2   4/O - j3
-  中指 (middle):  5/Y - j1         6/H - j2   7/. - j3   (j0被锁定)
-  拇指 (thumb):   8/M - j0   9/, - j1   0/- - j2   \\/[ - j3   '/] - j4
+  食指 (index):   1/I - j0(侧摆)    2/K - j1    3/U - j2    4/O - j3
+  中指 (middle):  5/Y - j1          6/H - j2    7/; - j3    (j0被锁定)
+  拇指 (thumb):   8/M - j0    9/, - j1    0/. - j2    \/- - j3    '// - j4
 
 【按P键输出内容】
-  - 格式1: 固定基座版本 (21 DoF)
-  - 格式2: Flying Hand版本 (27 DoF)
-  - 格式3: 详细状态 (基座、手指、物体)
-  - 格式4: 旋转轴配置 (用于yaml)
-  - 格式5: 指尖位置 (5个指尖的世界坐标和相对于基座的位置，用于Waypoint奖励设计)
+  - 格式1-4: 命令行/固定基座/Flying Hand/详细状态
+  - 格式5: 旋转轴配置    格式6: 指尖位置    格式7: TP Waypoint (含手部DOF)
 
 Author: Auto-generated for LinkerPenspin project
 ================================================================================
@@ -166,7 +160,12 @@ CONFIG = {
             ],
             "object_pos": [-0.120102, 0.028283, 0.530196],
             "object_rot": [0.60706, -0.361703, 0.361988, -0.607958]
-        }
+        },
+        "thumbaround_init":{
+            'hand_dof': [2.740276894286353e-10, -3.6835656747058465e-10, 0.34999996423721313, 0.3000001013278961, -1.3099994659423828, 3.081352284439731e-09, 0.17999990284442902, -0.7000001072883606, -0.8499999642372131, -0.6999997496604919, -7.318028405478572e-10, -7.13164638455055e-10, -8.735182577268574e-10, -8.556055863806478e-11, -5.774559216215058e-12, -1.449998378753662, -0.399999737739563, -0.39999985694885254, -1.1633550789369451e-09, -1.608403077391074e-09, -4.978174539260749e-10, -7.663112332190192e-12, -0.5500006079673767, -0.8999996185302734, -1.0426544072572597e-09, -0.5999993681907654, -0.4999999403953552],
+            'object_pos': [-0.11806444078683853, -0.018145889043807983, 0.528519332408905],
+            'object_rot': [0.33628520369529724, -0.6232331395149231, 0.6288980841636658, -0.32090461254119873],  # xyzw 格式
+        },  
     },
     "default_scene_preset": "triangle_grasp",
     
@@ -549,6 +548,11 @@ class InteractivePoseTuner:
                 # 裁剪到关节限制范围内
                 self.target_dof_pos[i] = np.clip(val, self.dof_lower[i], self.dof_upper[i])
         
+        # 同步更新手基座位置和旋转 (前6维的本地副本)
+        # 这样下一帧的 _update_hand_base() 就不会覆盖预设值
+        self.hand_base_pos = np.array(hand_dof[0:3], dtype=np.float32)
+        self.hand_base_rot = np.array(hand_dof[3:6], dtype=np.float32)
+        
         # 应用物体位置和旋转
         self.obj_pos = np.array(preset["object_pos"], dtype=np.float32)
         self.obj_base_rot = np.array(preset["object_rot"], dtype=np.float32)  # 更新基础旋转
@@ -572,8 +576,21 @@ class InteractivePoseTuner:
         self.current_scene_preset = preset_name
 
     def _subscribe_keyboard_events(self):
-        """订阅键盘事件"""
-        # 物体位置控制
+        """订阅键盘事件
+        
+        键位分配 (避免冲突):
+        =========================================================================
+        物体位置:    W/S (X), A/D (Y), Q/E (Z)
+        物体旋转:    J/L (Yaw)
+        手基座旋转:  ←/→ (Roll), ↑/↓ (Pitch), [/] (Yaw)  <-- 新增
+        旋转轴:      Z/X (X), C/V (Y), B/N (Z), G (重置)
+        功能键:      Space, R, P, T, F
+        食指增/减:   1234 / IKUO
+        中指增/减:   567 / YH;
+        拇指增/减:   890\' / M,.-/
+        =========================================================================
+        """
+        # === 物体位置控制 ===
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_W, "obj_move_forward")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_S, "obj_move_backward")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_A, "obj_move_left")
@@ -581,18 +598,27 @@ class InteractivePoseTuner:
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_Q, "obj_move_up")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_E, "obj_move_down")
         
-        # 物体旋转控制 (只有 Yaw)
+        # === 物体旋转控制 (只有 Yaw) ===
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_J, "obj_yaw_left")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_L, "obj_yaw_right")
         
-        # 功能键
+        # === 手基座旋转控制 (新增) ===
+        # Flying Hand 基座的 rx/ry/rz 控制
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_LEFT, "hand_roll_dec")   # ← Roll-
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_RIGHT, "hand_roll_inc")  # → Roll+
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_UP, "hand_pitch_inc")    # ↑ Pitch+
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_DOWN, "hand_pitch_dec")  # ↓ Pitch-
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_LEFT_BRACKET, "hand_yaw_dec")   # [ Yaw-
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_RIGHT_BRACKET, "hand_yaw_inc")  # ] Yaw+
+        
+        # === 功能键 ===
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_SPACE, "toggle_gravity")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_R, "reset_object")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_P, "print_pose")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_T, "toggle_finger_preset")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_F, "toggle_help")
         
-        # 旋转轴调整控制 (始终显示)
+        # === 旋转轴调整控制 ===
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_Z, "axis_x_inc")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_X, "axis_x_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_C, "axis_y_inc")
@@ -601,37 +627,41 @@ class InteractivePoseTuner:
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_N, "axis_z_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_G, "axis_reset")
         
-        # 手指关节单独控制 (数字键增加, Shift+数字键减少)
+        # === 手指关节控制 ===
         # IsaacGym 按字母顺序: index[6-9], little[10-13], middle[14-17], ring[18-21], thumb[22-26]
+        
         # 食指 (index): joint0-3 -> DoF 6, 7, 8, 9
+        # 增加: 1234, 减少: IKUO
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_1, "index_j0_inc")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_2, "index_j1_inc")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_3, "index_j2_inc")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_4, "index_j3_inc")
-        # 中指 (middle): joint0 被锁定, joint1-3 -> DoF 15, 16, 17
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_5, "middle_j1_inc")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_6, "middle_j2_inc")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_7, "middle_j3_inc")
-        # 拇指 (thumb): joint0-4 -> DoF 22, 23, 24, 25, 26
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_8, "thumb_j0_inc")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_9, "thumb_j1_inc")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_0, "thumb_j2_inc")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_BACKSLASH, "thumb_j3_inc")  # 用 \ 键
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_APOSTROPHE, "thumb_j4_inc")  # 用 ' 键
-        
-        # I/K/U/O/Y/H 用于减小手指关节值（重新安排以避免与旋转轴按键冲突）
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_I, "index_j0_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_K, "index_j1_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_U, "index_j2_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_O, "index_j3_dec")
+        
+        # 中指 (middle): joint0 被锁定, joint1-3 -> DoF 15, 16, 17
+        # 增加: 567, 减少: YH;
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_5, "middle_j1_inc")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_6, "middle_j2_inc")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_7, "middle_j3_inc")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_Y, "middle_j1_dec")
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_H, "middle_j2_dec")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_PERIOD, "middle_j3_dec")  # 改用 . 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_SEMICOLON, "middle_j3_dec")  # ; 键
+        
+        # 拇指 (thumb): joint0-4 -> DoF 22, 23, 24, 25, 26
+        # 增加: 890\', 减少: M,.-/
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_8, "thumb_j0_inc")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_9, "thumb_j1_inc")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_0, "thumb_j2_inc")
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_BACKSLASH, "thumb_j3_inc")   # \ 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_APOSTROPHE, "thumb_j4_inc") # ' 键
         self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_M, "thumb_j0_dec")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_COMMA, "thumb_j1_dec")
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_MINUS, "thumb_j2_dec")  # 改用 - 键
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_LEFT_BRACKET, "thumb_j3_dec")  # 改用 [ 键
-        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_RIGHT_BRACKET, "thumb_j4_dec")  # 改用 ] 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_COMMA, "thumb_j1_dec")      # , 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_PERIOD, "thumb_j2_dec")     # . 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_MINUS, "thumb_j3_dec")      # - 键
+        self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_SLASH, "thumb_j4_dec")      # / 键
         
     def _print_dof_info(self):
         """打印 DOF 信息"""
@@ -649,8 +679,9 @@ class InteractivePoseTuner:
 
     def _print_help(self):
         """打印帮助信息"""
-        # 获取当前旋转轴信息
+        # 获取当前旋转轴信息和手基座旋转信息
         axis_str = f"[{self.current_rotation_axis[0]:.2f}, {self.current_rotation_axis[1]:.2f}, {self.current_rotation_axis[2]:.2f}]"
+        base_rot_str = f"[{self.hand_base_rot[0]:.2f}, {self.hand_base_rot[1]:.2f}, {self.hand_base_rot[2]:.2f}]"
         help_text = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                    交互式姿态调试工具 - 快捷键说明                              ║
@@ -658,28 +689,30 @@ class InteractivePoseTuner:
 ║  物体位置控制:                                                                 ║
 ║    W/S - 前进/后退 (X轴)    A/D - 左/右 (Y轴)    Q/E - 上升/下降 (Z轴)        ║
 ║                                                                               ║
-║  物体旋转控制:                                                                 ║
-║    J/L - Yaw 左/右 (绕Z轴)                                                    ║
+║  物体旋转控制:          J/L - Yaw 左/右 (绕Z轴)                                ║
 ║                                                                               ║
-║  旋转轴调整 (始终显示，当前: {axis}):                                          ║
+║  手基座旋转控制 (当前: {base_rot}):                                            ║
+║    ←/→ - Roll +/-    ↑/↓ - Pitch +/-    [/] - Yaw +/-                         ║
+║                                                                               ║
+║  旋转轴调整 (当前: {axis}):                                                    ║
 ║    Z/X - X分量 +/-    C/V - Y分量 +/-    B/N - Z分量 +/-    G - 重置为+Z      ║
 ║                                                                               ║
 ║  功能键:                                                                       ║
-║    Space - 开启/关闭重力    R - 重置物体位置    P - 打印可复制姿态+指尖位置   ║
+║    Space - 开启/关闭重力    R - 重置物体位置    P - 打印姿态(含TP Waypoint)   ║
 ║    T     - 切换场景预设     F - 显示/隐藏帮助                                  ║
 ║                                                                               ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  手指关节控制 (数字键增加/字母键减少):                                         ║
 ║  ─────────────────────────────────────────────────────────────────────────────║
 ║  食指 (index):   1/I - j0(侧摆)   2/K - j1   3/U - j2   4/O - j3             ║
-║  中指 (middle):  5/Y - j1         6/H - j2   7/. - j3   (j0被锁定)            ║
-║  拇指 (thumb):   8/M - j0   9/, - j1   0/- - j2   [/] - j3   \\/' - j4       ║
+║  中指 (middle):  5/Y - j1         6/H - j2   7/; - j3   (j0被锁定)            ║
+║  拇指 (thumb):   8/M - j0   9/, - j1   0/. - j2   \\/- - j3   '// - j4       ║
 ║                                                                               ║
 ║  步长: 位置={pos_step:.4f}m  旋转={rot_step:.4f}rad  关节={finger_step:.4f}rad║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """.format(pos_step=self.step_size_pos, rot_step=self.step_size_rot, 
            finger_step=CONFIG["step_size_finger"],
-           axis=axis_str)
+           axis=axis_str, base_rot=base_rot_str)
         print(help_text)
 
     def _process_events(self):
@@ -733,6 +766,20 @@ class InteractivePoseTuner:
                     self._print_help()
                 else:
                     print("帮助已隐藏 (按 F 重新显示)")
+            
+            # --- 手基座旋转控制 (新增) ---
+            elif action == "hand_roll_inc":
+                self._adjust_hand_base_rotation(0, self.step_size_rot)  # rx+
+            elif action == "hand_roll_dec":
+                self._adjust_hand_base_rotation(0, -self.step_size_rot) # rx-
+            elif action == "hand_pitch_inc":
+                self._adjust_hand_base_rotation(1, self.step_size_rot)  # ry+
+            elif action == "hand_pitch_dec":
+                self._adjust_hand_base_rotation(1, -self.step_size_rot) # ry-
+            elif action == "hand_yaw_inc":
+                self._adjust_hand_base_rotation(2, self.step_size_rot)  # rz+
+            elif action == "hand_yaw_dec":
+                self._adjust_hand_base_rotation(2, -self.step_size_rot) # rz-
             
             # --- 旋转轴调整控制 ---
             elif action == "axis_x_inc":
@@ -909,6 +956,27 @@ class InteractivePoseTuner:
         
         self._apply_scene_preset(next_preset)
         print(f"场景预设切换为: {next_preset}")
+
+    def _adjust_hand_base_rotation(self, component_idx, delta):
+        """调整手基座旋转 (rx/ry/rz)
+        
+        Args:
+            component_idx: 0=rx(Roll), 1=ry(Pitch), 2=rz(Yaw)
+            delta: 旋转增量 (弧度)
+        """
+        component_names = ['Roll(rx)', 'Pitch(ry)', 'Yaw(rz)']
+        old_val = self.hand_base_rot[component_idx]
+        
+        # 裁剪到关节限制范围
+        new_val = np.clip(
+            old_val + delta,
+            self.dof_lower[3 + component_idx],
+            self.dof_upper[3 + component_idx]
+        )
+        self.hand_base_rot[component_idx] = new_val
+        
+        rot_str = f"[{self.hand_base_rot[0]:.3f}, {self.hand_base_rot[1]:.3f}, {self.hand_base_rot[2]:.3f}]"
+        print(f"手基座 {component_names[component_idx]}: {old_val:.3f} -> {new_val:.3f}  |  {rot_str}")
 
     def _adjust_rotation_axis(self, component_idx, delta):
         """调整旋转轴的指定分量"""
@@ -1112,7 +1180,7 @@ class InteractivePoseTuner:
         print(f"fingertip_rel_pos: {[round(x, 6) for x in fingertip_relative_list]}")
         
         # 格式7: 笔姿态相位 (用于Waypoint奖励)
-        print("\n【格式7】笔姿态相位 (Phase):")
+        print("\n【格式7】笔姿态相位 (Phase) + TP Waypoint:")
         print("-"*80)
         phase, pen_long_axis, proj_vec = self._compute_pen_phase()
         print(f"# 笔长轴 (世界坐标): [{pen_long_axis[0]:.6f}, {pen_long_axis[1]:.6f}, {pen_long_axis[2]:.6f}]")
@@ -1120,12 +1188,16 @@ class InteractivePoseTuner:
         print(f"# 笔长轴在旋转轴垂平面的投影: [{proj_vec[0]:.6f}, {proj_vec[1]:.6f}, {proj_vec[2]:.6f}]")
         print(f"# 相位 (phase): {phase:.6f} rad ({np.degrees(phase):.2f}°)")
         print("#")
+        print("# 注意: 相位计算暂未考虑Flying Hand基座朝向的影响")
+        print("# 如需考虑手朝向，需要将笔长轴和旋转轴都变换到手基座坐标系下计算")
+        print("#")
         print("# TP Waypoint 格式 (可直接复制到 TP_waypoints.py):")
-        print(f"{{")
+        print("{")
         print(f"    'phase': {phase:.6f},  # {np.degrees(phase):.1f}°")
         print(f"    'fingertip_pos': {[round(x, 6) for x in fingertip_relative_list]},")
+        print(f"    'hand_dof': {[round(x, 6) for x in finger_dof]},  # 21 DoF 手指关节")
         print(f"    'object_rot': {[round(x, 6) for x in obj_rot]},")
-        print(f"}},")
+        print("},")
         
         print("="*80 + "\n")
 

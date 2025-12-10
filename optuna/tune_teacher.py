@@ -116,17 +116,17 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 权重衰减 (Best: ~4.9e-5)
     # 原范围 1e-5~1e-3。最佳值偏小。
     # 调整策略：聚焦于 1e-5 到 1e-4
-    weight_decay = trial.suggest_float("weight_decay", 1e-5, 5e-5, log=True)
+    weight_decay = trial.suggest_float("weight_decay", 5e-6, 5e-5, log=True)
     hpo_overrides.append(f"train.ppo.weight_decay={weight_decay}")
     
     # 折扣因子 (Best: 0.995)
     # 当前动作对未来累积奖励的影响程度
-    gamma = trial.suggest_categorical("gamma", [0.985, 0.99, 0.992])
+    gamma = trial.suggest_categorical("gamma", [0.985, 0.99, 0.992, 0.995])
     hpo_overrides.append(f"train.ppo.gamma={gamma}")
     
     # GAE lambda (Best: 0.95)
     # GAE (Generalized Advantage Estimation) 的平滑系数，用于权衡偏差（Bias）和方差（Variance）
-    tau = trial.suggest_categorical("tau", [0.85, 0.90, 0.95])
+    tau = trial.suggest_categorical("tau", [0.85, 0.90, 0.95, 0.98])
     hpo_overrides.append(f"train.ppo.tau={tau}")
     
     # PPO裁剪范围 (Best: 0.3)
@@ -164,7 +164,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # --- B. PPO数据收集参数 ---
     
     # Mini-epochs
-    mini_epochs = trial.suggest_int("mini_epochs", 5, 10)
+    mini_epochs = trial.suggest_int("mini_epochs", 4, 10)
     hpo_overrides.append(f"train.ppo.mini_epochs={mini_epochs}")
     
     # Minibatch大小
@@ -176,7 +176,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 梯度裁剪 (Best: 2.0)
     # 原范围 [0.5, 1.0, 2.0]。最佳值触顶。
     # 调整策略：移除 0.5，增加 4.0
-    grad_norm = trial.suggest_categorical("grad_norm", [0.5, 1.0, 2.0])
+    grad_norm = trial.suggest_categorical("grad_norm", [0.25, 0.5, 1.0, 2.0])
     hpo_overrides.append(f"train.ppo.grad_norm={grad_norm}")
     
     # --- D. 环境与数据收集规模参数 ---
@@ -184,7 +184,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     # 环境数量 (默认: 8192)
     # 影响并行采样效率和样本多样性
     # 范围：4096, 8192
-    num_envs = trial.suggest_categorical("num_envs", [4096, 8192])
+    num_envs = trial.suggest_categorical("num_envs", [8192])
     hpo_overrides.append(f"task.env.numEnvs={num_envs}")
     
     # Horizon长度 (默认: 16)
@@ -198,7 +198,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # 1. P-Gain (刚度)
     # 原值 15.0。范围扩大到 [8.0, 25.0]
-    p_gain = trial.suggest_float("controller_pgain", 8.0, 25.0)
+    p_gain = trial.suggest_float("controller_pgain", 12.0, 25.0)
     hpo_overrides.append(f"task.env.controller.pgain={p_gain}")
     
     # 2. D-Gain (阻尼)
@@ -209,12 +209,12 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # 3. Torque Limit (力矩限制)
     # 原值 4.0。必须随 P 增大。范围 [2.0, 8.0]
-    torque_limit = trial.suggest_float("controller_torque_limit", 2.0, 8.0)
+    torque_limit = trial.suggest_float("controller_torque_limit", 5.0, 8.0)
     hpo_overrides.append(f"task.env.controller.torque_limit={torque_limit}")
     
     # 4. Action Scale (动作缩放)
     # 原值 0.1。影响灵敏度。范围 [0.05, 0.15]
-    action_scale = trial.suggest_float("controller_action_scale", 0.05, 0.15)
+    action_scale = trial.suggest_float("controller_action_scale", 0.08, 0.15)
     hpo_overrides.append(f"task.env.controller.action_scale={action_scale}")
     
     # --- F. 奖励参数 (基于 Best Values 重新中心化) ---
@@ -227,18 +227,18 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # Gaussian kernel 参数
     # 目标角速度: π rad/s ≈ 0.5 圈/s 是一个合理的起点
-    target_angvel = trial.suggest_float("target_angvel", 4.0, 6.0)  # 4.0 ~ 6.0 rad/s
+    target_angvel = trial.suggest_float("target_angvel", 6, 10)  # 4.0 ~ 6.0 rad/s
     hpo_overrides.append(f"task.env.reward.target_angvel={target_angvel}")
     
     # 高斯核带宽 σ: 越小奖励越陡峭
-    angvel_reward_sigma = trial.suggest_float("angvel_sigma", 0.5, 2.0)
+    angvel_reward_sigma = trial.suggest_float("angvel_sigma", 1.0, 2.0)
     hpo_overrides.append(f"task.env.reward.angvel_sigma={angvel_reward_sigma}")
     
     # 2. 奖励权重相关 (Reward Scales)
     
     # 旋转奖励 (Best: 1.7) -> 偏向高值 (原范围 0.5~2.0)
     # 调整：1.0 ~ 2.5，鼓励进一步加大旋转奖励比重
-    rotate_reward_scale = trial.suggest_float("rotate_reward_scale", 1.0, 2.5)
+    rotate_reward_scale = trial.suggest_float("rotate_reward_scale", 1.5, 2.5)
     hpo_overrides.append(f"task.env.reward.rotate_reward_scale={rotate_reward_scale}")
     
     # 物体线速度惩罚 (Best: -0.11) -> 偏向低惩罚 (原范围 -0.6 ~ -0.1)
@@ -253,17 +253,17 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # 旋转惩罚 (Best: -0.005) -> 非常小，几乎忽略不计
     # 调整：-0.1 ~ 0.0
-    rotate_penalty_scale = trial.suggest_float("rotate_penalty_scale", -0.1, 0.0)
+    rotate_penalty_scale = trial.suggest_float("rotate_penalty_scale", -0.15, 0.0)
     hpo_overrides.append(f"task.env.reward.rotate_penalty_scale={rotate_penalty_scale}")
     
     # 轴向倾斜惩罚 (Best: -1.5) -> 中间值
     # 调整：-2.0 ~ -1.0
-    axial_tilt_penalty_scale = trial.suggest_float("axial_tilt_penalty_scale", -2.0, -1.0)
+    axial_tilt_penalty_scale = trial.suggest_float("axial_tilt_penalty_scale", -2.5, -1.5)
     hpo_overrides.append(f"task.env.reward.axial_tilt_penalty_scale={axial_tilt_penalty_scale}")
     
     # 轴向倾斜阈值（米），低于此值不惩罚
     # 调整：0.02 ~ 0.05
-    axial_tilt_threshold = trial.suggest_float("axial_tilt_threshold", 0.02, 0.05)
+    axial_tilt_threshold = trial.suggest_float("axial_tilt_threshold", 0.01, 0.03)
     hpo_overrides.append(f"task.env.reward.axial_tilt_threshold={axial_tilt_threshold}")
     
     # 位置惩罚 (Best: -0.22) -> 中间偏高
@@ -284,12 +284,12 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # Waypoint 高斯核带宽
     # 调整：0.03 ~ 0.1
-    waypoint_sigma = trial.suggest_float("waypoint_sigma", 0.03, 0.5)
+    waypoint_sigma = trial.suggest_float("waypoint_sigma", 0.03, 0.4)
     hpo_overrides.append(f"task.env.reward.waypoint_sigma={waypoint_sigma}")
     
     # 对数缩放灵敏度控制参数
     # 范围: 0.5 ~ 5.0，越小越线性，越大大力压缩更强
-    log_scale_beta = trial.suggest_float("log_scale_beta", 0.5, 5.0)
+    log_scale_beta = trial.suggest_float("log_scale_beta", 0.5, 7.0)
     hpo_overrides.append(f"task.env.reward.log_scale_beta={log_scale_beta}")
     
     # --- 4. [Anti-Hacking] EMA 平滑和惩罚参数 ---
@@ -301,7 +301,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # Jitter 惩罚权重 (负值因为是惩罚)
     # 范围: -1.0 ~ -0.1
-    jitter_penalty_scale = trial.suggest_float("jitter_penalty_scale", -1.0, -0.1)
+    jitter_penalty_scale = trial.suggest_float("jitter_penalty_scale", -1.5, -0.5)
     hpo_overrides.append(f"task.env.reward.jitter_penalty_scale={jitter_penalty_scale}")
     
     # 反向旋转惩罚权重 (负值因为是惩罚)
