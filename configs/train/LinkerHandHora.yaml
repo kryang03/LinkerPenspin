@@ -28,10 +28,12 @@ ppo:
   tau: 0.95
   learning_rate: 5e-3
   weight_decay: 1e-4
-  kl_threshold: 0.02
+  kl_threshold: 0.01
+  kl_adaptive_factor: 1.15  # KL 自适应因子，控制 LR 调整幅度
+  min_lr: 1e-6              # 最小学习率下限，防止死锁
   # PPO batch collection
   is_demon: True
-  horizon_length: 12
+  horizon_length: 16
   minibatch_size: 16384
   mini_epochs: 5
   # PPO loss setting
@@ -50,8 +52,8 @@ ppo:
   # 50M agent steps for saving best model
   save_best_after: 50000000
   save_frequency: 500
-  # 300M agent steps for training
-  max_agent_steps: 300000000
+  # 1000M agent steps for training
+  max_agent_steps: 1000000000
   # hora setting
   priv_info: True              # Teacher默认开启特权信息
   proprio_mode: True

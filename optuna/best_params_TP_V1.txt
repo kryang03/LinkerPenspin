@@ -1,0 +1,33 @@
+Best Trial Number: 13
+Best Composite Score: 2531.69
+
+Best Hyperparameters:
+  learning_rate: 0.0004988620204062084
+  weight_decay: 1.1073239861215819e-05
+  gamma: 0.99
+  tau: 0.9
+  e_clip: 0.2
+  entropy_coef: 0.002953067408129904
+  critic_coef: 2.0
+  kl_threshold: 0.07994355842066564
+  mini_epochs: 9
+  minibatch_size: 16384
+  grad_norm: 1.0
+  num_envs: 8192
+  horizon_length: 24
+  flying_linear_velocity: 0.07342083828556274
+  flying_angular_velocity: 1.9483294472562382
+  angvelClipMin: -0.2531536273678795
+  angvelClipMax: 0.8221276384763581
+  angvelPenaltyThresHigh: 0.65477426123904
+  angvelPenaltyThresLow: -0.7977987753439719
+  rotate_reward_scale: 1.2749973970970874
+  obj_linvel_penalty_scale: -0.15014485319378934
+  torque_penalty_scale: -0.02398319337298298
+  rotate_penalty_scale: -0.09671560759396386
+  axial_tilt_penalty_scale: -1.9410579908184946
+  axial_tilt_threshold: 0.041676147157687214
+  position_penalty_scale: -0.28891224992715936
+  flying_base_movement_penalty_scale: -0.0713603140923449
+  waypoint_tracking_reward_scale: 6.645477814909902
+  waypoint_sigma: 0.03695038685068187

@@ -1,0 +1,2051 @@
+==========================================
+启动命令
+==========================================
+完整命令:
+CUDA_VISIBLE_DEVICES=0 \
+python train.py task=LinkerHandHora headless=True seed=42 \
+  train.ppo.output_name=LinkerHandHora/spaceE_curriculum_test_0.3_20251207_234309 \
+  train.algo=PPOTeacher \
+  task.env.grasp_cache_name=3_30000_49_nofly \
+  task.env.flyingHand.enabled=False \
+  task.env.asset.handAsset='assets/linker_hand/L25_dof_urdf.urdf' \
+  task.env.numActions=21 \
+  task.env.numObservations=126 \
+  train.ppo.max_agent_steps=10000000000 \
+  task.env.initPoseMode=low \
+  task.env.relative_z_drop_threshold=0.04 \
+  task.env.pencil_tilt_threshold=0.04 \
+  
+==========================================
+
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+Using /home/user/.cache/torch_extensions/py38_cu121 as PyTorch extensions root...
+Emitting ninja build file /home/user/.cache/torch_extensions/py38_cu121/gymtorch/build.ninja...
+Building extension module gymtorch...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module gymtorch...
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: False
+checkpoint: 
+headless: True
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 4096
+        numObservations: 126
+        numActions: 21
+        envSpacing: 0.5
+        flyingHand: 
+            enabled: False
+            defaultHeight: 0.35
+            heightLower: 0.3
+            heightUpper: 0.4
+            xyLimit: 0.05
+            linearVelocity: 0.1
+            angularVelocity: 2.0
+            basePgain: 10000.0
+            baseDgain: 200.0
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf.urdf
+        handBaseInit: 
+            position: [0.0, 0.0, 0.35]
+            rotation: [0.0, -1.31, 0.0]
+        actionSpace: 
+            disableRingLittleFinger: True
+        episodeLength: 400
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 6
+            dgain: 0.2
+            action_scale: 0.04167
+            torque_limit: 1.5
+        rotation_axis: [0, 0, 1]
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        relative_z_drop_threshold: 0.04
+        pencil_tilt_threshold: 0.04
+        grasp_cache_name: 3_30000_49_nofly
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            use_gaussian_angvel_reward: True
+            target_angvel: 3.14
+            angvel_sigma: 1.0
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThresHigh: 1.0
+            angvelPenaltyThresLow: -0.5
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            torque_penalty_scale: -0.01
+            rotate_penalty_scale: 0.0
+            axial_tilt_penalty_scale: -1.5
+            axial_tilt_threshold: 0.03
+            position_penalty_scale: -0.1
+            flying_base_movement_penalty_scale: -0.1
+            waypoint_tracking_reward_scale: 5.0
+            waypoint_sigma: 0.05
+            waypoint_half_period_symmetric: True
+        baseObjScale: 1.0
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.035
+            randomizeMassUpper: 0.048
+            randomizeCOM: True
+            randomizeCOMLower: -0.002
+            randomizeCOMUpper: 0.002
+            randomizeFriction: True
+            randomizeFrictionLower: 0.4
+            randomizeFrictionUpper: 1.2
+            randomizeRestitution: True
+            randomizeRestitutionLower: 0.1
+            randomizeRestitutionUpper: 0.5
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [1.0]
+            randomizeScaleLower: 1.0
+            randomizeScaleUpper: 1.0
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            contact_form: gpu_contact
+            contact_input: binary
+            enable_obj_linvel: True
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_obj_orientation: True
+            enable_ft_orientation: False
+            enable_ft_linvel: True
+            enable_ft_angvel: False
+            enable_hand_scale: False
+        object: 
+            type: cylinder_linkerpen
+            evalObjectType: None
+            sampleProb: [1.0]
+        useVHACD: False
+        enableCameraSensors: False
+        curriculum: 
+            mode: SpaceE
+            alpha_start: 0.3
+            alpha_end: 1.0
+            curriculum_steps: 100000000
+            ratio_threshold: 0.05
+            success_rot_threshold: 10.0
+            use_adaptive_threshold: True
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPOTeacher
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: 
+    demon_path: None
+    ppo: 
+        output_name: LinkerHandHora/spaceE_curriculum_test_0.3_20251207_234309
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 4096
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        weight_decay: 0.0001
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 16
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 50000000
+        save_frequency: 500
+        max_agent_steps: 500000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+Hand asset file: assets/linker_hand/L25_dof_urdf.urdf
+---- Object Setup (LinkerPen) ----
+Object type: cylinder_linkerpen
+---- Object List ----
+using 1 training objects: ['linkerpen']
+
+[角速度奖励] 使用 Gaussian Kernel 模式:
+  目标角速度: 3.14 rad/s (0.500 Hz)
+  高斯核带宽 σ: 1.00
+
+======================================================================
+动作空间配置 (Action Space Configuration)
+======================================================================
+Flying Hand 启用:     False
+禁用无名指和小拇指:   True
+策略动作维度:         13
+仿真 DOF 总数:        21
+----------------------------------------------------------------------
+手部动作维度:         13
+  策略索引 [0-3]  -> middle [仿真 0-3]
+  策略索引 [4-7]  -> index  [仿真 8-11]
+  策略索引 [8-12] -> thumb  [仿真 16-20]
+禁用的仿真 DOF:       [4, 5, 6, 7, 12, 13, 14, 15]
+======================================================================
+
+[PrivInfo Verify] OK: priv_info_dim=64, total_span=64, slices=11
+
+================================================================================
+启用的特权信息 (Privileged Information) 配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定启用]
+obj_mass                       [ 3: 4]         1        [固定启用]
+obj_friction                   [ 4: 5]         1        [固定启用]
+obj_com                        [ 5: 8]         3        [固定启用]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓ 已启用
+obj_linvel                     [12:15]         3        ✓ 已启用
+obj_angvel                     [15:18]         3        ✓ 已启用
+fingertip_position             [18:33]         15       ✓ 已启用
+fingertip_linvel               [33:48]         15       ✓ 已启用
+obj_restitution                [48:49]         1        ✓ 已启用
+tactile                        [49:64]         15       ✓ 已启用
+--------------------------------------------------------------------------------
+未启用的可选特权信息:
+fingertip_orientation                                   ✗ 未启用
+fingertip_angvel                                        ✗ 未启用
+hand_scale                                              ✗ 未启用
+--------------------------------------------------------------------------------
+总计: 12 项启用, 总维度 = 64
+priv_info_dim (缓冲区大小) = 64
+================================================================================
+
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+[Asset] Using submesh convex decomposition for hand collision
+LinkerPen loaded: radius=0.009m, length=0.18m (no scale applied)
+
+================================================================================
+环境初始化 - 显存相关参数
+================================================================================
+num_envs (环境数量):        4096
+环境间距 (spacing):         0.5
+每行环境数 (num_per_row):   64
+手部刚体数量:               22
+物体刚体数量:               1
+总刚体数/环境:              23
+================================================================================
+开始创建 4096 个并行环境...
+================================================================================
+
+环境创建进度: 0/4096 (0.0%)
+======================================================================
+物体物理属性（随机化后的最终值）
+======================================================================
+随机化配置:
+  - 质量随机化: True [0.035, 0.048]
+  - 质心随机化: True [-0.002, 0.002]
+  - 摩擦随机化: True [0.4, 1.2]
+  - 恢复系数随机化: True [0.1, 0.5]
+本环境实际值:
+  - 总质量: 0.0454 kg (45.38 g)
+  - 摩擦系数: 0.8091
+  - 恢复系数: 0.3006
+  - 质心偏移: [0.0012404535787167228, 0.0014682892743204147, 0.0016529622102258853]
+
+====================================================================================================
+IsaacGym 物体物理属性验证 (Object Physical Properties Verification)
+====================================================================================================
+
+--- 刚体属性 (Rigid Body Properties) ---
+刚体数量: 1
+
+  [Link 0]
+    质量 (mass):           0.045378 kg (45.38 g)
+    质心 (COM):            (0.001240, 0.001468, 0.001653) m
+    惯量 (inertia):
+      Ixx: 1.77093738e-04, Ixy: 0.00000000e+00, Ixz: 0.00000000e+00
+      Iyx: 0.00000000e+00, Iyy: 1.77093738e-04, Iyz: 0.00000000e+00
+      Izx: 0.00000000e+00, Izy: 0.00000000e+00, Izz: 2.47233288e-06
+    flags:                 0
+
+  总质量 (Total Mass): 0.045378 kg (45.38 g)
+
+--- 形状属性 (Shape Properties) ---
+形状数量: 3
+
+  [Shape 0]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 1]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 2]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+--- 自由度属性 (DOF Properties) ---
+自由度数量: 0
+
+--- 预期值对比 (Expected from pen_gen.py) ---
+  预期尼龙主体质量:  24.39 g
+  预期铝头质量 (x2): 8.27 g × 2 = 16.54 g
+  预期总质量:        40.93 g
+  预期半径:          9 mm
+  预期总长度:        180 mm (150 + 15×2)
+环境创建进度: 1024/4096 (25.0%)环境创建进度: 2048/4096 (50.0%)环境创建进度: 3072/4096 (75.0%)环境创建进度: 4095/4096 (100.0%)动作空间已更新: (13,) (策略输出维度: 13)
+Contact Tensor Dimension [1, numRigidBody, 3] torch.Size([4096, 23, 3])
+[LinkerHandHora] 加载缓存: cache/3_30000_49_nofly_grasp_cache.npy
+  缓存形状: torch.Size([30000, 49])
+  缓存格式: 61维(actual+target)
+[旋转轴] 使用三维向量格式: [0, 0, 1] (归一化后: [0.0, 0.0, 1.0])
+
+======================================================================
+Space E 时空扭曲编排器 (Time-Warping Orchestrator)
+======================================================================
+  模式:           SpaceE
+  Alpha 范围:     0.30 -> 1.00
+  课程步数:       1.00e+08
+  相对变化阈值:   5.0%
+  当前 Alpha:     0.300
+----------------------------------------------------------------------
+  [SpaceE] 完整动力学同构缩放（推荐）
+  物理层: g'=α²g, Kp'=α²Kp, Kd'=αKd, τ'=α²τ
+  观测层: v_obs=v_sim/α, F_obs=F_sim/α²
+  奖励层: r_final=r_raw×α
+======================================================================
+
+
+[Space E Curriculum] 更新物理参数 Alpha = 0.300 (Progress: 0.0%)
+  -> 重力: -0.8829 m/s² (原始: -9.81, 缩放: 0.0900)
+  -> DOF 属性已更新: Kp_scale=0.0900, Kd_scale=0.3000, τ_scale=0.0900
+  -> 手部 Kp: 0.5400, Kd: 0.0600
+[TP_Waypoints] 正在从 7 个原始点生成密集插值 (180°对称性扩展)...
+[TP_Waypoints] 使用 180° 对称性扩展模式
+[TP_Waypoints] 原始数据相位范围: [24.2°, 162.0°]
+[TP_Waypoints] 扩展后数据点数: 14
+[TP_Waypoints] 已生成 360 个密集 waypoint
+[Waypoint Tracking] 已启用，sigma=0.05, 180°对称=True
+[Waypoint Tracking] 密集点数: 360, 比较手指: middle, index, thumb (9维)
+
+================================================================================
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+显存相关配置参数 (Memory-Critical Configuration)
+================================================================================
+环境数量 (num_actors):        4,096
+Horizon 长度:                 16
+Batch Size:                   65,536 = 4,096 × 16
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         126
+动作维度 (actions_num):       13
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+
+================================================================================
+轨迹录制器初始化状态 (Trajectory Recorder Status)
+================================================================================
+  主进程 (LOCAL_RANK=0):  True
+  相机已启用:             False
+  轨迹录制器:             ✗ 未初始化
+    原因: 相机未启用 (enableCameraSensors=False)
+    解决方案: 在启动命令中添加 task.env.enableCameraSensors=True
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 0.3000
+
+[Space E Curriculum] 更新物理参数 Alpha = 0.300 (Progress: 0.0%)
+  -> 重力: -0.8829 m/s² (原始: -9.81, 缩放: 0.0900)
+  -> DOF 属性已更新: Kp_scale=0.0900, Kd_scale=0.3000, τ_scale=0.0900
+  -> 手部 Kp: 0.5400, Kd: 0.0600
+
+================================================================================
+Space E Curriculum Status [Epoch 100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0030, Success=0.0048
+  Sample Buffer:      1681 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     3.80
+  Episode Length:     38.13
+  Mean Rot Angle:     1.28 rad
+  Current Success:    0.0048 (8/1681) rot>3.0
+  Termination Dist:   Total=1681
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   1466 (87.2%)
+    - Tilt (Fall):    210 (12.5%)
+    - Overspeed:      5 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0028, Success=0.0436
+  Sample Buffer:      1422 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     5.68
+  Episode Length:     47.10
+  Mean Rot Angle:     1.71 rad
+  Current Success:    0.0436 (62/1422) rot>3.0
+  Termination Dist:   Total=1422
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   1209 (85.0%)
+    - Tilt (Fall):    209 (14.7%)
+    - Overspeed:      4 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0015, Success=0.0934
+  Sample Buffer:      1371 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     6.63
+  Episode Length:     50.08
+  Mean Rot Angle:     1.89 rad
+  Current Success:    0.0934 (128/1371) rot>3.0
+  Termination Dist:   Total=1371
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   1152 (84.0%)
+    - Tilt (Fall):    217 (15.8%)
+    - Overspeed:      2 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0017, Success=0.1250
+  Sample Buffer:      1168 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     7.27
+  Episode Length:     52.43
+  Mean Rot Angle:     2.00 rad
+  Current Success:    0.1250 (146/1168) rot>3.0
+  Termination Dist:   Total=1168
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   960 (82.2%)
+    - Tilt (Fall):    206 (17.6%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0000, Success=0.1693
+  Sample Buffer:      1152 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     7.76
+  Episode Length:     54.81
+  Mean Rot Angle:     2.10 rad
+  Current Success:    0.1693 (195/1152) rot>3.0
+  Termination Dist:   Total=1152
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   942 (81.8%)
+    - Tilt (Fall):    210 (18.2%)
+    - Overspeed:      0 (0.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0024, Success=0.1747
+  Sample Buffer:      1225 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     7.97
+  Episode Length:     55.26
+  Mean Rot Angle:     2.14 rad
+  Current Success:    0.1747 (214/1225) rot>3.0
+  Termination Dist:   Total=1225
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   989 (80.7%)
+    - Tilt (Fall):    233 (19.0%)
+    - Overspeed:      3 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0009, Success=0.1696
+  Sample Buffer:      1085 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     8.27
+  Episode Length:     57.16
+  Mean Rot Angle:     2.17 rad
+  Current Success:    0.1696 (184/1085) rot>3.0
+  Termination Dist:   Total=1085
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   898 (82.8%)
+    - Tilt (Fall):    186 (17.1%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0009, Success=0.2162
+  Sample Buffer:      1138 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     8.57
+  Episode Length:     58.27
+  Mean Rot Angle:     2.24 rad
+  Current Success:    0.2162 (246/1138) rot>3.0
+  Termination Dist:   Total=1138
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   951 (83.6%)
+    - Tilt (Fall):    186 (16.3%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0018, Success=0.2134
+  Sample Buffer:      1106 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     8.80
+  Episode Length:     59.51
+  Mean Rot Angle:     2.31 rad
+  Current Success:    0.2134 (236/1106) rot>3.0
+  Termination Dist:   Total=1106
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   916 (82.8%)
+    - Tilt (Fall):    188 (17.0%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0029, Success=0.2483
+  Sample Buffer:      1043 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.01
+  Episode Length:     61.63
+  Mean Rot Angle:     2.36 rad
+  Current Success:    0.2483 (259/1043) rot>3.0
+  Termination Dist:   Total=1043
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   867 (83.1%)
+    - Tilt (Fall):    173 (16.6%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0028, Success=0.2257
+  Sample Buffer:      1072 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.30
+  Episode Length:     62.17
+  Mean Rot Angle:     2.36 rad
+  Current Success:    0.2257 (242/1072) rot>3.0
+  Termination Dist:   Total=1072
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   885 (82.6%)
+    - Tilt (Fall):    184 (17.2%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0069, Success=0.2764
+  Sample Buffer:      1013 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.37
+  Episode Length:     62.71
+  Mean Rot Angle:     2.37 rad
+  Current Success:    0.2764 (280/1013) rot>3.0
+  Termination Dist:   Total=1013
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   842 (83.1%)
+    - Tilt (Fall):    164 (16.2%)
+    - Overspeed:      7 (0.7%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0080, Success=0.2565
+  Sample Buffer:      1006 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.50
+  Episode Length:     62.91
+  Mean Rot Angle:     2.40 rad
+  Current Success:    0.2565 (258/1006) rot>3.0
+  Termination Dist:   Total=1006
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   847 (84.2%)
+    - Tilt (Fall):    151 (15.0%)
+    - Overspeed:      8 (0.8%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0000, Success=0.2905
+  Sample Buffer:      1019 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.71
+  Episode Length:     64.38
+  Mean Rot Angle:     2.47 rad
+  Current Success:    0.2905 (296/1019) rot>3.0
+  Termination Dist:   Total=1019
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   868 (85.2%)
+    - Tilt (Fall):    151 (14.8%)
+    - Overspeed:      0 (0.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0010, Success=0.3161
+  Sample Buffer:      984 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.80
+  Episode Length:     65.04
+  Mean Rot Angle:     2.50 rad
+  Current Success:    0.3161 (311/984) rot>3.0
+  Termination Dist:   Total=984
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   827 (84.0%)
+    - Tilt (Fall):    156 (15.9%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0039, Success=0.3090
+  Sample Buffer:      1029 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     9.99
+  Episode Length:     66.01
+  Mean Rot Angle:     2.53 rad
+  Current Success:    0.3090 (318/1029) rot>3.0
+  Termination Dist:   Total=1029
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   847 (82.3%)
+    - Tilt (Fall):    178 (17.3%)
+    - Overspeed:      4 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0031, Success=0.3340
+  Sample Buffer:      976 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.07
+  Episode Length:     66.25
+  Mean Rot Angle:     2.57 rad
+  Current Success:    0.3340 (326/976) rot>3.0
+  Termination Dist:   Total=976
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   816 (83.6%)
+    - Tilt (Fall):    157 (16.1%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0011, Success=0.3604
+  Sample Buffer:      888 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.28
+  Episode Length:     67.70
+  Mean Rot Angle:     2.64 rad
+  Current Success:    0.3604 (320/888) rot>3.0
+  Termination Dist:   Total=888
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   741 (83.4%)
+    - Tilt (Fall):    146 (16.4%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 1900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0020, Success=0.3547
+  Sample Buffer:      981 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.58
+  Episode Length:     68.29
+  Mean Rot Angle:     2.67 rad
+  Current Success:    0.3547 (348/981) rot>3.0
+  Termination Dist:   Total=981
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   817 (83.3%)
+    - Tilt (Fall):    162 (16.5%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0010, Success=0.3607
+  Sample Buffer:      962 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.54
+  Episode Length:     68.08
+  Mean Rot Angle:     2.64 rad
+  Current Success:    0.3607 (347/962) rot>3.0
+  Termination Dist:   Total=962
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   794 (82.5%)
+    - Tilt (Fall):    167 (17.4%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0031, Success=0.3777
+  Sample Buffer:      977 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.59
+  Episode Length:     69.27
+  Mean Rot Angle:     2.66 rad
+  Current Success:    0.3777 (369/977) rot>3.0
+  Termination Dist:   Total=977
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   786 (80.5%)
+    - Tilt (Fall):    188 (19.2%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0045, Success=0.3673
+  Sample Buffer:      882 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.75
+  Episode Length:     70.03
+  Mean Rot Angle:     2.73 rad
+  Current Success:    0.3673 (324/882) rot>3.0
+  Termination Dist:   Total=882
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   711 (80.6%)
+    - Tilt (Fall):    167 (18.9%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0021, Success=0.4247
+  Sample Buffer:      949 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.03
+  Episode Length:     71.42
+  Mean Rot Angle:     2.79 rad
+  Current Success:    0.4247 (403/949) rot>3.0
+  Termination Dist:   Total=949
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   779 (82.1%)
+    - Tilt (Fall):    168 (17.7%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0045, Success=0.4318
+  Sample Buffer:      887 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     10.96
+  Episode Length:     71.28
+  Mean Rot Angle:     2.78 rad
+  Current Success:    0.4318 (383/887) rot>3.0
+  Termination Dist:   Total=887
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   730 (82.3%)
+    - Tilt (Fall):    153 (17.2%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0044, Success=0.3989
+  Sample Buffer:      905 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.12
+  Episode Length:     72.79
+  Mean Rot Angle:     2.83 rad
+  Current Success:    0.3989 (361/905) rot>3.0
+  Termination Dist:   Total=905
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   728 (80.4%)
+    - Tilt (Fall):    173 (19.1%)
+    - Overspeed:      4 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0070, Success=0.3756
+  Sample Buffer:      860 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.12
+  Episode Length:     72.30
+  Mean Rot Angle:     2.82 rad
+  Current Success:    0.3756 (323/860) rot>3.0
+  Termination Dist:   Total=860
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   696 (80.9%)
+    - Tilt (Fall):    158 (18.4%)
+    - Overspeed:      6 (0.7%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0033, Success=0.4175
+  Sample Buffer:      903 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.22
+  Episode Length:     73.00
+  Mean Rot Angle:     2.83 rad
+  Current Success:    0.4175 (377/903) rot>3.0
+  Termination Dist:   Total=903
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   736 (81.5%)
+    - Tilt (Fall):    164 (18.2%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0056, Success=0.3863
+  Sample Buffer:      888 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.36
+  Episode Length:     73.77
+  Mean Rot Angle:     2.84 rad
+  Current Success:    0.3863 (343/888) rot>3.0
+  Termination Dist:   Total=888
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   718 (80.9%)
+    - Tilt (Fall):    165 (18.6%)
+    - Overspeed:      5 (0.6%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 2900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0053, Success=0.4017
+  Sample Buffer:      951 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.45
+  Episode Length:     73.56
+  Mean Rot Angle:     2.86 rad
+  Current Success:    0.4017 (382/951) rot>3.0
+  Termination Dist:   Total=951
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   769 (80.9%)
+    - Tilt (Fall):    177 (18.6%)
+    - Overspeed:      5 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0046, Success=0.4659
+  Sample Buffer:      865 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.52
+  Episode Length:     73.92
+  Mean Rot Angle:     2.89 rad
+  Current Success:    0.4659 (403/865) rot>3.0
+  Termination Dist:   Total=865
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   688 (79.5%)
+    - Tilt (Fall):    173 (20.0%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0032, Success=0.4379
+  Sample Buffer:      934 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.94
+  Episode Length:     76.09
+  Mean Rot Angle:     2.98 rad
+  Current Success:    0.4379 (409/934) rot>3.0
+  Termination Dist:   Total=934
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   763 (81.7%)
+    - Tilt (Fall):    168 (18.0%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0097, Success=0.4481
+  Sample Buffer:      828 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.05
+  Episode Length:     76.93
+  Mean Rot Angle:     3.02 rad
+  Current Success:    0.4481 (371/828) rot>3.0
+  Termination Dist:   Total=828
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   664 (80.2%)
+    - Tilt (Fall):    156 (18.8%)
+    - Overspeed:      8 (1.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0012, Success=0.4631
+  Sample Buffer:      812 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     11.97
+  Episode Length:     76.44
+  Mean Rot Angle:     2.98 rad
+  Current Success:    0.4631 (376/812) rot>3.0
+  Termination Dist:   Total=812
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   680 (83.7%)
+    - Tilt (Fall):    131 (16.1%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0024, Success=0.4512
+  Sample Buffer:      851 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.05
+  Episode Length:     77.13
+  Mean Rot Angle:     2.99 rad
+  Current Success:    0.4512 (384/851) rot>3.0
+  Termination Dist:   Total=851
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   693 (81.4%)
+    - Tilt (Fall):    156 (18.3%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0036, Success=0.4702
+  Sample Buffer:      840 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.18
+  Episode Length:     78.02
+  Mean Rot Angle:     3.02 rad
+  Current Success:    0.4702 (395/840) rot>3.0
+  Termination Dist:   Total=840
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   716 (85.2%)
+    - Tilt (Fall):    121 (14.4%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0034, Success=0.4553
+  Sample Buffer:      894 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.32
+  Episode Length:     78.69
+  Mean Rot Angle:     3.05 rad
+  Current Success:    0.4553 (407/894) rot>3.0
+  Termination Dist:   Total=894
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   716 (80.1%)
+    - Tilt (Fall):    175 (19.6%)
+    - Overspeed:      3 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0086, Success=0.4828
+  Sample Buffer:      814 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.35
+  Episode Length:     78.54
+  Mean Rot Angle:     3.07 rad
+  Current Success:    0.4828 (393/814) rot>3.0
+  Termination Dist:   Total=814
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   652 (80.1%)
+    - Tilt (Fall):    155 (19.0%)
+    - Overspeed:      7 (0.9%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0058, Success=0.4433
+  Sample Buffer:      864 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.43
+  Episode Length:     78.72
+  Mean Rot Angle:     3.09 rad
+  Current Success:    0.4433 (383/864) rot>3.0
+  Termination Dist:   Total=864
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   704 (81.5%)
+    - Tilt (Fall):    155 (17.9%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 3900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0038, Success=0.4956
+  Sample Buffer:      787 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.46
+  Episode Length:     79.55
+  Mean Rot Angle:     3.10 rad
+  Current Success:    0.4956 (390/787) rot>3.0
+  Termination Dist:   Total=787
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   612 (77.8%)
+    - Tilt (Fall):    172 (21.9%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0041, Success=0.5156
+  Sample Buffer:      739 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.53
+  Episode Length:     80.58
+  Mean Rot Angle:     3.15 rad
+  Current Success:    0.5156 (381/739) rot>3.0
+  Termination Dist:   Total=739
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   595 (80.5%)
+    - Tilt (Fall):    141 (19.1%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0000, Success=0.5080
+  Sample Buffer:      813 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.71
+  Episode Length:     81.75
+  Mean Rot Angle:     3.18 rad
+  Current Success:    0.5080 (413/813) rot>3.0
+  Termination Dist:   Total=813
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   633 (77.9%)
+    - Tilt (Fall):    180 (22.1%)
+    - Overspeed:      0 (0.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0036, Success=0.5012
+  Sample Buffer:      834 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.78
+  Episode Length:     81.61
+  Mean Rot Angle:     3.20 rad
+  Current Success:    0.5012 (418/834) rot>3.0
+  Termination Dist:   Total=834
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   662 (79.4%)
+    - Tilt (Fall):    169 (20.3%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0038, Success=0.5452
+  Sample Buffer:      796 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.83
+  Episode Length:     82.14
+  Mean Rot Angle:     3.21 rad
+  Current Success:    0.5452 (434/796) rot>3.0
+  Termination Dist:   Total=796
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   613 (77.0%)
+    - Tilt (Fall):    180 (22.6%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0013, Success=0.4893
+  Sample Buffer:      791 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.87
+  Episode Length:     82.66
+  Mean Rot Angle:     3.20 rad
+  Current Success:    0.4893 (387/791) rot>3.0
+  Termination Dist:   Total=791
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   612 (77.4%)
+    - Tilt (Fall):    178 (22.5%)
+    - Overspeed:      1 (0.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0024, Success=0.4853
+  Sample Buffer:      818 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.83
+  Episode Length:     81.81
+  Mean Rot Angle:     3.19 rad
+  Current Success:    0.4853 (397/818) rot>3.0
+  Termination Dist:   Total=818
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   640 (78.2%)
+    - Tilt (Fall):    176 (21.5%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0038, Success=0.4752
+  Sample Buffer:      787 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.64
+  Episode Length:     81.58
+  Mean Rot Angle:     3.16 rad
+  Current Success:    0.4752 (374/787) rot>3.0
+  Termination Dist:   Total=787
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   630 (80.1%)
+    - Tilt (Fall):    154 (19.6%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0035, Success=0.4657
+  Sample Buffer:      846 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.77
+  Episode Length:     82.07
+  Mean Rot Angle:     3.18 rad
+  Current Success:    0.4657 (394/846) rot>3.0
+  Termination Dist:   Total=846
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   689 (81.4%)
+    - Tilt (Fall):    154 (18.2%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0038, Success=0.5261
+  Sample Buffer:      785 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.80
+  Episode Length:     82.01
+  Mean Rot Angle:     3.20 rad
+  Current Success:    0.5261 (413/785) rot>3.0
+  Termination Dist:   Total=785
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   609 (77.6%)
+    - Tilt (Fall):    173 (22.0%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 4900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0000, Success=0.5599
+  Sample Buffer:      793 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     12.99
+  Episode Length:     82.63
+  Mean Rot Angle:     3.23 rad
+  Current Success:    0.5599 (444/793) rot>3.0
+  Termination Dist:   Total=793
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   620 (78.2%)
+    - Tilt (Fall):    173 (21.8%)
+    - Overspeed:      0 (0.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0064, Success=0.5283
+  Sample Buffer:      778 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.16
+  Episode Length:     83.61
+  Mean Rot Angle:     3.28 rad
+  Current Success:    0.5283 (411/778) rot>3.0
+  Termination Dist:   Total=778
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   619 (79.6%)
+    - Tilt (Fall):    154 (19.8%)
+    - Overspeed:      5 (0.6%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0093, Success=0.5080
+  Sample Buffer:      750 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.18
+  Episode Length:     83.72
+  Mean Rot Angle:     3.28 rad
+  Current Success:    0.5080 (381/750) rot>3.0
+  Termination Dist:   Total=750
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   600 (80.0%)
+    - Tilt (Fall):    143 (19.1%)
+    - Overspeed:      7 (0.9%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0057, Success=0.5674
+  Sample Buffer:      705 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.32
+  Episode Length:     85.08
+  Mean Rot Angle:     3.32 rad
+  Current Success:    0.5674 (400/705) rot>3.0
+  Termination Dist:   Total=705
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   557 (79.0%)
+    - Tilt (Fall):    144 (20.4%)
+    - Overspeed:      4 (0.6%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0040, Success=0.5282
+  Sample Buffer:      746 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.22
+  Episode Length:     84.75
+  Mean Rot Angle:     3.29 rad
+  Current Success:    0.5282 (394/746) rot>3.0
+  Termination Dist:   Total=746
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   604 (81.0%)
+    - Tilt (Fall):    139 (18.6%)
+    - Overspeed:      2 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0000, Success=0.5071
+  Sample Buffer:      775 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.30
+  Episode Length:     84.56
+  Mean Rot Angle:     3.30 rad
+  Current Success:    0.5071 (393/775) rot>3.0
+  Termination Dist:   Total=775
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   612 (79.0%)
+    - Tilt (Fall):    163 (21.0%)
+    - Overspeed:      0 (0.0%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0039, Success=0.5520
+  Sample Buffer:      779 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.48
+  Episode Length:     85.48
+  Mean Rot Angle:     3.34 rad
+  Current Success:    0.5520 (430/779) rot>3.0
+  Termination Dist:   Total=779
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   630 (80.9%)
+    - Tilt (Fall):    146 (18.7%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0063, Success=0.5309
+  Sample Buffer:      793 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.42
+  Episode Length:     85.22
+  Mean Rot Angle:     3.34 rad
+  Current Success:    0.5309 (421/793) rot>3.0
+  Termination Dist:   Total=793
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   629 (79.3%)
+    - Tilt (Fall):    159 (20.1%)
+    - Overspeed:      5 (0.6%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0048, Success=0.5565
+  Sample Buffer:      832 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.43
+  Episode Length:     85.02
+  Mean Rot Angle:     3.34 rad
+  Current Success:    0.5565 (463/832) rot>3.0
+  Termination Dist:   Total=832
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   651 (78.2%)
+    - Tilt (Fall):    177 (21.3%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0025, Success=0.5590
+  Sample Buffer:      814 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.46
+  Episode Length:     85.35
+  Mean Rot Angle:     3.35 rad
+  Current Success:    0.5590 (455/814) rot>3.0
+  Termination Dist:   Total=814
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   634 (77.9%)
+    - Tilt (Fall):    178 (21.9%)
+    - Overspeed:      2 (0.2%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 5900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0050, Success=0.6062
+  Sample Buffer:      800 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.70
+  Episode Length:     85.85
+  Mean Rot Angle:     3.39 rad
+  Current Success:    0.6062 (485/800) rot>3.0
+  Termination Dist:   Total=800
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   635 (79.4%)
+    - Tilt (Fall):    161 (20.1%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0114, Success=0.5373
+  Sample Buffer:      791 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.75
+  Episode Length:     86.69
+  Mean Rot Angle:     3.40 rad
+  Current Success:    0.5373 (425/791) rot>3.0
+  Termination Dist:   Total=791
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   642 (81.2%)
+    - Tilt (Fall):    140 (17.7%)
+    - Overspeed:      9 (1.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0052, Success=0.5761
+  Sample Buffer:      769 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.52
+  Episode Length:     85.14
+  Mean Rot Angle:     3.36 rad
+  Current Success:    0.5761 (443/769) rot>3.0
+  Termination Dist:   Total=769
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   614 (79.8%)
+    - Tilt (Fall):    151 (19.6%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0051, Success=0.5639
+  Sample Buffer:      782 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.55
+  Episode Length:     85.15
+  Mean Rot Angle:     3.35 rad
+  Current Success:    0.5639 (441/782) rot>3.0
+  Termination Dist:   Total=782
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   630 (80.6%)
+    - Tilt (Fall):    148 (18.9%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0042, Success=0.5526
+  Sample Buffer:      713 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.73
+  Episode Length:     86.45
+  Mean Rot Angle:     3.40 rad
+  Current Success:    0.5526 (394/713) rot>3.0
+  Termination Dist:   Total=713
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   580 (81.3%)
+    - Tilt (Fall):    130 (18.2%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0051, Success=0.5714
+  Sample Buffer:      784 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.87
+  Episode Length:     86.78
+  Mean Rot Angle:     3.43 rad
+  Current Success:    0.5714 (448/784) rot>3.0
+  Termination Dist:   Total=784
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   612 (78.1%)
+    - Tilt (Fall):    168 (21.4%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0040, Success=0.5398
+  Sample Buffer:      754 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.79
+  Episode Length:     86.74
+  Mean Rot Angle:     3.41 rad
+  Current Success:    0.5398 (407/754) rot>3.0
+  Termination Dist:   Total=754
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   586 (77.7%)
+    - Tilt (Fall):    165 (21.9%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0028, Success=0.5424
+  Sample Buffer:      719 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.97
+  Episode Length:     87.55
+  Mean Rot Angle:     3.45 rad
+  Current Success:    0.5424 (390/719) rot>3.0
+  Termination Dist:   Total=719
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   581 (80.8%)
+    - Tilt (Fall):    136 (18.9%)
+    - Overspeed:      2 (0.3%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6700]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0043, Success=0.5883
+  Sample Buffer:      702 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.94
+  Episode Length:     87.88
+  Mean Rot Angle:     3.45 rad
+  Current Success:    0.5883 (413/702) rot>3.0
+  Termination Dist:   Total=702
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   545 (77.6%)
+    - Tilt (Fall):    154 (21.9%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6800]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.00 < 0.8)
+  Metrics (Accum.):   Survival=0.0040, Success=0.5461
+  Sample Buffer:      749 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.00
+  Episode Length:     88.67
+  Mean Rot Angle:     3.46 rad
+  Current Success:    0.5461 (409/749) rot>3.0
+  Termination Dist:   Total=749
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   582 (77.7%)
+    - Tilt (Fall):    164 (21.9%)
+    - Overspeed:      3 (0.4%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 6900]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0081, Success=0.5437
+  Sample Buffer:      743 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.05
+  Episode Length:     89.20
+  Mean Rot Angle:     3.47 rad
+  Current Success:    0.5437 (404/743) rot>3.0
+  Termination Dist:   Total=743
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   565 (76.0%)
+    - Tilt (Fall):    172 (23.1%)
+    - Overspeed:      5 (0.7%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7000]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0092, Success=0.5660
+  Sample Buffer:      765 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.93
+  Episode Length:     88.92
+  Mean Rot Angle:     3.46 rad
+  Current Success:    0.5660 (433/765) rot>3.0
+  Termination Dist:   Total=765
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   575 (75.2%)
+    - Tilt (Fall):    183 (23.9%)
+    - Overspeed:      6 (0.8%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7100]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0105, Success=0.5632
+  Sample Buffer:      760 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     13.98
+  Episode Length:     89.54
+  Mean Rot Angle:     3.49 rad
+  Current Success:    0.5632 (428/760) rot>3.0
+  Termination Dist:   Total=760
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   577 (75.9%)
+    - Tilt (Fall):    175 (23.0%)
+    - Overspeed:      7 (0.9%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7200]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0083, Success=0.5629
+  Sample Buffer:      723 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.05
+  Episode Length:     89.65
+  Mean Rot Angle:     3.49 rad
+  Current Success:    0.5629 (407/723) rot>3.0
+  Termination Dist:   Total=723
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   553 (76.5%)
+    - Tilt (Fall):    164 (22.7%)
+    - Overspeed:      6 (0.8%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7300]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0052, Success=0.5698
+  Sample Buffer:      767 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.09
+  Episode Length:     89.72
+  Mean Rot Angle:     3.50 rad
+  Current Success:    0.5698 (437/767) rot>3.0
+  Termination Dist:   Total=767
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   600 (78.2%)
+    - Tilt (Fall):    163 (21.3%)
+    - Overspeed:      4 (0.5%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7400]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0108, Success=0.5188
+  Sample Buffer:      744 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.20
+  Episode Length:     90.45
+  Mean Rot Angle:     3.54 rad
+  Current Success:    0.5188 (386/744) rot>3.0
+  Termination Dist:   Total=744
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   579 (77.8%)
+    - Tilt (Fall):    157 (21.1%)
+    - Overspeed:      8 (1.1%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7500]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0085, Success=0.5757
+  Sample Buffer:      707 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.04
+  Episode Length:     89.45
+  Mean Rot Angle:     3.49 rad
+  Current Success:    0.5757 (407/707) rot>3.0
+  Termination Dist:   Total=707
+    - Max Steps:      0 (0.0%)
+    - Drop (Low Z):   525 (74.3%)
+    - Tilt (Fall):    176 (24.9%)
+    - Overspeed:      6 (0.8%)
+================================================================================
+
+
+================================================================================
+Space E Curriculum Status [Epoch 7600]
+================================================================================
+  Current Alpha:      0.3000 (Gravity: 0.0900g)
+  Curriculum Status:  ❌ HOLD: Low Survival (0.01 < 0.8)
+  Metrics (Accum.):   Survival=0.0096, Success=0.6008
+  Sample Buffer:      729 episodes
+--------------------------------------------------------------------------------
+  Episode Reward:     14.17
+  Episode Length:     89.72
+  Mean Rot Angle:     3.51 rad
+  Current Success:    0.6008 (438/729) rot>3.0
+  Termination Dist:   Total=729
+    - Max Steps:      1 (0.1%)
+    - Drop (Low Z):   569 (78.1%)
+    - Tilt (Fall):    153 (21.0%)
+    - Overspeed:      6 (0.8%)
+================================================================================
+
+max steps achieved
+Final best reward: 14.30
+Final success rate: 0.6350
+Final mean rotation angle (rad): 3.5112
+
+OPTUNA_METRICS: reward=14.2990 success_rate=0.6350 mean_rot_angle=3.5112

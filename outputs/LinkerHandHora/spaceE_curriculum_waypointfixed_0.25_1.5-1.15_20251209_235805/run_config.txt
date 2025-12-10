@@ -1,0 +1,68 @@
+========================================
+RL Teacher 训练配置
+========================================
+启动时间:        2025-12-09 23:58:05
+GPU ID:          0
+随机种子:        42
+输出目录:        outputs/LinkerHandHora/spaceE_curriculum_waypointfixed_0.25_1.5-1.15_20251209_235805
+输出名称:        spaceE_curriculum_waypointfixed_0.25_1.5-1.15_20251209_235805
+额外参数:        
+
+========================================
+训练参数配置
+========================================
+算法:            PPOTeacher
+任务:            LinkerHandHora
+Grasp Cache:     3_30000_49_nofly
+初始化模式:      low
+最大训练步数:    500000000
+
+早期终止阈值:
+  relative_z_drop_threshold:  0.04
+  pencil_tilt_threshold:      0.04
+
+Space E Curriculum 配置 (SpaceA 是 alpha_start=1.0 的特例):
+  mode:                     SpaceE
+  alpha_start:              0.25
+  alpha_end:                1.0
+  ratio_threshold:          0.05
+  success_rot_threshold:    10.0
+  use_adaptive_threshold:   True
+
+Controller 参数 (PD 控制器):
+  pgain:                      15.0
+  dgain:                      0.35
+  torque_limit:               4.0
+  action_scale:               0.1
+
+角速度参数:
+  use_gaussian_angvel_reward: True
+  target_angvel:              3.14
+  angvel_sigma:               1.0
+
+Anti-Hacking 参数:
+  ema_alpha:                  0.15
+  jitter_penalty_scale:       -0.5
+  reverse_penalty_scale:      -1.0
+
+奖励权重（合并后的最终值）:
+  [奖励 - 正数 scale]
+  rotate_reward:          1.0
+  waypoint_tracking:      3.0
+    waypoint_sigma:         0.05
+    waypoint_symmetric:     True
+  
+  [惩罚 - 负数 scale]
+  obj_linvel_penalty:     -0.3
+  torque_penalty:         -0.01
+  rotate_penalty:         0.0
+  axial_tilt_penalty:     -1.5
+    axial_tilt_threshold:   0.03
+  position_penalty:       -0.1
+  flying_base_penalty:    -0.1 (ignored when Flying Hand disabled)
+  jitter_penalty:         -0.5
+  reverse_penalty:        -1.0
+
+Flying Hand: disabled (fixed base, 21 DoF)
+
+========================================

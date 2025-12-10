@@ -1,0 +1,526 @@
+==========================================
+启动命令
+==========================================
+完整命令:
+CUDA_VISIBLE_DEVICES=0 \
+python train.py task=LinkerHandHora headless=True seed=42 \
+  train.ppo.output_name=LinkerHandHora/spaceE_curriculum_test_camera_20251208_141535 \
+  train.algo=PPOTeacher \
+  task.env.grasp_cache_name=3_30000_49_nofly \
+  task.env.flyingHand.enabled=False \
+  task.env.asset.handAsset='assets/linker_hand/L25_dof_urdf.urdf' \
+  task.env.numActions=21 \
+  task.env.numObservations=126 \
+  train.ppo.max_agent_steps=10000000000 \
+  task.env.initPoseMode=low \
+  task.env.relative_z_drop_threshold=0.04 \
+  task.env.pencil_tilt_threshold=0.04 \
+  
+==========================================
+
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+Using /home/user/.cache/torch_extensions/py38_cu121 as PyTorch extensions root...
+Emitting ninja build file /home/user/.cache/torch_extensions/py38_cu121/gymtorch/build.ninja...
+Building extension module gymtorch...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module gymtorch...
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: False
+checkpoint: 
+headless: True
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 4096
+        numObservations: 126
+        numActions: 21
+        envSpacing: 0.5
+        flyingHand: 
+            enabled: False
+            defaultHeight: 0.35
+            heightLower: 0.3
+            heightUpper: 0.4
+            xyLimit: 0.05
+            linearVelocity: 0.1
+            angularVelocity: 2.0
+            basePgain: 10000.0
+            baseDgain: 200.0
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf.urdf
+        handBaseInit: 
+            position: [0.0, 0.0, 0.35]
+            rotation: [0.0, -1.31, 0.0]
+        actionSpace: 
+            disableRingLittleFinger: True
+        episodeLength: 400
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 6
+            dgain: 0.2
+            action_scale: 0.04167
+            torque_limit: 1.5
+        rotation_axis: [0, 0, 1]
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        relative_z_drop_threshold: 0.04
+        pencil_tilt_threshold: 0.04
+        grasp_cache_name: 3_30000_49_nofly
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            use_gaussian_angvel_reward: True
+            target_angvel: 3.14
+            angvel_sigma: 1.0
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThresHigh: 1.0
+            angvelPenaltyThresLow: -0.5
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            torque_penalty_scale: -0.01
+            rotate_penalty_scale: 0.0
+            axial_tilt_penalty_scale: -1.5
+            axial_tilt_threshold: 0.03
+            position_penalty_scale: -0.1
+            flying_base_movement_penalty_scale: -0.1
+            waypoint_tracking_reward_scale: 5.0
+            waypoint_sigma: 0.05
+            waypoint_half_period_symmetric: True
+        baseObjScale: 1.0
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.035
+            randomizeMassUpper: 0.048
+            randomizeCOM: True
+            randomizeCOMLower: -0.002
+            randomizeCOMUpper: 0.002
+            randomizeFriction: True
+            randomizeFrictionLower: 0.4
+            randomizeFrictionUpper: 1.2
+            randomizeRestitution: True
+            randomizeRestitutionLower: 0.1
+            randomizeRestitutionUpper: 0.5
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [1.0]
+            randomizeScaleLower: 1.0
+            randomizeScaleUpper: 1.0
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            contact_form: gpu_contact
+            contact_input: binary
+            enable_obj_linvel: True
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_obj_orientation: True
+            enable_ft_orientation: False
+            enable_ft_linvel: True
+            enable_ft_angvel: False
+            enable_hand_scale: False
+        object: 
+            type: cylinder_linkerpen
+            evalObjectType: None
+            sampleProb: [1.0]
+        useVHACD: False
+        enableCameraSensors: True
+        curriculum: 
+            mode: SpaceE
+            alpha_start: 0.3
+            alpha_end: 1.0
+            curriculum_steps: 100000000
+            ratio_threshold: 0.05
+            success_rot_threshold: 10.0
+            use_adaptive_threshold: True
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPOTeacher
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: 
+    demon_path: None
+    ppo: 
+        output_name: LinkerHandHora/spaceE_curriculum_test_camera_20251208_141535
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 4096
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        weight_decay: 0.0001
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 16
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 50000000
+        save_frequency: 500
+        max_agent_steps: 500000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+Hand asset file: assets/linker_hand/L25_dof_urdf.urdf
+---- Object Setup (LinkerPen) ----
+Object type: cylinder_linkerpen
+---- Object List ----
+using 1 training objects: ['linkerpen']
+
+[角速度奖励] 使用 Gaussian Kernel 模式:
+  目标角速度: 3.14 rad/s (0.500 Hz)
+  高斯核带宽 σ: 1.00
+
+======================================================================
+动作空间配置 (Action Space Configuration)
+======================================================================
+Flying Hand 启用:     False
+禁用无名指和小拇指:   True
+策略动作维度:         13
+仿真 DOF 总数:        21
+----------------------------------------------------------------------
+手部动作维度:         13
+  策略索引 [0-3]  -> middle [仿真 0-3]
+  策略索引 [4-7]  -> index  [仿真 8-11]
+  策略索引 [8-12] -> thumb  [仿真 16-20]
+禁用的仿真 DOF:       [4, 5, 6, 7, 12, 13, 14, 15]
+======================================================================
+
+[PrivInfo Verify] OK: priv_info_dim=64, total_span=64, slices=11
+
+================================================================================
+启用的特权信息 (Privileged Information) 配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定启用]
+obj_mass                       [ 3: 4]         1        [固定启用]
+obj_friction                   [ 4: 5]         1        [固定启用]
+obj_com                        [ 5: 8]         3        [固定启用]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓ 已启用
+obj_linvel                     [12:15]         3        ✓ 已启用
+obj_angvel                     [15:18]         3        ✓ 已启用
+fingertip_position             [18:33]         15       ✓ 已启用
+fingertip_linvel               [33:48]         15       ✓ 已启用
+obj_restitution                [48:49]         1        ✓ 已启用
+tactile                        [49:64]         15       ✓ 已启用
+--------------------------------------------------------------------------------
+未启用的可选特权信息:
+fingertip_orientation                                   ✗ 未启用
+fingertip_angvel                                        ✗ 未启用
+hand_scale                                              ✗ 未启用
+--------------------------------------------------------------------------------
+总计: 12 项启用, 总维度 = 64
+priv_info_dim (缓冲区大小) = 64
+================================================================================
+
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+[Asset] Using submesh convex decomposition for hand collision
+LinkerPen loaded: radius=0.009m, length=0.18m (no scale applied)
+
+================================================================================
+环境初始化 - 显存相关参数
+================================================================================
+num_envs (环境数量):        4096
+环境间距 (spacing):         0.5
+每行环境数 (num_per_row):   64
+手部刚体数量:               22
+物体刚体数量:               1
+总刚体数/环境:              23
+================================================================================
+开始创建 4096 个并行环境...
+================================================================================
+
+环境创建进度: 0/4096 (0.0%)
+======================================================================
+物体物理属性（随机化后的最终值）
+======================================================================
+随机化配置:
+  - 质量随机化: True [0.035, 0.048]
+  - 质心随机化: True [-0.002, 0.002]
+  - 摩擦随机化: True [0.4, 1.2]
+  - 恢复系数随机化: True [0.1, 0.5]
+本环境实际值:
+  - 总质量: 0.0454 kg (45.38 g)
+  - 摩擦系数: 0.8091
+  - 恢复系数: 0.3006
+  - 质心偏移: [0.0012404535787167228, 0.0014682892743204147, 0.0016529622102258853]
+
+====================================================================================================
+IsaacGym 物体物理属性验证 (Object Physical Properties Verification)
+====================================================================================================
+
+--- 刚体属性 (Rigid Body Properties) ---
+刚体数量: 1
+
+  [Link 0]
+    质量 (mass):           0.045378 kg (45.38 g)
+    质心 (COM):            (0.001240, 0.001468, 0.001653) m
+    惯量 (inertia):
+      Ixx: 1.77093738e-04, Ixy: 0.00000000e+00, Ixz: 0.00000000e+00
+      Iyx: 0.00000000e+00, Iyy: 1.77093738e-04, Iyz: 0.00000000e+00
+      Izx: 0.00000000e+00, Izy: 0.00000000e+00, Izz: 2.47233288e-06
+    flags:                 0
+
+  总质量 (Total Mass): 0.045378 kg (45.38 g)
+
+--- 形状属性 (Shape Properties) ---
+形状数量: 3
+
+  [Shape 0]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 1]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 2]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+--- 自由度属性 (DOF Properties) ---
+自由度数量: 0
+
+--- 预期值对比 (Expected from pen_gen.py) ---
+  预期尼龙主体质量:  24.39 g
+  预期铝头质量 (x2): 8.27 g × 2 = 16.54 g
+  预期总质量:        40.93 g
+  预期半径:          9 mm
+  预期总长度:        180 mm (150 + 15×2)
+环境创建进度: 1024/4096 (25.0%)环境创建进度: 2048/4096 (50.0%)环境创建进度: 3072/4096 (75.0%)环境创建进度: 4095/4096 (100.0%)动作空间已更新: (13,) (策略输出维度: 13)
+Contact Tensor Dimension [1, numRigidBody, 3] torch.Size([4096, 23, 3])
+[LinkerHandHora] 加载缓存: cache/3_30000_49_nofly_grasp_cache.npy
+  缓存形状: torch.Size([30000, 49])
+  缓存格式: 61维(actual+target)
+[旋转轴] 使用三维向量格式: [0, 0, 1] (归一化后: [0.0, 0.0, 1.0])
+
+======================================================================
+Space E 时空扭曲编排器 (Time-Warping Orchestrator)
+======================================================================
+  模式:           SpaceE
+  Alpha 范围:     0.30 -> 1.00
+  课程步数:       1.00e+08
+  相对变化阈值:   5.0%
+  当前 Alpha:     0.300
+----------------------------------------------------------------------
+  [SpaceE] 完整动力学同构缩放（推荐）
+  物理层: g'=α²g, Kp'=α²Kp, Kd'=αKd, τ'=α²τ
+  观测层: v_obs=v_sim/α, F_obs=F_sim/α²
+  奖励层: r_final=r_raw×α
+======================================================================
+
+
+[Space E Curriculum] 更新物理参数 Alpha = 0.300 (Progress: 0.0%)
+  -> 重力: -0.8829 m/s² (原始: -9.81, 缩放: 0.0900)
+  -> DOF 属性已更新: Kp_scale=0.0900, Kd_scale=0.3000, τ_scale=0.0900
+  -> 手部 Kp: 0.5400, Kd: 0.0600
+  -> PhysX contact_offset: 0.00100 (仅低 alpha 时缩放)
+  -> PhysX bounce_threshold: 0.0600 (原始: 0.20)
+[TP_Waypoints] 正在从 7 个原始点生成密集插值 (180°对称性扩展)...
+[TP_Waypoints] 使用 180° 对称性扩展模式
+[TP_Waypoints] 原始数据相位范围: [24.2°, 162.0°]
+[TP_Waypoints] 扩展后数据点数: 14
+[TP_Waypoints] 已生成 360 个密集 waypoint
+[Waypoint Tracking] 已启用，sigma=0.05, 180°对称=True
+[Waypoint Tracking] 密集点数: 360, 比较手指: middle, index, thumb (9维)
+
+================================================================================
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+显存相关配置参数 (Memory-Critical Configuration)
+================================================================================
+环境数量 (num_actors):        4,096
+Horizon 长度:                 16
+Batch Size:                   65,536 = 4,096 × 16
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         126
+动作维度 (actions_num):       13
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+
+================================================================================
+轨迹录制器初始化状态 (Trajectory Recorder Status)
+================================================================================
+  主进程 (LOCAL_RANK=0):  True
+  相机已启用:             True
+
+[TrajectoryRecorder] 初始化完成 (Top-5 模式)
+  录制环境数: 4
+  最大 episode 长度: 1000
+  成功阈值: 1.80 rad
+  保留最佳轨迹数: 5
+  轨迹录制器:             ✓ 已初始化
+  成功阈值:               1.80 rad
+================================================================================
+

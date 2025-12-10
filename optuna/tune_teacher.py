@@ -10,7 +10,11 @@ CUDA_VISIBLE_DEVICES=0 python train.py task=LinkerHandHora headless=True seed=42
 3. 综合评分 = best_reward + 1000 * success_rate
 
 使用方法：
-    python optuna/tune_teacher.py --gpu 0 --n_trials 50 --max_steps 100000000
+    # SpaceA 模式 (Baseline)
+    python optuna/tune_teacher.py --gpu 0 --n_trials 50 --max_steps 100000000 --space_mode SpaceA
+    
+    # SpaceE 模式 (Curriculum Learning)
+    python optuna/tune_teacher.py --gpu 0 --n_trials 50 --max_steps 100000000 --space_mode SpaceE
 
 参数说明：
     --gpu: GPU ID
@@ -18,6 +22,10 @@ CUDA_VISIBLE_DEVICES=0 python train.py task=LinkerHandHora headless=True seed=42
     --max_steps: 每次试验的最大训练步数（建议100M-300M以加快迭代）
     --storage: Optuna数据库路径（默认：sqlite:///optuna/hpo_teacher.db）
     --study_name: Study名称（默认：teacher_ppo_hpo）
+    --space_mode: 训练模式 SpaceA (Baseline) 或 SpaceE (Curriculum Learning)
+    --alpha_start: SpaceE 模式的初始 alpha 值（默认 0.1）
+    --alpha_end: SpaceE 模式的最终 alpha 值（默认 1.0）
+    --curriculum_steps: SpaceE 模式的 curriculum 总步数（默认 100000000）
 """
 
 import os
@@ -52,15 +60,46 @@ def objective(trial: optuna.trial.Trial, args) -> float:
         "headless=True",
         "train.algo=PPOTeacher",
         f"train.ppo.max_agent_steps={args.max_steps}",
-        # Grasp cache 配置
-        "task.env.grasp_cache_name='3_30000_61'",
+        # Grasp cache 配置（非 Flying Hand）
+        "task.env.grasp_cache_name='3_30000_49_nofly'",
         "task.env.initPoseMode=low",
         # 早期终止阈值
         "task.env.relative_z_drop_threshold=0.05",
         "task.env.pencil_tilt_threshold=0.06",
         # 动作空间配置：禁用无名指和小拇指 (21 -> 13 DoF)
         "task.env.actionSpace.disableRingLittleFinger=True",
+        # 默认关闭 Flying Hand（固定底座 21 DoF）
+        "task.env.flyingHand.enabled=False",
+        "task.env.asset.handAsset='assets/linker_hand/L25_dof_urdf.urdf'",
+        "task.env.numActions=21",
+        "task.env.numObservations=126",
     ]
+    
+    # =====================================================
+    # Space E 配置 (统一架构: SpaceA 是 alpha_start=1.0 的特例)
+    # =====================================================
+    # 核心思想: 不再区分 SpaceA 和 SpaceE
+    # - alpha_start 作为 Optuna 搜索参数
+    # - alpha_start = 1.0 等效于原来的 SpaceA (无物理缩放)
+    # - alpha_start < 1.0 启用 Space E 课程学习
+    
+    # 搜索最佳初始 Alpha
+    # 范围: 0.25 (慢) ~ 1.0 (真实物理)
+    # alpha=1.0 等效于 SpaceA baseline
+    alpha_start = trial.suggest_float("alpha_start", 0.25, 1.0)
+    
+    base_overrides.extend([
+        "task.env.curriculum.mode=SpaceE",  # 统一使用 SpaceE 模式
+        f"task.env.curriculum.alpha_start={alpha_start}",
+        "task.env.curriculum.alpha_end=1.0",  # 强制 alpha_end 为 1.0
+        "task.env.curriculum.ratio_threshold=0.05",
+        "task.env.curriculum.success_rot_threshold=10.0",
+        "task.env.curriculum.use_adaptive_threshold=True",
+    ])
+    
+    print(f"[Space E] Alpha: {alpha_start:.3f} -> 1.0")
+    if alpha_start >= 0.99:
+        print("  (等效于 SpaceA Baseline: 无物理缩放)")
     
     # =====================================================
     # 2. 定义超参数搜索空间（基于RL_TEACHER_PARAMETERS.md）
@@ -92,7 +131,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # PPO裁剪范围 (Best: 0.3)
     # 限制了新策略 $\pi_{new}$ 和旧策略 $\pi_{old}$ 之间的差异幅度
-    e_clip = trial.suggest_categorical("e_clip", [0.1, 0.2, 0.3])
+    e_clip = trial.suggest_categorical("e_clip", [0.1, 0.2, 0.3, 0.4])
     hpo_overrides.append(f"train.ppo.e_clip={e_clip}")
     
     # 熵系数 (Best: ~0.005)
@@ -107,8 +146,20 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # KL散度阈值 (Best: ~0.049)
     # 计算新旧策略之间的 KL 散度，太剧烈降低学习率，太保守增大学习率
-    kl_threshold = trial.suggest_float("kl_threshold", 0.03, 0.08)
+    # 扩大范围以允许更大的更新步幅，帮助跳出局部最优
+    kl_threshold = trial.suggest_float("kl_threshold", 0.008, 0.08)
     hpo_overrides.append(f"train.ppo.kl_threshold={kl_threshold}")
+    
+    # KL 自适应因子 (原 1.15)
+    # 控制学习率调整的幅度: LR *= factor 或 LR /= factor
+    # 较大的因子允许更激进的调整，有助于逃离死锁
+    kl_adaptive_factor = trial.suggest_categorical("kl_adaptive_factor", [1.1, 1.15, 1.2, 1.5])
+    hpo_overrides.append(f"train.ppo.kl_adaptive_factor={kl_adaptive_factor}")
+    
+    # 最小学习率下限 (防止死锁)
+    # 即使 KL 很大，LR 也不会低于此值，保持一定探索能力
+    min_lr = trial.suggest_float("min_lr", 1e-6, 1e-4, log=True)
+    hpo_overrides.append(f"train.ppo.min_lr={min_lr}")
     
     # --- B. PPO数据收集参数 ---
     
@@ -142,33 +193,46 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     horizon_length = trial.suggest_categorical("horizon_length", [16, 24 ,32])
     hpo_overrides.append(f"train.ppo.horizon_length={horizon_length}")
     
-    # --- E. Flying base 配置 ---
-    # Flying base (6 DoF 浮空底座) 速度限制配置
-    flying_linear_velocity = trial.suggest_float("flying_linear_velocity", 0.05, 0.2)
-    hpo_overrides.append(f"task.env.flyingHand.linearVelocity={flying_linear_velocity}")
+    # --- E. 物理控制器参数 (Physics Controller) ---
+    # 核心痛点：低 Alpha 下手太软。让 Optuna 寻找最佳刚度。
     
-    flying_angular_velocity = trial.suggest_float("flying_angular_velocity", 1.0, 3.0)
-    hpo_overrides.append(f"task.env.flyingHand.angularVelocity={flying_angular_velocity}")
+    # 1. P-Gain (刚度)
+    # 原值 15.0。范围扩大到 [8.0, 25.0]
+    p_gain = trial.suggest_float("controller_pgain", 8.0, 25.0)
+    hpo_overrides.append(f"task.env.controller.pgain={p_gain}")
+    
+    # 2. D-Gain (阻尼)
+    # 原值 0.35。通常随 P 增大。范围 [0.15, 0.6]
+    # 经验公式: K_d ≈ ratio * K_p, ratio ∈ [0.02, 0.03]
+    d_gain = trial.suggest_float("controller_dgain", 0.15, 0.6)
+    hpo_overrides.append(f"task.env.controller.dgain={d_gain}")
+    
+    # 3. Torque Limit (力矩限制)
+    # 原值 4.0。必须随 P 增大。范围 [2.0, 8.0]
+    torque_limit = trial.suggest_float("controller_torque_limit", 2.0, 8.0)
+    hpo_overrides.append(f"task.env.controller.torque_limit={torque_limit}")
+    
+    # 4. Action Scale (动作缩放)
+    # 原值 0.1。影响灵敏度。范围 [0.05, 0.15]
+    action_scale = trial.suggest_float("controller_action_scale", 0.05, 0.15)
+    hpo_overrides.append(f"task.env.controller.action_scale={action_scale}")
     
     # --- F. 奖励参数 (基于 Best Values 重新中心化) ---
     
     # 1. 角速度相关
-    # Clip Min (Best: -0.22) -> Range: -0.4 ~ -0.1
-    angvel_clip_min = trial.suggest_float("angvelClipMin", -0.4, -0.1)
-    hpo_overrides.append(f"task.env.reward.angvelClipMin={angvel_clip_min}")
+    # - Gaussian-kernel: 使用 target_angvel 和 angvel_sigma
     
-    # Clip Max (Best: 0.73) -> Range: 0.5 ~ 0.9
-    angvel_clip_max = trial.suggest_float("angvelClipMax", 0.5, 0.9)
-    hpo_overrides.append(f"task.env.reward.angvelClipMax={angvel_clip_max}")
+    # 使用 Gaussian kernel 角速度奖励
+    hpo_overrides.append("task.env.reward.use_gaussian_angvel_reward=True")
     
-    # Penalty High (Best: 0.805) -> 原范围 0.8~1.5，触底！
-    # 必须降低下限
-    angvel_penalty_thres_high = trial.suggest_float("angvelPenaltyThresHigh", 0.5, 1.0)
-    hpo_overrides.append(f"task.env.reward.angvelPenaltyThresHigh={angvel_penalty_thres_high}")
+    # Gaussian kernel 参数
+    # 目标角速度: π rad/s ≈ 0.5 圈/s 是一个合理的起点
+    target_angvel = trial.suggest_float("target_angvel", 4.0, 6.0)  # 4.0 ~ 6.0 rad/s
+    hpo_overrides.append(f"task.env.reward.target_angvel={target_angvel}")
     
-    # Penalty Low (Best: -0.67) -> Range: -0.8 ~ -0.5
-    angvel_penalty_thres_low = trial.suggest_float("angvelPenaltyThresLow", -0.8, -0.5)
-    hpo_overrides.append(f"task.env.reward.angvelPenaltyThresLow={angvel_penalty_thres_low}")
+    # 高斯核带宽 σ: 越小奖励越陡峭
+    angvel_reward_sigma = trial.suggest_float("angvel_sigma", 0.5, 2.0)
+    hpo_overrides.append(f"task.env.reward.angvel_sigma={angvel_reward_sigma}")
     
     # 2. 奖励权重相关 (Reward Scales)
     
@@ -207,10 +271,10 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     position_penalty_scale = trial.suggest_float("position_penalty_scale", -0.3, -0.1)
     hpo_overrides.append(f"task.env.reward.position_penalty_scale={position_penalty_scale}")
     
-    # Flying base 移动惩罚
+    # Flying base 移动惩罚（Flying Hand 关闭时此项几乎不生效）
     # 鼓励策略依赖手指技巧而非手腕运动
-    flying_base_penalty_scale = trial.suggest_float("flying_base_movement_penalty_scale", -0.2, -0.05)
-    hpo_overrides.append(f"task.env.reward.flying_base_movement_penalty_scale={flying_base_penalty_scale}")
+    # flying_base_penalty_scale = trial.suggest_float("flying_base_movement_penalty_scale", -0.2, -0.05)
+    # hpo_overrides.append(f"task.env.reward.flying_base_movement_penalty_scale={flying_base_penalty_scale}")
     
     # Waypoint 跟踪奖励 (Triangle Pass)
     # 默认禁用，仅在填充 waypoint 数据后启用
@@ -223,7 +287,29 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     waypoint_sigma = trial.suggest_float("waypoint_sigma", 0.03, 0.5)
     hpo_overrides.append(f"task.env.reward.waypoint_sigma={waypoint_sigma}")
     
-    # --- 3. 创建唯一输出目录 ---
+    # 对数缩放灵敏度控制参数
+    # 范围: 0.5 ~ 5.0，越小越线性，越大大力压缩更强
+    log_scale_beta = trial.suggest_float("log_scale_beta", 0.5, 5.0)
+    hpo_overrides.append(f"task.env.reward.log_scale_beta={log_scale_beta}")
+    
+    # --- 4. [Anti-Hacking] EMA 平滑和惩罚参数 ---
+    
+    # EMA 平滑系数 (仅用于速度门控，较小值=更平滑)
+    # 范围: 0.1 ~ 0.3，越小越平滑但响应越慢
+    ema_alpha = trial.suggest_float("ema_alpha", 0.1, 0.3)
+    hpo_overrides.append(f"task.env.reward.ema_alpha={ema_alpha}")
+    
+    # Jitter 惩罚权重 (负值因为是惩罚)
+    # 范围: -1.0 ~ -0.1
+    jitter_penalty_scale = trial.suggest_float("jitter_penalty_scale", -1.0, -0.1)
+    hpo_overrides.append(f"task.env.reward.jitter_penalty_scale={jitter_penalty_scale}")
+    
+    # 反向旋转惩罚权重 (负值因为是惩罚)
+    # 范围: -2.0 ~ -0.5
+    reverse_penalty_scale = trial.suggest_float("reverse_penalty_scale", -2.0, -0.5)
+    hpo_overrides.append(f"task.env.reward.reverse_penalty_scale={reverse_penalty_scale}")
+    
+    # --- 5. 创建唯一输出目录 ---
     # 使用 study_name 作为输出目录的基础
     output_dir = f"{args.study_name}/optuna_trial_{trial.number:04d}"
     hpo_overrides.append(f"train.ppo.output_name={output_dir}")
@@ -395,6 +481,8 @@ def main():
                        help="Study名称（也用作输出目录名）")
     parser.add_argument("--load_if_exists", action="store_true",
                        help="如果study已存在则加载并继续")
+    # 注意: alpha_start 现在作为 Optuna 搜索参数，不再从命令行传入
+    # SpaceA 是 SpaceE 在 alpha_start=1.0 时的特例
     
     args = parser.parse_args()
     
@@ -408,7 +496,7 @@ def main():
     
     # 创建或加载Study
     print("\n" + "="*80)
-    print("Optuna 超参数优化 - RL Teacher PPO")
+    print("Optuna 超参数优化 - RL Teacher PPO (统一架构)")
     print("="*80)
     print(f"GPU ID:           {args.gpu}")
     print(f"试验次数:         {args.n_trials}")
@@ -416,6 +504,10 @@ def main():
     print(f"数据库:           {args.storage}")
     print(f"Study名称:        {args.study_name}")
     print(f"加载已有study:    {args.load_if_exists}")
+    print(f"架构说明:         SpaceE 统一架构 (alpha_start 作为搜索参数)")
+    print(f"  alpha_start:    [0.25, 1.0] (Optuna 搜索)")
+    print(f"  alpha_end:      1.0 (固定)")
+    print(f"  注: alpha_start=1.0 等效于原 SpaceA Baseline")
     print("="*80 + "\n")
     
     # 使用TPE采样器和Median剪枝器

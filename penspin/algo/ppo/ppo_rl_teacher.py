@@ -16,7 +16,8 @@ import time
 import torch
 import numpy as np
 from isaacgym import gymapi
-from torch.optim.lr_scheduler import CosineAnnealingLR
+# [移除] CosineAnnealingLR - Curriculum Learning 场景下不适合时间衰减 LR
+# from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # 从 penspin.algo.ppo 模块导入 ExperienceBuffer，用于存储智能体与环境交互的数据
 from penspin.algo.ppo.experience import ExperienceBuffer
@@ -30,6 +31,9 @@ from penspin.utils.misc import AverageScalarMeter
 
 # 导入 tensorboardX 中的 SummaryWriter，用于记录训练过程中的日志和可视化数据
 from tensorboardX import SummaryWriter
+
+# 导入轨迹录制器，用于在课程学习更新时录制完整轨迹
+from penspin.utils.trajectory_recorder import TrajectoryRecorder
 
 # 导入统一的机器人配置常量
 from penspin.utils.robot_config import (
@@ -132,12 +136,18 @@ class PPOTeacher(object):
         # 初始化 AdamW 优化器，优化模型的参数
         self.optimizer = torch.optim.AdamW(self.model.parameters(), self.last_lr, weight_decay=self.weight_decay)
         
-        # ---- 全局学习率调度器 (Global Learning Rate Scheduler) ----
+        # ---- 学习率调度策略 (Learning Rate Scheduling) ----
+        # [设计说明] 移除 CosineAnnealingLR，完全依赖 KL 自适应调度
+        # 原因：Curriculum Learning 是非平稳 (Non-Stationary) 过程
+        # - 每当 α 改变，物理环境就变了（相当于换了一个新游戏）
+        # - CosineAnnealing 的假设是任务静态，随时间需微调，故 LR 单调递减
+        # - Space E 的现实：当 α 从 0.3 变到 0.4 时，Agent 需要较大 LR 适应新动力学
+        # - 如果此时 LR 已被 Cosine 压到 1e-5，Agent 无法适应新环境，导致卡死
+        # 
+        # 新策略：LR 仅由策略稳定性 (KL 散度) 决定，不随时间强制衰减
+        # - 当 KL 过大：Agent 在剧烈探索，降低 LR 稳定训练
+        # - 当 KL 过小：Agent 陷入局部，提高 LR 鼓励探索
         self.max_steps = self.ppo_config['max_agent_steps']
-        # 估算总共的 epoch 数量
-        total_epochs = self.max_steps // (self.ppo_config['horizon_length'] * self.ppo_config['num_actors'])
-        # 使用余弦退火调度器，让学习率在整个训练过程中平滑下降
-        self.global_scheduler = CosineAnnealingLR(self.optimizer, T_max=total_epochs, eta_min=1e-6)
         
         # ---- PPO 训练参数 (PPO Train Param) ----
         # PPO 裁剪范围的 epsilon 值
@@ -184,8 +194,17 @@ class PPOTeacher(object):
         # ---- 调度器 (scheduler) ----
         # KL 散度阈值，用于自适应调整学习率
         self.kl_threshold = self.ppo_config['kl_threshold']
+        # KL 自适应因子 (默认 1.15)
+        self.kl_adaptive_factor = self.ppo_config.get('kl_adaptive_factor', 1.15)
+        # 最小学习率 (默认 1e-6)
+        self.min_lr = self.ppo_config.get('min_lr', 1e-6)
         # 初始化自适应学习率调度器，传入初始学习率作为 max_lr
-        self.scheduler = AdaptiveScheduler(self.kl_threshold, min_lr=1e-6, max_lr=self.last_lr)
+        self.scheduler = AdaptiveScheduler(
+            kl_threshold=self.kl_threshold,
+            min_lr=self.min_lr,
+            max_lr=self.last_lr,
+            adaptive_factor=self.kl_adaptive_factor
+        )
         # ---- 快照 (Snapshot) ----
         # 模型保存频率
         self.save_freq = self.ppo_config['save_frequency']
@@ -201,10 +220,11 @@ class PPOTeacher(object):
         # ---- Rollout GIFs ----
         # GIF 帧计数器
         self.gif_frame_counter = 0
+        # 对于 Horizon Length = 16，建议设置：每 50 Epoch 录制一次：$16 \times 50 = 800$每 100 Epoch 录制一次：$16 \times 100 = 1600$
         # 每隔多少步保存一次 GIF
-        self.gif_save_every_n = 7500
+        self.gif_save_every_n = 800
         # GIF 的帧长度
-        self.gif_save_length = 600
+        self.gif_save_length = 80
         # 用于存储 GIF 帧的列表
         self.gif_frames = []
 
@@ -214,10 +234,14 @@ class PPOTeacher(object):
         self.episode_lengths = AverageScalarMeter(20000)
         self.total_rot_angle = AverageScalarMeter(20000)
         self.total_waypoint_tracking_reward = AverageScalarMeter(20000)
-        # 追踪成功案例（旋转角度>10）的数量和比例
+        # 追踪成功案例（旋转角度>阈值）的数量和比例
         self.success_count = 0
         self.total_episodes = 0
         self.best_success_rate = 0.0
+        # 追踪失败案例（用于计算 survival_rate）
+        self.fall_count = 0  # 掉落 + 倾斜
+        self.drop_count = 0  # 仅掉落
+        self.tilt_count = 0  # 仅倾斜
         # 存储当前观察
         self.obs = None
         # 当前 epoch 计数
@@ -271,6 +295,55 @@ class PPOTeacher(object):
         self.rl_train_time = 0
         # 所有时间
         self.all_time = 0
+        
+        # ---- Curriculum 配置 (在轨迹录制器初始化之前需要) ----
+        # 获取 curriculum 配置用于自适应成功阈值
+        self.success_rot_threshold = 10.0  # 默认值
+        self.use_adaptive_threshold = False
+        if hasattr(self.env, 'config') and 'env' in self.env.config:
+            curriculum_config = self.env.config['env'].get('curriculum', {})
+            self.success_rot_threshold = curriculum_config.get('success_rot_threshold', 10.0)
+            self.use_adaptive_threshold = curriculum_config.get('use_adaptive_threshold', False)
+        
+        # ---- 轨迹录制器 (Trajectory Recorder) ----
+        # 用于在课程学习更新时录制完整的成功轨迹
+        # 只在主进程且启用相机时初始化
+        self.trajectory_recorder = None
+        is_main_process = int(os.getenv('LOCAL_RANK', '0')) == 0
+        camera_enabled = getattr(self.env, 'with_camera', False)
+        
+        print("\n" + "="*80)
+        print("轨迹录制器初始化状态 (Trajectory Recorder Status)")
+        print("="*80)
+        print(f"  主进程 (LOCAL_RANK=0):  {is_main_process}")
+        print(f"  相机已启用:             {camera_enabled}")
+        
+        if is_main_process and camera_enabled:
+            # 使用自适应成功阈值逻辑，与 effective_threshold 保持一致
+            # 但轨迹录制需要更宽松的阈值来捕获轨迹，所以使用 0.6 系数
+            success_threshold = self.success_rot_threshold * 0.6
+            if self.use_adaptive_threshold and hasattr(self.env, 'time_warper'):
+                success_threshold = self.success_rot_threshold * self.env.time_warper.current_alpha * 0.6
+            
+            self.trajectory_recorder = TrajectoryRecorder(
+                env=self.env,
+                num_record_envs=4,  # 追踪 4 个环境
+                max_episode_length=1000,  # 最大 episode 长度
+                success_threshold=success_threshold,
+                min_trajectories_to_export=1,  # 只要有1条成功轨迹就导出
+                keep_best_k=5,  # 缓冲区保留 Top-5 最佳轨迹
+                device=self.device
+            )
+            print(f"  轨迹录制器:             ✓ 已初始化")
+            print(f"  成功阈值:               {success_threshold:.2f} rad")
+        else:
+            print(f"  轨迹录制器:             ✗ 未初始化")
+            if not is_main_process:
+                print(f"    原因: 非主进程 (LOCAL_RANK != 0)")
+            if not camera_enabled:
+                print(f"    原因: 相机未启用 (enableCameraSensors=False)")
+                print(f"    解决方案: 在启动命令中添加 task.env.enableCameraSensors=True")
+        print("="*80 + "\n")
 
     # 写入统计数据到 TensorBoard
     def write_stats(self, a_losses, c_losses, b_losses, entropies, kls, grad_norms):
@@ -379,17 +452,61 @@ class PPOTeacher(object):
         _last_t = time.time()
         # 重置环境，获取初始观察
         self.obs = self.env.reset()
+        
+        # ==============================================================
+        # Space E: 初始化 Curriculum Learning 物理参数
+        # ==============================================================
+        # 在训练开始时应用初始的 curriculum 物理参数 (α = alpha_start)
+        # 这确保从第一个 episode 开始就使用正确的慢时间物理设置
+        if hasattr(self.env, 'time_warper') and hasattr(self.env, 'apply_curriculum_physics'):
+            print(f"[Space E] Initializing curriculum physics with α = {self.env.time_warper.current_alpha:.4f}")
+            self.env.apply_curriculum_physics()
+        
         # 初始化 agent steps，每个 epoch 开始时增加一个 batch_size
         self.agent_steps = self.batch_size
         self.success_count = 0
         self.total_episodes = 0
+        self.fall_count = 0
+        self.drop_count = 0
+        self.tilt_count = 0
         self.env.reset_termination_counts()
+        
+        # ============================================================
+        # 累积统计缓冲区 (Accumulated Statistics Buffer)
+        # ============================================================
+        # 解决低 α 阶段的"分母消失"问题：
+        # 当 episode 很长（高存活率）时，一个 Epoch 内完成的 episode 数量
+        # 可能非常少，导致 survival_rate 等指标统计失真。
+        # 
+        # 方案：累积多个 Epoch 的数据，直到样本量足够才进行门控判断。
+        # ============================================================
+        self.accumulated_stats = {
+            'total_episodes': 0,
+            'success_count': 0,
+            'fail_count': 0,
+            'rot_angle_sum': 0.0,
+            'reward_sum': 0.0,
+        }
+        # 最小样本量阈值（建议设为并行环境数的 5%~10% 或固定值 500）
+        self.min_episodes_for_curriculum = 500
+        
         # 循环直到达到最大 agent steps
         while self.agent_steps < self.max_agent_steps:
             # 增加 epoch 计数
             self.epoch_num += 1
+            
+            # ---- 轨迹录制器：动态调整成功阈值 ----
+            # 在 Space E 中，低 alpha 阶段成功旋转的弧度较小
+            # 需要根据当前 alpha 动态调整阈值，否则初期无法录制到轨迹
+            if self.trajectory_recorder is not None and hasattr(self.env, 'time_warper'):
+                # 动态阈值 = 基础阈值 × alpha × 宽松系数(0.6)
+                # alpha=0.1 时阈值为 0.6 rad，alpha=1.0 时为 6.0 rad
+                adaptive_threshold = self.success_rot_threshold * self.env.time_warper.current_alpha * 0.6
+                self.trajectory_recorder.success_threshold = adaptive_threshold
+            
             # 执行一个训练 epoch（包括数据收集和模型更新）
             a_losses, c_losses, b_losses, entropies, kls, grad_norms = self.train_epoch()
+            
             # 清空 storage 中的数据，准备下一个 epoch 的收集
             self.storage.data_dict = None
 
@@ -413,47 +530,227 @@ class PPOTeacher(object):
             mean_lengths = self.episode_lengths.get_mean()
             mean_rot_angle = self.total_rot_angle.get_mean()
             mean_waypoint_tracking_reward = self.total_waypoint_tracking_reward.get_mean()
-            # 计算成功率（旋转角度>10）
+            # 计算成功率（旋转角度>阈值）
             current_success_rate = self.success_count / max(self.total_episodes, 1)
             if current_success_rate > self.best_success_rate:
                 self.best_success_rate = current_success_rate
             
-            # 每100个epoch打印一次奖励信息
-            if self.epoch_num % 100 == 0:
-                print('-----------------------')
-                print(f'episode rewards: {mean_rewards:.2f} | episode lengths: {mean_lengths:.2f}')
-                print(f'episode rot angle(rad): {mean_rot_angle:.2f}')
-                print(f'episode waypoint tracking reward: {mean_waypoint_tracking_reward:.2f}')
-                print(f'success rate (rot>6): {current_success_rate:.4f} ({self.success_count}/{self.total_episodes})')
-                print(f'best success rate: {self.best_success_rate:.4f}')
-                print(f'Terminations: Fall={self.env.termination_counts["pencil_tilt"]} | '
-                      f'Drop={self.env.termination_counts["object_below_threshold"]} | '
-                      f'Overspeed={self.env.termination_counts["angular_velocity_too_high"]}')
-                # 打印额外信息
-                # for k, v in self.extra_info.items():
-                #     # 如果是张量，打印其平均值
-                #     if isinstance(v, torch.Tensor):
-                #         if len(v.shape) > 0:  # 非标量张量
-                #             # 转换为浮点数再计算平均值（处理整数张量）
-                #             print(f'{k}: {v.float().mean().item():.4f}')
-                #         else:  # 标量张量
-                #             print(f'{k}: {v.item():.4f}')
-                #     else:
-                #         print(f'{k}: {v}')
-                # 打印训练信息
-                info_string = f'Agent Steps: {int(self.agent_steps // 1e6):04}M | FPS: {all_fps:.1f} | ' \
-                              f'Last FPS: {last_fps:.1f} | ' \
-                              f'Collect Time: {self.data_collect_time / 60:.1f} min | ' \
-                              f'Train RL Time: {self.rl_train_time / 60:.1f} min | ' \
-                              f'Current Best: {self.best_rewards:.2f}'
-                print(info_string)
-            # 记录 episode 奖励和长度的平均值到 TensorBoard
+            # ==============================================================
+            # Space E: Curriculum Learning - Time Warping 更新
+            # ==============================================================
+            # 在每个 epoch 结束后更新 curriculum 进度
+            # 如果 α 发生显著变化，则重新应用物理参数
+            if hasattr(self.env, 'time_warper'):
+                # ------------------------------------------------------------
+                # 累积统计：解决低 α 阶段的"分母消失"问题
+                # ------------------------------------------------------------
+                # 将当前 Epoch 的数据累加到缓冲区
+                self.accumulated_stats['total_episodes'] += self.total_episodes
+                self.accumulated_stats['success_count'] += self.success_count
+                self.accumulated_stats['fail_count'] += self.fall_count
+                self.accumulated_stats['rot_angle_sum'] += mean_rot_angle * self.total_episodes  # 加权累加
+                self.accumulated_stats['reward_sum'] += mean_rewards * self.total_episodes
+                
+                # 检查累积样本量是否足够
+                accumulated_episodes = self.accumulated_stats['total_episodes']
+                has_enough_samples = accumulated_episodes >= self.min_episodes_for_curriculum
+                
+                # 基于累积统计计算更鲁棒的 metrics
+                if has_enough_samples:
+                    # 用累积数据计算 survival_rate（更稳健）
+                    accumulated_survival_rate = 1.0 - (
+                        self.accumulated_stats['fail_count'] / max(accumulated_episodes, 1)
+                    )
+                    accumulated_success_rate = (
+                        self.accumulated_stats['success_count'] / max(accumulated_episodes, 1)
+                    )
+                    accumulated_mean_rot = (
+                        self.accumulated_stats['rot_angle_sum'] / max(accumulated_episodes, 1)
+                    )
+                    accumulated_mean_reward = (
+                        self.accumulated_stats['reward_sum'] / max(accumulated_episodes, 1)
+                    )
+                    
+                    # 构建 metrics 字典传递给 time_warper
+                    curriculum_metrics = {
+                        'success_rate': accumulated_success_rate,
+                        'survival_rate': accumulated_survival_rate,
+                        'mean_rot_angle': accumulated_mean_rot,
+                        'mean_reward': accumulated_mean_reward,
+                        'mean_entropy': torch.mean(torch.stack(entropies)).item() if entropies else 0.0,
+                        # 附加信息用于调试
+                        'accumulated_episodes': accumulated_episodes,
+                    }
+                else:
+                    # 样本量不足时，使用当前 Epoch 的瞬时值（但不触发 curriculum update）
+                    current_survival_rate = 1.0 - (self.fall_count / max(self.total_episodes, 1))
+                    curriculum_metrics = {
+                        'success_rate': current_success_rate,
+                        'survival_rate': current_survival_rate,
+                        'mean_rot_angle': mean_rot_angle,
+                        'mean_reward': mean_rewards,
+                        'mean_entropy': torch.mean(torch.stack(entropies)).item() if entropies else 0.0,
+                        'accumulated_episodes': accumulated_episodes,
+                        # 标记样本量不足，time_warper 可据此跳过门控判断
+                        '_insufficient_samples': True,
+                    }
+                
+                # [Bug Fix] 先保存更新前的 alpha，用于视频标签
+                # 因为 time_warper.update() 会修改 current_alpha
+                alpha_before_update = self.env.time_warper.current_alpha
+                
+                needs_update = self.env.time_warper.update(self.agent_steps, curriculum_metrics)
+                
+                # [修复] 无论是否触发课程更新，只要样本量足够并进行了一次检查，
+                # 就清空累积缓冲区，开始新一轮统计。
+                # 这避免了历史失败数据拖累当前表现，导致死锁。
+                if has_enough_samples:
+                    self.accumulated_stats = {
+                        'total_episodes': 0,
+                        'success_count': 0,
+                        'fail_count': 0,
+                        'rot_angle_sum': 0.0,
+                        'reward_sum': 0.0,
+                    }
+                
+                if needs_update:
+                    # ---- 轨迹录制器：先导出旧 alpha 下的轨迹视频 ----
+                    # 重要：使用 alpha_before_update 确保视频标签与内容一致
+                    if self.trajectory_recorder is not None:
+                        self.trajectory_recorder.export_on_curriculum_update(
+                            writer=self.writer,
+                            agent_steps=self.agent_steps,
+                            current_alpha=alpha_before_update,  # [Fix] 使用更新前的 alpha
+                            output_dir=self.output_dir
+                        )
+                    # 然后再应用新的物理参数（逻辑更顺畅：先总结过去，再开启未来）
+                    self.env.apply_curriculum_physics()
+                # 记录 curriculum 相关指标到 TensorBoard
+                self.writer.add_scalar('curriculum/alpha', self.env.time_warper.current_alpha, self.agent_steps)
+                self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+                self.writer.add_scalar('curriculum/gravity_scale', self.env.time_warper.gravity_scale, self.agent_steps)
+                # 使用累积统计的 survival_rate（如果样本足够）
+                survival_rate_to_log = curriculum_metrics.get('survival_rate', 0.0)
+                self.writer.add_scalar('curriculum/survival_rate', survival_rate_to_log, self.agent_steps)
+                # 额外记录累积样本量，便于调试
+                self.writer.add_scalar('curriculum/accumulated_episodes', accumulated_episodes, self.agent_steps)
+            
+            # ========================================================================================
+            # [Enhanced Logging] Space E Curriculum Diagnostic & Tensorboard
+            # ========================================================================================
+            
+            # 1. 获取课程学习的核心状态
+            curriculum_active = hasattr(self.env, 'time_warper')
+            if curriculum_active:
+                tw = self.env.time_warper
+                current_alpha = tw.current_alpha
+                alpha_progress = tw.progress
+                
+                # 获取累积统计数据（用于判断是否满足门控）
+                # 注意：这些是在本次 loop 中刚刚累积或清空的
+                # 如果刚刚发生了 update，accumulated_stats 已经被清空，这里显示的是新一轮的起点
+                acc_episodes = curriculum_metrics.get('accumulated_episodes', 0)
+                # 使用 curriculum_metrics 中的值，因为它们可能是累积值
+                curr_survival_rate = curriculum_metrics.get('survival_rate', 0.0)
+                curr_success_rate = curriculum_metrics.get('success_rate', 0.0)
+                
+                # 判断当前未更新的原因
+                update_status_msg = "N/A"
+                if needs_update:
+                    update_status_msg = f"✅ UPDATE TRIGGERED (Alpha -> {current_alpha:.3f})"
+                else:
+                    # 分析由于什么原因卡住了
+                    reasons = []
+                    # 原因 A: 样本不足
+                    if acc_episodes < self.min_episodes_for_curriculum:
+                        reasons.append(f"Insufficient Samples ({acc_episodes}/{self.min_episodes_for_curriculum})")
+                    else:
+                        # 原因 B: 门控未过
+                        if current_alpha < 0.5:
+                            if curr_survival_rate < 0.8:
+                                reasons.append(f"Low Survival ({curr_survival_rate:.2f} < 0.8)")
+                        else:
+                            if curr_success_rate < 0.7:
+                                reasons.append(f"Low Success ({curr_success_rate:.2f} < 0.7)")
+                        
+                        # 原因 C: 增量太小 (虽然门控过了，但 alpha 增长还没达到物理刷新阈值)
+                        # 这是 time_warper 内部逻辑，通常不显示，但如果上面都过了，说明是这个原因
+                        if not reasons:
+                            reasons.append("Accumulating Alpha Increment (Ratio Threshold)")
+                    
+                    update_status_msg = f"❌ HOLD: {', '.join(reasons)}"
+
+            # 2. 打印详细日志 (每 100 epoch 或 课程更新时)
+            if self.epoch_num % 100 == 0 or (curriculum_active and needs_update):
+                # 计算当前有效的成功阈值
+                effective_threshold = self.success_rot_threshold
+                if self.use_adaptive_threshold and hasattr(self.env, 'time_warper'):
+                    effective_threshold = self.success_rot_threshold * self.env.time_warper.current_alpha
+                
+                print("\n" + "="*80)
+                print(f"Space E Curriculum Status [Epoch {self.epoch_num}]")
+                print("="*80)
+                if curriculum_active:
+                    print(f"  Current Alpha:      {current_alpha:.4f} (Gravity: {current_alpha**2:.4f}g)")
+                    print(f"  Curriculum Status:  {update_status_msg}")
+                    print(f"  Metrics (Accum.):   Survival={curr_survival_rate:.4f}, Success={curr_success_rate:.4f}")
+                    print(f"  Sample Buffer:      {acc_episodes} episodes")
+                    print("-"*80)
+                
+                print(f"  Episode Reward:     {mean_rewards:.2f}")
+                print(f"  Episode Length:     {mean_lengths:.2f}")
+                print(f"  Mean Rot Angle:     {mean_rot_angle:.2f} rad")
+                print(f"  Current Success:    {current_success_rate:.4f} ({self.success_count}/{max(self.total_episodes, 1)}) rot>{effective_threshold:.1f}")
+                
+                # 打印终止原因分布
+                term_counts = self.env.termination_counts
+                total_terms = max(term_counts['total_episodes'], 1)
+                print(f"  Termination Dist:   Total={term_counts['total_episodes']}")
+                print(f"    - Max Steps:      {term_counts['max_episode_length']} ({term_counts['max_episode_length']/total_terms*100:.1f}%)")
+                print(f"    - Drop (Low Z):   {term_counts['object_below_threshold']} ({term_counts['object_below_threshold']/total_terms*100:.1f}%)")
+                print(f"    - Tilt (Fall):    {term_counts['pencil_tilt']} ({term_counts['pencil_tilt']/total_terms*100:.1f}%)")
+                print(f"    - Overspeed:      {term_counts['angular_velocity_too_high']} ({term_counts['angular_velocity_too_high']/total_terms*100:.1f}%)")
+                print("="*80 + "\n")
+            
+            # ========================================================================================
+            # [周期性轨迹导出] 每 100 Epoch 导出最佳轨迹
+            # ========================================================================================
+            # 注意：这与 curriculum update 触发的导出是独立的
+            # curriculum update 时会导出 "curriculum" 标签的视频，这里导出 "periodic" 标签的视频
+            # 如果两者在同一 epoch 发生，也不冲突（缓冲区独立管理）
+            if self.epoch_num % 100 == 0 and self.trajectory_recorder is not None:
+                # 获取当前 alpha（如果有 time_warper）
+                periodic_alpha = 1.0
+                if hasattr(self.env, 'time_warper'):
+                    periodic_alpha = self.env.time_warper.current_alpha
+                
+                # 尝试导出最佳轨迹
+                self.trajectory_recorder.export(
+                    writer=self.writer,
+                    agent_steps=self.agent_steps,
+                    current_alpha=periodic_alpha,
+                    tag_prefix="periodic",
+                    output_dir=self.output_dir
+                )
+
+            # 3. Tensorboard 记录
             self.writer.add_scalar('episode_rewards/step', mean_rewards, self.agent_steps)
             self.writer.add_scalar('episode_lengths/step', mean_lengths, self.agent_steps)
             self.writer.add_scalar('total_rot_angle(rad)/step', mean_rot_angle, self.agent_steps)
             self.writer.add_scalar('total_waypoint_tracking_reward/step', mean_waypoint_tracking_reward, self.agent_steps)
-            self.writer.add_scalar('success_rate/step', current_success_rate, self.agent_steps)
+            self.writer.add_scalar('success_rate/step', current_success_rate, self.agent_steps) # 当前 epoch 的瞬时成功率
             self.writer.add_scalar('success_count/step', self.success_count, self.agent_steps)
+            
+            # [Add] Space E 特有指标
+            if curriculum_active:
+                # 记录累积的 survival rate (这才是决定课程进度的关键)
+                self.writer.add_scalar('curriculum/accumulated_survival_rate', curr_survival_rate, self.agent_steps)
+                self.writer.add_scalar('curriculum/accumulated_success_rate', curr_success_rate, self.agent_steps)
+                # 记录导致失败的主要原因占比
+                total_fails = self.fall_count # 这里用当前 epoch 的计数
+                total_eps = max(self.total_episodes, 1)
+                self.writer.add_scalar('failure/drop_rate', self.drop_count / total_eps, self.agent_steps)
+                self.writer.add_scalar('failure/tilt_rate', self.tilt_count / total_eps, self.agent_steps)
 
             # 构建 checkpoint 文件名
             checkpoint_name = f'ep_{self.epoch_num}_step_{int(self.agent_steps // 1e6):04}m_reward_{mean_rewards:.2f}'
@@ -478,6 +775,9 @@ class PPOTeacher(object):
             self.env.reset_termination_counts()
             self.success_count = 0
             self.total_episodes = 0
+            self.fall_count = 0
+            self.drop_count = 0
+            self.tilt_count = 0
         # 达到最大步数时打印信息
         print('max steps achieved')
         print(f'Final best reward: {self.best_rewards:.2f}')
@@ -549,37 +849,8 @@ class PPOTeacher(object):
         self.set_eval()
         # 重置环境，获取初始观察
         obs_dict = self.env.reset()
-        
-        # ================= [新增] 交互控制初始化 =================
-        print("\n[交互控制] 已激活:")
-        print("  按 'V' 或 'F' 切换垂直同步 (关闭后可加速渲染)")
-        print("  按 'P' 暂停/继续仿真")
-        print("  注意：需要点击窗口使其获得焦点")
-        gym = self.env.gym
-        viewer = self.env.viewer
-        # 订阅V、F和P键（V键在vec_task中已注册为toggle_viewer_sync）
-        if viewer:
-            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_F, "toggle_fast")
-            gym.subscribe_viewer_keyboard_event(viewer, gymapi.KEY_P, "toggle_pause")
-        
-        # =======================================================
-        is_paused = False
 
         while True:
-            # 暂停逻辑（在step之前处理）
-            if is_paused:
-                if viewer:
-                    # 检查按键事件
-                    events = gym.query_viewer_action_events(viewer)
-                    for evt in events:
-                        if evt.action == "toggle_pause" and evt.value > 0:
-                            is_paused = False
-                            print(f"[仿真状态] 运行")
-                    # 暂停时只画图，不模拟物理
-                    gym.draw_viewer(viewer, self.env.sim, False)
-                    gym.sync_frame_time(self.env.sim)
-                continue
-
             # Teacher模式：处理点云标准化
             if self.normalize_point_cloud:
                 point_cloud = self.point_cloud_mean_std(
@@ -604,26 +875,7 @@ class PPOTeacher(object):
             
             # 在环境中执行动作，获取新的观察、奖励、done 标志和信息
             obs_dict, r, done, info = self.env.step(mu, extrin_record=extrin)
-            
-            # 在step之后处理按键事件（现在不会丢失事件了）
-            if viewer:
-                # 直接读取我们在 render 中保存的列表，不要再次 query
-                # 使用 getattr 防止第一次运行时 last_events 未定义
-                events = getattr(self.env, 'last_events', [])
-                
-                for evt in events:
-                    # 处理 P 键
-                    if evt.action == "toggle_pause" and evt.value > 0:
-                        is_paused = True
-                        print(f"[仿真状态] 暂停")
-                    
-                    # V键：仅打印状态，实际逻辑已在 vec_task 中处理
-                    if evt.action == "toggle_viewer_sync" and evt.value > 0:
-                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")
-                    
-                    # F键作为额外的快捷键
-                    if evt.action == "toggle_fast" and evt.value > 0:
-                        print(f"[垂直同步] {'开启 (限制速度)' if self.env.enable_viewer_sync else '关闭 (全速)'}")    # 执行一个训练 epoch
+
     def train_epoch(self):
         # 收集 minibatch 数据
         _t = time.time()
@@ -743,17 +995,15 @@ class PPOTeacher(object):
             kls.append(av_kls)
 
             # 使用自适应调度器更新学习率
+            # [重构] 移除 CosineAnnealing 的约束，LR 仅由 KL 自适应控制
             self.last_lr = self.scheduler.update(self.last_lr, av_kls.item())
 
-        # 更新全局学习率（余弦退火）
-        self.global_scheduler.step()
-        global_lr = self.global_scheduler.get_last_lr()[0]
+        # [移除] 不再使用全局余弦退火调度器
+        # self.global_scheduler.step()
+        # global_lr = self.global_scheduler.get_last_lr()[0]
+        # self.scheduler.max_lr = global_lr
+        # self.last_lr = min(self.last_lr, global_lr)
         
-        # 更新 AdaptiveScheduler 的 max_lr，使其受全局调度器约束
-        self.scheduler.max_lr = global_lr
-        
-        # 更新最终学习率，确保不超过全局上限
-        self.last_lr = min(self.last_lr, global_lr)
         # 更新优化器的学习率
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = self.last_lr
@@ -810,8 +1060,10 @@ class PPOTeacher(object):
             self.obs, rewards, self.dones, infos = self.env.step(actions)
 
             # 如果需要记录帧且环境支持相机，则捕捉帧并添加到 GIF 帧列表
+            captured_frame = None
             if record_frame and self.env.with_camera:
-                self.gif_frames.append(self.env.capture_frame())
+                captured_frame = self.env.capture_frame()
+                self.gif_frames.append(captured_frame)
                 # add frame to GIF # 注释
                 # 如果 GIF 帧列表达到指定长度，则将帧列表写入 TensorBoard 作为视频
                 if len(self.gif_frames) == self.gif_save_length:
@@ -824,6 +1076,15 @@ class PPOTeacher(object):
                     self.writer.flush()
                     # 清空 GIF 帧列表
                     self.gif_frames.clear()
+
+            # ---- 轨迹录制器：记录当前步 ----
+            # 在课程学习中，追踪指定环境的完整轨迹
+            if self.trajectory_recorder is not None:
+                self.trajectory_recorder.record_step(
+                    dones=self.dones,
+                    infos=infos,
+                    frame=captured_frame  # 复用已捕获的帧
+                )
 
             # 将奖励 reshape 为 (batch_size, 1)
             rewards = rewards.unsqueeze(1)
@@ -856,11 +1117,28 @@ class PPOTeacher(object):
             self.episode_lengths.update(self.current_lengths[done_indices])
             self.total_rot_angle.update(self.current_rot_angle[done_indices])
             self.total_waypoint_tracking_reward.update(self.current_waypoint_tracking_reward[done_indices])
-            # 统计成功案例（旋转角度>10）
+            # 统计成功案例（旋转角度>阈值，支持自适应阈值）
             if len(done_indices) > 0:
-                success_mask = self.current_rot_angle[done_indices] > 10.0
+                # 计算有效阈值：如果使用自适应阈值，则乘以当前 alpha
+                effective_threshold = self.success_rot_threshold
+                if self.use_adaptive_threshold and hasattr(self.env, 'time_warper'):
+                    effective_threshold = self.success_rot_threshold * self.env.time_warper.current_alpha
+                
+                success_mask = self.current_rot_angle[done_indices] > effective_threshold
                 self.success_count += success_mask.sum().item()
                 self.total_episodes += len(done_indices)
+                
+                # 统计失败案例（用于 survival_rate）
+                # 从 infos 获取终止原因或从 env 的 termination_counts 获取
+                if 'termination_reason' in infos:
+                    # 每个 done 环境的终止原因
+                    term_reasons = infos['termination_reason'][done_indices.squeeze(-1)]
+                    # 2: object_below_threshold (掉落), 3: pencil_tilt (倾斜)
+                    drop_mask = (term_reasons == 2)
+                    tilt_mask = (term_reasons == 3)
+                    self.drop_count += drop_mask.sum().item()
+                    self.tilt_count += tilt_mask.sum().item()
+                    self.fall_count += (drop_mask | tilt_mask).sum().item()
             # 确保 infos 是字典类型
             assert isinstance(infos, dict), 'Info Should be a Dict'
             # 更新额外信息字典，储存上一个时间步的信息
@@ -922,25 +1200,32 @@ def policy_kl(p0_mu, p0_sigma, p1_mu, p1_sigma):
 # 从 https://github.com/leggedrobotics/rsl_rl/blob/master/rsl_rl/algorithms/ppo.py 引用
 # 自适应学习率调度器，根据 KL 散度调整学习率
 class AdaptiveScheduler(object):
-    # 构造函数，初始化调度器参数
-    def __init__(self, kl_threshold=0.008, min_lr=1e-6, max_lr=1e-2):
+    """自适应学习率调度器
+    
+    根据 KL 散度动态调整学习率:
+    - KL > 2 * threshold: LR /= factor (策略变化太大，减小步幅)
+    - KL < 0.5 * threshold: LR *= factor (策略变化太小，增大步幅)
+    
+    Args:
+        kl_threshold: KL 散度阈值
+        min_lr: 最小学习率 (防止死锁)
+        max_lr: 最大学习率
+        adaptive_factor: 调整因子 (默认 1.15)
+    """
+    def __init__(self, kl_threshold=0.01, min_lr=1e-6, max_lr=1e-2, adaptive_factor=1.15):
         super().__init__()
-        # 最小学习率
         self.min_lr = min_lr
-        # 最大学习率（可动态更新）
         self.max_lr = max_lr
-        # KL 散度阈值
         self.kl_threshold = kl_threshold
+        self.adaptive_factor = adaptive_factor
 
-    # 更新学习率
     def update(self, current_lr, kl_dist):
-        # 当前学习率
+        """ 根据 KL 散度更新学习率 """
         lr = current_lr
         # 如果 KL 散度大于阈值的两倍，则降低学习率
         if kl_dist > (2.0 * self.kl_threshold):
-            lr = max(current_lr / 1.5, self.min_lr)
+            lr = max(current_lr / self.adaptive_factor, self.min_lr)
         # 如果 KL 散度小于阈值的一半，则增加学习率
         if kl_dist < (0.5 * self.kl_threshold):
-            lr = min(current_lr * 1.5, self.max_lr)  # 使用动态的 self.max_lr
-        # 返回更新后的学习率
+            lr = min(current_lr * self.adaptive_factor, self.max_lr)
         return lr

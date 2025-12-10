@@ -1004,8 +1004,18 @@ class InteractivePoseTuner:
             print(f"调整 {finger_name} 手指")
 
     def _export_pose(self):
-        """导出当前姿态 (可复制格式)"""
-        # 获取当前手部 DOF 状态 (25维: 6 base + 19 fingers)
+        """导出当前姿态 (可复制格式)
+        
+        输出格式说明:
+        - 格式1: 命令行参数格式 (用于 linker_hand_grasp.py)
+        - 格式2: 固定基座版本 (21 DoF 手指 DOF)
+        - 格式3: Flying Hand 版本 (27 DoF 完整)
+        - 格式4: 详细状态信息 (基座、手指、物体)
+        - 格式5: 旋转轴配置 (yaml)
+        - 格式6: 指尖位置 (用于 Waypoint 奖励)
+        - 格式7: 笔姿态相位 (用于 TP 任务)
+        """
+        # 获取当前手部 DOF 状态 (27维: 6 base + 21 fingers)
         current_dof = self.dof_pos.cpu().numpy().tolist()
         
         # 分离基座和手指
@@ -1017,56 +1027,70 @@ class InteractivePoseTuner:
         obj_rot = self.root_states[1, 3:7].cpu().numpy().tolist()  # xyzw
         
         # 格式化输出
-        print("\n" + "="*75)
+        print("\n" + "="*80)
         print("█████ 可复制的姿态配置 █████")
-        print("="*75)
+        print("="*80)
         
-        # 格式1: 适用于 linker_hand_grasp.py 的 canonical_pose_dict (21 DoF 固定基座)
-        # 注意: 固定基座版本的 URDF 只有 21 个 DOF
-        print("\n【格式1】固定基座版本 (21 DoF, 用于 linker_hand_grasp.py):")
-        print("-"*75)
-        print("# 注意: 固定基座版本需要去掉前 6 个基座关节")
-        print("# 物体位置需要根据基座偏移进行调整")
+        # 格式1: 命令行参数格式 (重要！用于 linker_hand_grasp.py)
+        print("\n【格式1】命令行参数格式 (用于 linker_hand_grasp.py):")
+        print("-"*80)
+        print("# 运行生成缓存时，使用以下参数指定手部基座位置:")
+        print("# 非 Flying Hand 模式 (推荐):")
+        print(f"python cache/linker_hand_grasp.py --disable-flying-hand \\")
+        print(f"    --hand-base-pos {base_dof[0]:.6f} {base_dof[1]:.6f} {base_dof[2]:.6f} \\")
+        print(f"    --hand-base-rot {base_dof[3]:.6f} {base_dof[4]:.6f} {base_dof[5]:.6f}")
+        print("#")
+        print("# Flying Hand 模式:")
+        print(f"python cache/linker_hand_grasp.py --enable-flying-hand \\")
+        print(f"    --hand-base-pos {base_dof[0]:.6f} {base_dof[1]:.6f} {base_dof[2]:.6f} \\")
+        print(f"    --hand-base-rot {base_dof[3]:.6f} {base_dof[4]:.6f} {base_dof[5]:.6f}")
+        
+        # 格式2: 适用于 linker_hand_grasp.py 的 canonical_pose_dict (21 DoF 固定基座)
+        print("\n【格式2】固定基座版本 (21 DoF 手指, 用于 canonical_pose_dict):")
+        print("-"*80)
+        print("# 物体位置为世界坐标，手指 DOF 不含基座")
         print(f"'hand': {finger_dof},")
-        # 调整物体位置 (考虑基座偏移)
-        adjusted_obj_pos = [
-            obj_pos[0] - base_dof[0],  # x - px
-            obj_pos[1] - base_dof[1],  # y - py  
-            obj_pos[2] - base_dof[2],  # z - pz
-        ]
-        print(f"'object': {adjusted_obj_pos + obj_rot}")
+        print(f"'object_pos': {obj_pos},")
+        print(f"'object_rot': {obj_rot},  # xyzw 格式")
         
-        # 格式2: 完整 25 DoF Flying Hand
-        print("\n【格式2】Flying Hand 版本 (25 DoF, 用于 flying_hand_grasp.py):")
-        print("-"*75)
-        print("'flying_hand': [")
-        print("    {")
-        print(f"        'hand': {current_dof},")
-        print(f"        'object': {obj_pos + obj_rot}")
-        print("    }")
-        print("]")
+        # 格式3: 完整 27 DoF Flying Hand
+        print("\n【格式3】Flying Hand 版本 (27 DoF, 包含 6 维基座):")
+        print("-"*80)
+        print("# canonical_pose_dict 格式 (可直接复制):")
+        print("{")
+        print(f"    'hand_dof': {current_dof},")
+        print(f"    'object_pos': {obj_pos},")
+        print(f"    'object_rot': {obj_rot},  # xyzw 格式")
+        print("},")
         
-        # 格式3: 详细状态信息
-        print("\n【格式3】详细状态:")
-        print("-"*75)
-        print(f"# 基座状态 (6 DoF):")
-        print(f"#   平移 (x,y,z): [{base_dof[0]:.6f}, {base_dof[1]:.6f}, {base_dof[2]:.6f}]")
-        print(f"#   旋转 (r,p,y): [{base_dof[3]:.6f}, {base_dof[4]:.6f}, {base_dof[5]:.6f}]")
-        print(f"# 手指状态 (19 DoF): {[round(x, 4) for x in finger_dof]}")
-        print(f"# 物体世界坐标:")
-        print(f"#   位置: {[round(x, 6) for x in obj_pos]}")
-        print(f"#   旋转: {[round(x, 6) for x in obj_rot]}")
+        # 格式4: 详细状态信息
+        print("\n【格式4】详细状态:")
+        print("-"*80)
+        print(f"# ===== 手部基座状态 (6 DoF) =====")
+        print(f"# 位置 (px, py, pz): [{base_dof[0]:.6f}, {base_dof[1]:.6f}, {base_dof[2]:.6f}]")
+        print(f"# 旋转 (rx, ry, rz): [{base_dof[3]:.6f}, {base_dof[4]:.6f}, {base_dof[5]:.6f}] 欧拉角 (弧度)")
+        print(f"#")
+        print(f"# ===== 手指状态 (21 DoF) =====")
+        print(f"# Index (4):  {[round(x, 4) for x in finger_dof[0:4]]}")
+        print(f"# Little (4): {[round(x, 4) for x in finger_dof[4:8]]}")
+        print(f"# Middle (4): {[round(x, 4) for x in finger_dof[8:12]]}")
+        print(f"# Ring (4):   {[round(x, 4) for x in finger_dof[12:16]]}")
+        print(f"# Thumb (5):  {[round(x, 4) for x in finger_dof[16:21]]}")
+        print(f"#")
+        print(f"# ===== 物体世界坐标 =====")
+        print(f"# 位置: {[round(x, 6) for x in obj_pos]}")
+        print(f"# 旋转: {[round(x, 6) for x in obj_rot]} (xyzw)")
         
-        # 格式4: 旋转轴配置
-        print("\n【格式4】旋转轴配置:")
-        print("-"*75)
+        # 格式5: 旋转轴配置
+        print("\n【格式5】旋转轴配置:")
+        print("-"*80)
         axis_str = f"[{self.current_rotation_axis[0]:.6f}, {self.current_rotation_axis[1]:.6f}, {self.current_rotation_axis[2]:.6f}]"
         print(f"rotation_axis: {axis_str}")
         print("# 用于 configs/task/LinkerHandHora.yaml 中的 rotation_axis 配置")
         
-        # 格式5: 指尖位置信息 (用于奖励计算)
-        print("\n【格式5】指尖位置 (Fingertip Positions):")
-        print("-"*75)
+        # 格式6: 指尖位置信息 (用于奖励计算)
+        print("\n【格式6】指尖位置 (Fingertip Positions):")
+        print("-"*80)
         print("# 用于设计 Waypoint 奖励，指尖在笛卡尔空间中的位置")
         fingertip_info, hand_base = self._get_fingertip_relative_positions()
         print(f"# 手基座位置: [{hand_base[0]:.6f}, {hand_base[1]:.6f}, {hand_base[2]:.6f}]")
@@ -1087,17 +1111,14 @@ class InteractivePoseTuner:
         print("# 可复制的指尖相对位置向量 (15维: 5指 × 3D):")
         print(f"fingertip_rel_pos: {[round(x, 6) for x in fingertip_relative_list]}")
         
-        # 格式6: 笔姿态相位 (用于Waypoint奖励)
-        print("\n【格式6】笔姿态相位 (Phase):")
-        print("-"*75)
+        # 格式7: 笔姿态相位 (用于Waypoint奖励)
+        print("\n【格式7】笔姿态相位 (Phase):")
+        print("-"*80)
         phase, pen_long_axis, proj_vec = self._compute_pen_phase()
         print(f"# 笔长轴 (世界坐标): [{pen_long_axis[0]:.6f}, {pen_long_axis[1]:.6f}, {pen_long_axis[2]:.6f}]")
         print(f"# 旋转轴: [{self.current_rotation_axis[0]:.6f}, {self.current_rotation_axis[1]:.6f}, {self.current_rotation_axis[2]:.6f}]")
         print(f"# 笔长轴在旋转轴垂平面的投影: [{proj_vec[0]:.6f}, {proj_vec[1]:.6f}, {proj_vec[2]:.6f}]")
         print(f"# 相位 (phase): {phase:.6f} rad ({np.degrees(phase):.2f}°)")
-        print("#")
-        print("# 注意: 相位计算暂未考虑Flying Hand基座朝向的影响")
-        print("# 如需考虑手朝向，需要将笔长轴和旋转轴都变换到手基座坐标系下计算")
         print("#")
         print("# TP Waypoint 格式 (可直接复制到 TP_waypoints.py):")
         print(f"{{")
@@ -1106,7 +1127,7 @@ class InteractivePoseTuner:
         print(f"    'object_rot': {[round(x, 6) for x in obj_rot]},")
         print(f"}},")
         
-        print("="*75 + "\n")
+        print("="*80 + "\n")
 
     def _update_hand_base(self):
         """更新手部基座关节"""

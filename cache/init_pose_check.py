@@ -1,13 +1,20 @@
 """
 python cache/init_pose_check.py
+
 初始化姿态成功率检测 - Headless 模式批量验证 grasp_cache 质量
 
-支持两种缓存格式:
-- 61维格式 (推荐): [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
+支持三种缓存格式:
+- 61维格式 (Flying Hand): [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
+- 49维格式 (非 Flying Hand): [hand_actual(21) + hand_target(21) + obj_pos(3) + obj_rot(4)]
 - 34维格式 (旧版): [hand_dof(27) + obj_pos(3) + obj_rot(4)]
 
 用于批量检验抓取缓存中的初始化姿态成功率，输出详细统计信息。
 与 init_pose_vis.py 使用相同的检测逻辑，但运行在 headless 模式下，适合大规模验证。
+
+Space E 支持：
+- 使用 --alpha 参数指定时间缩放因子（与训练 alpha_start 一致）
+- alpha < 1.0 时自动应用 Space E 物理缩放（重力、PD 增益、PhysX 阈值等）
+- 确保检测环境与训练环境的物理参数一致
 """
 
 # 添加项目根目录到Python路径
@@ -21,7 +28,7 @@ import argparse
 # 重要参数配置 - 可通过命令行覆盖
 DEFAULT_CONFIG = {
     # 缓存文件配置
-    'cache_file': 'cache/3_30000_grasp_61_cache.npy',  # 默认缓存文件路径
+    'cache_file': 'cache/3_30000_49_nofly_grasp_cache.npy',  # 默认缓存文件路径 (非 Flying Hand)
     #'cache_file': 'cache/SLIP_3_30000_34_grasp_cache.npy',
     #'cache_file': 'cache/HIT_3_30000_34_grasp_cache.npy',
     # 仿真配置
@@ -34,6 +41,9 @@ DEFAULT_CONFIG = {
     # 早期终止阈值（与训练配置一致）
     'relative_z_drop_threshold': 0.15,  # 物体高度偏离阈值（米）
     'pencil_tilt_threshold': 0.08,      # LinkerPen倾斜阈值（米）
+    
+    # Space E 课程学习配置
+    'alpha': 1.0,                       # 时间缩放因子 (0.1-1.0)，默认 1.0 (标准物理)
     
     # 随机种子
     'seed': 42,
@@ -71,6 +81,10 @@ def parse_args():
                        default=DEFAULT_CONFIG['pencil_tilt_threshold'],
                        help=f'LinkerPen倾斜阈值（米），默认: {DEFAULT_CONFIG["pencil_tilt_threshold"]}')
     
+    # Space E 配置
+    parser.add_argument('--alpha', type=float, default=DEFAULT_CONFIG['alpha'],
+                       help=f'Space E 时间缩放因子 (0.1-1.0)，默认: {DEFAULT_CONFIG["alpha"]}')
+    
     # 随机种子
     parser.add_argument('--seed', type=int, default=DEFAULT_CONFIG['seed'],
                        help=f'随机种子，默认: {DEFAULT_CONFIG["seed"]}')
@@ -107,6 +121,7 @@ OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default 
 
 from penspin.tasks.linker_hand_hora import LinkerHandHora
 from penspin.utils.robot_config import (
+    NUM_DOF,
     NUM_TOTAL_DOF_FLYING,
     FLYING_DOF_INDICES,
 )
@@ -120,6 +135,8 @@ class InitPoseChecker(LinkerHandHora):
     初始化姿态成功率检测器（Headless）
     
     从 grasp_cache 中加载姿态并批量验证成功率
+    
+    支持 Space E 时间缩放：使用 --alpha 参数在指定的物理环境下检测
     """
     
     def __init__(self, config, sim_device, graphics_device_id, headless, cache_data):
@@ -133,18 +150,43 @@ class InitPoseChecker(LinkerHandHora):
         if 'actionSpace' in config['env']:
             config['env']['actionSpace']['disableRingLittleFinger'] = False
         
+        # ============================================================
+        # Space E 课程学习配置：使用指定的 alpha 检测
+        # ============================================================
+        # 设置 curriculum 配置，让父类 LinkerHandHora 使用正确的物理参数
+        # 这确保检测时的物理环境与训练初期一致
+        alpha = args.alpha
+        if 'curriculum' not in config['env']:
+            config['env']['curriculum'] = {}
+        config['env']['curriculum']['mode'] = 'SpaceE' if alpha < 1.0 else 'SpaceA'
+        config['env']['curriculum']['alpha_start'] = alpha
+        config['env']['curriculum']['alpha_end'] = alpha  # 检测时保持固定 alpha
+        print(f"[InitPoseChecker] Space E 配置: alpha={alpha:.2f}, mode={config['env']['curriculum']['mode']}")
+        
         super().__init__(config, sim_device, graphics_device_id, headless)
+        
+        # 如果 alpha < 1.0，应用 Space E 物理缩放
+        if alpha < 1.0:
+            print(f"[InitPoseChecker] 应用 Space E 物理缩放...")
+            self.apply_curriculum_physics()
         
         # 缓存数据
         self.cache_data = torch.tensor(cache_data, dtype=torch.float32, device=self.device)
         self.cache_dim = cache_data.shape[1]
         self.num_cached_poses = cache_data.shape[0]
         
-        # 检测缓存格式: 61维(新) vs 34维(旧)
-        self.is_new_format = (self.cache_dim == NUM_TOTAL_DOF_FLYING * 2 + NUM_OBJECT_DIMS)  # 61维
-        format_str = "61维(actual+target)" if self.is_new_format else "34维(旧格式)"
+        # 检测缓存格式:
+        # - 61维 (Flying Hand 新格式): 27*2 + 7 = 61
+        # - 49维 (非 Flying Hand 新格式): 21*2 + 7 = 49
+        # - 34维 (旧格式 Flying Hand): 27 + 7 = 34
+        self.is_new_format = (self.cache_dim == self.num_linker_hand_dofs * 2 + NUM_OBJECT_DIMS)
+        if self.is_new_format:
+            format_str = f"{self.cache_dim}维(actual+target, DOF={self.num_linker_hand_dofs})"
+        else:
+            format_str = f"{self.cache_dim}维(旧格式)"
         
         print(f"[InitPoseChecker] 加载缓存: {self.num_cached_poses} 个姿态, 维度: {self.cache_dim} ({format_str})")
+        print(f"[InitPoseChecker] Flying Hand: {self.flying_hand_enabled}, DOF: {self.num_linker_hand_dofs}")
         
         # 当前显示的姿态索引
         self.current_pose_indices = None
@@ -160,33 +202,36 @@ class InitPoseChecker(LinkerHandHora):
             return
         
         self.current_pose_indices = pose_indices
-        selected_poses = self.cache_data[pose_indices]  # [num_envs, 61 or 34]
+        selected_poses = self.cache_data[pose_indices]  # [num_envs, cache_dim]
         
-        # 解析缓存数据（支持新旧两种格式）
+        # 解析缓存数据（支持新旧两种格式，以及 Flying / 非 Flying Hand）
+        hand_dof_dim = self.num_linker_hand_dofs  # 27 (Flying) 或 21 (非 Flying)
+        
         if self.is_new_format:
-            # 61维格式: [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
-            hand_actual = selected_poses[:, :NUM_TOTAL_DOF_FLYING].clone()  # [num_envs, 27]
-            hand_target = selected_poses[:, NUM_TOTAL_DOF_FLYING:NUM_TOTAL_DOF_FLYING*2].clone()  # [num_envs, 27]
-            object_pos = selected_poses[:, NUM_TOTAL_DOF_FLYING*2:NUM_TOTAL_DOF_FLYING*2+3].clone()  # [num_envs, 3]
-            object_rot = selected_poses[:, NUM_TOTAL_DOF_FLYING*2+3:].clone()  # [num_envs, 4]
+            # 新格式: [hand_actual(N) + hand_target(N) + obj_pos(3) + obj_rot(4)]
+            # N = 27 (Flying) 或 21 (非 Flying)
+            hand_actual = selected_poses[:, :hand_dof_dim].clone()
+            hand_target = selected_poses[:, hand_dof_dim:hand_dof_dim*2].clone()
+            object_pos = selected_poses[:, hand_dof_dim*2:hand_dof_dim*2+3].clone()
+            object_rot = selected_poses[:, hand_dof_dim*2+3:].clone()
         else:
-            # 34维格式（旧版）: [hand_dof(27) + obj_pos(3) + obj_rot(4)]
-            hand_actual = selected_poses[:, :NUM_TOTAL_DOF_FLYING].clone()
+            # 旧格式: [hand_dof(N) + obj_pos(3) + obj_rot(4)]
+            hand_actual = selected_poses[:, :hand_dof_dim].clone()
             hand_target = hand_actual.clone()  # 旧格式：actual = target
-            object_pos = selected_poses[:, NUM_TOTAL_DOF_FLYING:NUM_TOTAL_DOF_FLYING+3].clone()
-            object_rot = selected_poses[:, NUM_TOTAL_DOF_FLYING+3:].clone()
+            object_pos = selected_poses[:, hand_dof_dim:hand_dof_dim+3].clone()
+            object_rot = selected_poses[:, hand_dof_dim+3:].clone()
         
         # ====================================================================
         # 应用手部 DOF 状态（区分物理位置和控制目标）
         # ====================================================================
         # 物理位置: 使用 actual（避免穿模爆炸）
-        self.linker_hand_dof_pos[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_actual
+        self.linker_hand_dof_pos[env_ids, :hand_dof_dim] = hand_actual
         self.linker_hand_dof_vel[env_ids, :] = 0.0
         
         # 控制目标: 使用 target（产生抓握力）
-        self.prev_targets[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_target
-        self.cur_targets[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_target
-        self.init_pose_buf[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_target
+        self.prev_targets[env_ids, :hand_dof_dim] = hand_target
+        self.cur_targets[env_ids, :hand_dof_dim] = hand_target
+        self.init_pose_buf[env_ids, :hand_dof_dim] = hand_target
         
         # ====================================================================
         # 应用物体状态
@@ -277,6 +322,7 @@ def main(config):
     
     print(f"[main] 创建了 {env.num_envs} 个环境 (Headless 模式)")
     print(f"[main] 早期终止阈值: z_drop={env.relative_z_drop_threshold:.3f}m, tilt={env.pencil_tilt_threshold:.3f}m")
+    print(f"[main] Space E Alpha: {args.alpha:.2f} (重力缩放: {args.alpha**2:.4f})")
     
     # ================================================================
     # 配置参数
@@ -446,6 +492,7 @@ def main(config):
     print(f"       - 稳定步数: {stability_steps}")
     print(f"       - z_drop 阈值: {args.relative_z_drop_threshold:.3f}m")
     print(f"       - tilt 阈值: {args.pencil_tilt_threshold:.3f}m")
+    print(f"       - Space E Alpha: {args.alpha:.2f}")
     print()
     
     success_rate = total_success / total_tested * 100 if total_tested > 0 else 0

@@ -34,6 +34,110 @@
 - 添加提示信息告知用户需要点击窗口获取焦点
 - 暂停时使用 `gym.sync_frame_time()` 保持实时渲染
 
+### 3. Alpha 视频标签不匹配 ✅ (2024-01)
+
+**问题**：轨迹视频标签显示的是更新后的 alpha，而非录制时的 alpha
+
+**根因**：先调用 `time_warper.update()` 更新 alpha，再导出视频，导致标签使用了新 alpha
+
+**解决方案**：
+- 在调用 `update()` 前保存 `alpha_before_update = self.env.time_warper.current_alpha`
+- 导出视频时使用 `alpha_before_update` 作为标签
+
+**修改文件**：
+- `penspin/algo/ppo/ppo_rl_teacher.py`
+
+### 4. 固定录制阈值问题 ✅ (2024-01)
+
+**问题**：低 alpha 阶段几乎无法录制到成功轨迹
+
+**根因**：录制成功阈值固定为 3.0 rad，而 alpha=0.1 时真实阈值仅 1.0 rad
+
+**解决方案**：
+- 动态阈值 = 基础阈值 × alpha × 宽松系数(0.6)
+- 例如：alpha=0.1 时阈值为 0.6 rad
+
+**修改文件**：
+- `penspin/algo/ppo/ppo_rl_teacher.py`
+
+### 5. Alpha 起始值过低 ✅ (2024-01)
+
+**问题**：alpha=0.1 时重力太弱 (0.01g)，物体几乎悬浮
+
+**解决方案**：
+- 默认 alpha_start 从 0.1 改为 0.3
+- alpha=0.3 时重力约 0.09g，仍有显著缓冲但物理更真实
+
+**修改文件**：
+- `penspin/utils/time_warping.py`
+- `scripts/TP_train_rl_teacher_spaceE.sh`
+- `optuna/run_hpo.sh`
+
+### 6. 低 Alpha 阶段"分母消失"问题 ✅ (2024-01)
+
+**问题描述**：
+在低 α 阶段 (α ≤ 0.3) 时，由于重力极低 (g' = α²g ≈ 0.09g)，episode 存活时间极长。
+这导致一个 Epoch (4096 steps) 内完成的 episode 数量极少（可能只有 6 个左右）。
+
+当用这么少的样本计算 survival_rate 时：
+- `survival_rate = 1 - fall_count / total_episodes`
+- 如果 6 个 episode 中 0 个 fall：survival_rate = 100%（但实际只是样本太少）
+- 如果 6 个 episode 中 1 个 fall：survival_rate ≈ 83%（一次偶然事件导致巨大波动）
+
+这种"分母消失"问题导致 curriculum 门控判断失真。
+
+**解决方案 - 累积统计 (Accumulated Statistics)**：
+
+1. **引入累积缓冲区**：
+```python
+self.accumulated_stats = {
+    'total_episodes': 0,
+    'success_count': 0,
+    'fail_count': 0,
+    'rot_angle_sum': 0.0,
+    'reward_sum': 0.0,
+}
+self.min_episodes_for_curriculum = 500
+```
+
+2. **每个 Epoch 累加数据**：
+```python
+self.accumulated_stats['total_episodes'] += self.total_episodes
+self.accumulated_stats['fail_count'] += self.fall_count
+# ... 等
+```
+
+3. **样本量足够时才判断**：
+```python
+if accumulated_episodes >= self.min_episodes_for_curriculum:
+    # 使用累积数据计算可靠的 survival_rate
+    survival_rate = 1.0 - (fail_count / accumulated_episodes)
+else:
+    # 标记样本不足，跳过门控判断
+    metrics['_insufficient_samples'] = True
+```
+
+4. **time_warping.py 检查样本量标记**：
+```python
+if metrics.get('_insufficient_samples', False):
+    return False  # 跳过本次更新
+```
+
+5. **curriculum 更新后清空累积缓冲区**：
+```python
+if needs_update:
+    self.accumulated_stats = {...}  # 清空，开始新阶段统计
+```
+
+**修改文件**：
+- `penspin/algo/ppo/ppo_rl_teacher.py`
+- `penspin/utils/time_warping.py`
+
+**效果**：
+- 低 α 阶段需要累积约 500 个 episode 才会判断是否进入下一阶段
+- survival_rate 计算基于更大样本量，更加稳定可靠
+- 避免因样本稀疏导致的误判（过早/过晚进入下一阶段）
+
 ## 使用说明
 
 ### 运行可视化

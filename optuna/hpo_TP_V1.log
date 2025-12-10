@@ -1592,3 +1592,2350 @@ RunningMeanStd:  (1,)
 输出目录: outputs/TP_V1/optuna_trial_0020
 ================================================================================
 
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         309.2456
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 1.0831
+  Composite Score:     417.56
+    = 1.0×309.25 + 100.0×0.0000 + 100.0×1.0831
+
+================================================================================
+[Optuna Trial 20] 训练完成
+================================================================================
+
+                                                                                            [I 2025-12-04 23:52:40,961] Trial 20 finished with value: 417.5556 and parameters: {'learning_rate': 0.00010906857466703475, 'weight_decay': 1.190318455359739e-05, 'gamma': 0.99, 'tau': 0.85, 'e_clip': 0.3, 'entropy_coef': 0.003834340158785444, 'critic_coef': 2.0, 'kl_threshold': 0.04856795136670321, 'mini_epochs': 10, 'minibatch_size': 16384, 'grad_norm': 2.0, 'num_envs': 8192, 'horizon_length': 24, 'flying_linear_velocity': 0.097620041724442, 'flying_angular_velocity': 1.3848380996326872, 'angvelClipMin': -0.2389181253375822, 'angvelClipMax': 0.6629317433308995, 'angvelPenaltyThresHigh': 0.596041442459605, 'angvelPenaltyThresLow': -0.6822453965543352, 'rotate_reward_scale': 1.0919391373679832, 'obj_linvel_penalty_scale': -0.11620482492737771, 'torque_penalty_scale': -0.010010920616435824, 'rotate_penalty_scale': -0.06889215829089301, 'axial_tilt_penalty_scale': -1.9935746225375182, 'axial_tilt_threshold': 0.039902531999198174, 'position_penalty_scale': -0.28647776057496793, 'flying_base_movement_penalty_scale': -0.09540482023614383, 'waypoint_tracking_reward_scale': 8.770126824676916, 'waypoint_sigma': 0.13748341401817252}. Best is trial 13 with value: 2531.6863.
+Best trial: 13. Best value: 2531.69:  50%|█████     | 20/40 [32:39:20<29:49:54, 5369.73s/it]Best trial: 13. Best value: 2531.69:  50%|█████     | 20/40 [32:39:20<29:49:54, 5369.73s/it]Best trial: 13. Best value: 2531.69:  52%|█████▎    | 21/40 [32:39:20<28:40:20, 5432.66s/it]
+================================================================================
+[Optuna Trial 21] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0004294308783926464
+  weight_decay                   = 1.456928511189808e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.0053725234639129295
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.07488798458425631
+  mini_epochs                    = 5
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.06783815488157356
+  flying_angular_velocity        = 2.366133170921343
+  angvelClipMin                  = -0.19541729540914243
+  angvelClipMax                  = 0.8454096633136119
+  angvelPenaltyThresHigh         = 0.9985439360693054
+  angvelPenaltyThresLow          = -0.5751361267151873
+  rotate_reward_scale            = 1.3655898696633977
+  obj_linvel_penalty_scale       = -0.16612502717948402
+  torque_penalty_scale           = -0.018075525353557075
+  rotate_penalty_scale           = -0.024743637598603395
+  axial_tilt_penalty_scale       = -1.1041466184439765
+  axial_tilt_threshold           = 0.029725404332379007
+  position_penalty_scale         = -0.21442596141724213
+  flying_base_movement_penalty_scale = -0.07304610882917995
+  waypoint_tracking_reward_scale = 6.5673793503649875
+  waypoint_sigma                 = 0.3694237577605748
+输出目录: outputs/TP_V1/optuna_trial_0021
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 21 训练失败
+STDERR:
+ncil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0004294308783926464', 'train.ppo.weight_decay=1.456928511189808e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.0053725234639129295', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.07488798458425631', 'train.ppo.mini_epochs=5', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.06783815488157356', 'task.env.flyingHand.angularVelocity=2.366133170921343', 'task.env.reward.angvelClipMin=-0.19541729540914243', 'task.env.reward.angvelClipMax=0.8454096633136119', 'task.env.reward.angvelPenaltyThresHigh=0.9985439360693054', 'task.env.reward.angvelPenaltyThresLow=-0.5751361267151873', 'task.env.reward.rotate_reward_scale=1.3655898696633977', 'task.env.reward.obj_linvel_penalty_scale=-0.16612502717948402', 'task.env.reward.torque_penalty_scale=-0.018075525353557075', 'task.env.reward.rotate_penalty_scale=-0.024743637598603395', 'task.env.reward.axial_tilt_penalty_scale=-1.1041466184439765', 'task.env.reward.axial_tilt_threshold=0.029725404332379007', 'task.env.reward.position_penalty_scale=-0.21442596141724213', 'task.env.reward.flying_base_movement_penalty_scale=-0.07304610882917995', 'task.env.reward.waypoint_tracking_reward_scale=6.5673793503649875', 'task.env.reward.waypoint_sigma=0.3694237577605748', 'train.ppo.output_name=TP_V1/optuna_trial_0021', 'seed=63']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 21 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0021', 'seed=63']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                            [I 2025-12-04 23:52:53,515] Trial 21 pruned. 
+Best trial: 13. Best value: 2531.69:  52%|█████▎    | 21/40 [32:39:33<28:40:20, 5432.66s/it]Best trial: 13. Best value: 2531.69:  52%|█████▎    | 21/40 [32:39:33<28:40:20, 5432.66s/it]Best trial: 13. Best value: 2531.69:  55%|█████▌    | 22/40 [32:39:33<19:01:47, 3805.99s/it]
+================================================================================
+[Optuna Trial 22] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0007385982383292285
+  weight_decay                   = 1.1739381535650259e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.006558031255094753
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.0749592059602853
+  mini_epochs                    = 6
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.05068068689002338
+  flying_angular_velocity        = 2.619597632269045
+  angvelClipMin                  = -0.11008746106973089
+  angvelClipMax                  = 0.7524705286641484
+  angvelPenaltyThresHigh         = 0.8420500672299006
+  angvelPenaltyThresLow          = -0.6234023103476098
+  rotate_reward_scale            = 1.3575382288289515
+  obj_linvel_penalty_scale       = -0.19862415284093662
+  torque_penalty_scale           = -0.019806903082978406
+  rotate_penalty_scale           = -0.017681309053510924
+  axial_tilt_penalty_scale       = -1.8533937423983173
+  axial_tilt_threshold           = 0.03685434527040893
+  position_penalty_scale         = -0.24578336625922986
+  flying_base_movement_penalty_scale = -0.061623391316560305
+  waypoint_tracking_reward_scale = 5.728950699921005
+  waypoint_sigma                 = 0.4918766475569509
+输出目录: outputs/TP_V1/optuna_trial_0022
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 22 训练失败
+STDERR:
+pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0007385982383292285', 'train.ppo.weight_decay=1.1739381535650259e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.006558031255094753', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.0749592059602853', 'train.ppo.mini_epochs=6', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.05068068689002338', 'task.env.flyingHand.angularVelocity=2.619597632269045', 'task.env.reward.angvelClipMin=-0.11008746106973089', 'task.env.reward.angvelClipMax=0.7524705286641484', 'task.env.reward.angvelPenaltyThresHigh=0.8420500672299006', 'task.env.reward.angvelPenaltyThresLow=-0.6234023103476098', 'task.env.reward.rotate_reward_scale=1.3575382288289515', 'task.env.reward.obj_linvel_penalty_scale=-0.19862415284093662', 'task.env.reward.torque_penalty_scale=-0.019806903082978406', 'task.env.reward.rotate_penalty_scale=-0.017681309053510924', 'task.env.reward.axial_tilt_penalty_scale=-1.8533937423983173', 'task.env.reward.axial_tilt_threshold=0.03685434527040893', 'task.env.reward.position_penalty_scale=-0.24578336625922986', 'task.env.reward.flying_base_movement_penalty_scale=-0.061623391316560305', 'task.env.reward.waypoint_tracking_reward_scale=5.728950699921005', 'task.env.reward.waypoint_sigma=0.4918766475569509', 'train.ppo.output_name=TP_V1/optuna_trial_0022', 'seed=64']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 22 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  6
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0022', 'seed=64']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                            [I 2025-12-04 23:53:06,027] Trial 22 pruned. 
+Best trial: 13. Best value: 2531.69:  55%|█████▌    | 22/40 [32:39:45<19:01:47, 3805.99s/it]Best trial: 13. Best value: 2531.69:  55%|█████▌    | 22/40 [32:39:45<19:01:47, 3805.99s/it]Best trial: 13. Best value: 2531.69:  57%|█████▊    | 23/40 [32:39:45<12:35:49, 2667.64s/it]
+================================================================================
+[Optuna Trial 23] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0005487214317407825
+  weight_decay                   = 1.6441960599725524e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.003931263206752255
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.06726782008794391
+  mini_epochs                    = 7
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.07009754233585144
+  flying_angular_velocity        = 2.4744186820255063
+  angvelClipMin                  = -0.22437296901694773
+  angvelClipMax                  = 0.8663486518831217
+  angvelPenaltyThresHigh         = 0.7100642064813139
+  angvelPenaltyThresLow          = -0.6089913416527221
+  rotate_reward_scale            = 1.1555685732203271
+  obj_linvel_penalty_scale       = -0.13832135386978966
+  torque_penalty_scale           = -0.015323618956864741
+  rotate_penalty_scale           = -0.05332407307791786
+  axial_tilt_penalty_scale       = -1.9022747919163843
+  axial_tilt_threshold           = 0.03455691132901245
+  position_penalty_scale         = -0.1824948229993582
+  flying_base_movement_penalty_scale = -0.0838187826823243
+  waypoint_tracking_reward_scale = 7.685629523086836
+  waypoint_sigma                 = 0.2981759198495017
+输出目录: outputs/TP_V1/optuna_trial_0023
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 23 训练失败
+STDERR:
+v.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0005487214317407825', 'train.ppo.weight_decay=1.6441960599725524e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.003931263206752255', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.06726782008794391', 'train.ppo.mini_epochs=7', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.07009754233585144', 'task.env.flyingHand.angularVelocity=2.4744186820255063', 'task.env.reward.angvelClipMin=-0.22437296901694773', 'task.env.reward.angvelClipMax=0.8663486518831217', 'task.env.reward.angvelPenaltyThresHigh=0.7100642064813139', 'task.env.reward.angvelPenaltyThresLow=-0.6089913416527221', 'task.env.reward.rotate_reward_scale=1.1555685732203271', 'task.env.reward.obj_linvel_penalty_scale=-0.13832135386978966', 'task.env.reward.torque_penalty_scale=-0.015323618956864741', 'task.env.reward.rotate_penalty_scale=-0.05332407307791786', 'task.env.reward.axial_tilt_penalty_scale=-1.9022747919163843', 'task.env.reward.axial_tilt_threshold=0.03455691132901245', 'task.env.reward.position_penalty_scale=-0.1824948229993582', 'task.env.reward.flying_base_movement_penalty_scale=-0.0838187826823243', 'task.env.reward.waypoint_tracking_reward_scale=7.685629523086836', 'task.env.reward.waypoint_sigma=0.2981759198495017', 'train.ppo.output_name=TP_V1/optuna_trial_0023', 'seed=65']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 23 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  7
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0023', 'seed=65']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                            [I 2025-12-04 23:53:18,835] Trial 23 pruned. 
+Best trial: 13. Best value: 2531.69:  57%|█████▊    | 23/40 [32:39:58<12:35:49, 2667.64s/it]Best trial: 13. Best value: 2531.69:  57%|█████▊    | 23/40 [32:39:58<12:35:49, 2667.64s/it]Best trial: 13. Best value: 2531.69:  60%|██████    | 24/40 [32:39:58<8:18:56, 1871.03s/it] 
+================================================================================
+[Optuna Trial 24] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00023475821702646332
+  weight_decay                   = 1.3549196229834846e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.0020568620084073534
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.0755010719093867
+  mini_epochs                    = 8
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.0848260357966921
+  flying_angular_velocity        = 2.0821388613408494
+  angvelClipMin                  = -0.2832951966292398
+  angvelClipMax                  = 0.8141130443554253
+  angvelPenaltyThresHigh         = 0.8330384785123058
+  angvelPenaltyThresLow          = -0.5558501919146321
+  rotate_reward_scale            = 1.5701094266670206
+  obj_linvel_penalty_scale       = -0.17142190183869438
+  torque_penalty_scale           = -0.0240878173764466
+  rotate_penalty_scale           = -0.013375140127439483
+  axial_tilt_penalty_scale       = -1.7444267461297907
+  axial_tilt_threshold           = 0.025945109921346188
+  position_penalty_scale         = -0.27931419218896275
+  flying_base_movement_penalty_scale = -0.11228844200001592
+  waypoint_tracking_reward_scale = 6.997871856997554
+  waypoint_sigma                 = 0.38514815786319034
+输出目录: outputs/TP_V1/optuna_trial_0024
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 24 训练失败
+STDERR:
+pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00023475821702646332', 'train.ppo.weight_decay=1.3549196229834846e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.0020568620084073534', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.0755010719093867', 'train.ppo.mini_epochs=8', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.0848260357966921', 'task.env.flyingHand.angularVelocity=2.0821388613408494', 'task.env.reward.angvelClipMin=-0.2832951966292398', 'task.env.reward.angvelClipMax=0.8141130443554253', 'task.env.reward.angvelPenaltyThresHigh=0.8330384785123058', 'task.env.reward.angvelPenaltyThresLow=-0.5558501919146321', 'task.env.reward.rotate_reward_scale=1.5701094266670206', 'task.env.reward.obj_linvel_penalty_scale=-0.17142190183869438', 'task.env.reward.torque_penalty_scale=-0.0240878173764466', 'task.env.reward.rotate_penalty_scale=-0.013375140127439483', 'task.env.reward.axial_tilt_penalty_scale=-1.7444267461297907', 'task.env.reward.axial_tilt_threshold=0.025945109921346188', 'task.env.reward.position_penalty_scale=-0.27931419218896275', 'task.env.reward.flying_base_movement_penalty_scale=-0.11228844200001592', 'task.env.reward.waypoint_tracking_reward_scale=6.997871856997554', 'task.env.reward.waypoint_sigma=0.38514815786319034', 'train.ppo.output_name=TP_V1/optuna_trial_0024', 'seed=66']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 24 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  8
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0024', 'seed=66']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                           [I 2025-12-04 23:53:31,527] Trial 24 pruned. 
+Best trial: 13. Best value: 2531.69:  60%|██████    | 24/40 [32:40:11<8:18:56, 1871.03s/it]Best trial: 13. Best value: 2531.69:  60%|██████    | 24/40 [32:40:11<8:18:56, 1871.03s/it]Best trial: 13. Best value: 2531.69:  62%|██████▎   | 25/40 [32:40:11<5:28:21, 1313.46s/it]
+================================================================================
+[Optuna Trial 25] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00043273996580343437
+  weight_decay                   = 1.1396647731699608e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.004081964618731924
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.06021096052449399
+  mini_epochs                    = 6
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 16
+  flying_linear_velocity         = 0.06451198513156292
+  flying_angular_velocity        = 2.843738885152422
+  angvelClipMin                  = -0.1828320431167904
+  angvelClipMax                  = 0.8718614319824862
+  angvelPenaltyThresHigh         = 0.9835947441873099
+  angvelPenaltyThresLow          = -0.5007132635213996
+  rotate_reward_scale            = 1.7818053350252958
+  obj_linvel_penalty_scale       = -0.15290280682745072
+  torque_penalty_scale           = -0.01828420202187452
+  rotate_penalty_scale           = -0.074619105583629
+  axial_tilt_penalty_scale       = -1.5360913011568358
+  axial_tilt_threshold           = 0.03290035907665191
+  position_penalty_scale         = -0.2515008391131369
+  flying_base_movement_penalty_scale = -0.0793078951208234
+  waypoint_tracking_reward_scale = 6.162339472669414
+  waypoint_sigma                 = 0.06606993730055977
+输出目录: outputs/TP_V1/optuna_trial_0025
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 25 训练失败
+STDERR:
+.env.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00043273996580343437', 'train.ppo.weight_decay=1.1396647731699608e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.004081964618731924', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.06021096052449399', 'train.ppo.mini_epochs=6', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=16', 'task.env.flyingHand.linearVelocity=0.06451198513156292', 'task.env.flyingHand.angularVelocity=2.843738885152422', 'task.env.reward.angvelClipMin=-0.1828320431167904', 'task.env.reward.angvelClipMax=0.8718614319824862', 'task.env.reward.angvelPenaltyThresHigh=0.9835947441873099', 'task.env.reward.angvelPenaltyThresLow=-0.5007132635213996', 'task.env.reward.rotate_reward_scale=1.7818053350252958', 'task.env.reward.obj_linvel_penalty_scale=-0.15290280682745072', 'task.env.reward.torque_penalty_scale=-0.01828420202187452', 'task.env.reward.rotate_penalty_scale=-0.074619105583629', 'task.env.reward.axial_tilt_penalty_scale=-1.5360913011568358', 'task.env.reward.axial_tilt_threshold=0.03290035907665191', 'task.env.reward.position_penalty_scale=-0.2515008391131369', 'task.env.reward.flying_base_movement_penalty_scale=-0.0793078951208234', 'task.env.reward.waypoint_tracking_reward_scale=6.162339472669414', 'task.env.reward.waypoint_sigma=0.06606993730055977', 'train.ppo.output_name=TP_V1/optuna_trial_0025', 'seed=67']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 25 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 16
+Batch Size:                   131,072 = 8,192 × 16
+Minibatch Size:               16,384
+Mini Epochs:                  6
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0025', 'seed=67']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                           [I 2025-12-04 23:53:42,799] Trial 25 pruned. 
+Best trial: 13. Best value: 2531.69:  62%|██████▎   | 25/40 [32:40:22<5:28:21, 1313.46s/it]Best trial: 13. Best value: 2531.69:  62%|██████▎   | 25/40 [32:40:22<5:28:21, 1313.46s/it]Best trial: 13. Best value: 2531.69:  65%|██████▌   | 26/40 [32:40:22<3:35:18, 922.76s/it] 
+================================================================================
+[Optuna Trial 26] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00029688134520079864
+  weight_decay                   = 1.9840870144021076e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.002585818764116547
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.06990460863715167
+  mini_epochs                    = 9
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.13377072960290531
+  flying_angular_velocity        = 2.292781870578999
+  angvelClipMin                  = -0.27112275497232224
+  angvelClipMax                  = 0.7444807895666467
+  angvelPenaltyThresHigh         = 0.643827291464477
+  angvelPenaltyThresLow          = -0.7710323281763135
+  rotate_reward_scale            = 1.3429271438522232
+  obj_linvel_penalty_scale       = -0.07006621625892039
+  torque_penalty_scale           = -0.02274796340109185
+  rotate_penalty_scale           = -0.08911231621979325
+  axial_tilt_penalty_scale       = -1.2106349124375804
+  axial_tilt_threshold           = 0.04155990131117714
+  position_penalty_scale         = -0.1585535479098487
+  flying_base_movement_penalty_scale = -0.09349629337374984
+  waypoint_tracking_reward_scale = 6.593901280601382
+  waypoint_sigma                 = 0.24019678694462018
+输出目录: outputs/TP_V1/optuna_trial_0026
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 26 训练失败
+STDERR:
+v.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00029688134520079864', 'train.ppo.weight_decay=1.9840870144021076e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.002585818764116547', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.06990460863715167', 'train.ppo.mini_epochs=9', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.13377072960290531', 'task.env.flyingHand.angularVelocity=2.292781870578999', 'task.env.reward.angvelClipMin=-0.27112275497232224', 'task.env.reward.angvelClipMax=0.7444807895666467', 'task.env.reward.angvelPenaltyThresHigh=0.643827291464477', 'task.env.reward.angvelPenaltyThresLow=-0.7710323281763135', 'task.env.reward.rotate_reward_scale=1.3429271438522232', 'task.env.reward.obj_linvel_penalty_scale=-0.07006621625892039', 'task.env.reward.torque_penalty_scale=-0.02274796340109185', 'task.env.reward.rotate_penalty_scale=-0.08911231621979325', 'task.env.reward.axial_tilt_penalty_scale=-1.2106349124375804', 'task.env.reward.axial_tilt_threshold=0.04155990131117714', 'task.env.reward.position_penalty_scale=-0.1585535479098487', 'task.env.reward.flying_base_movement_penalty_scale=-0.09349629337374984', 'task.env.reward.waypoint_tracking_reward_scale=6.593901280601382', 'task.env.reward.waypoint_sigma=0.24019678694462018', 'train.ppo.output_name=TP_V1/optuna_trial_0026', 'seed=68']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 26 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+========
+环境数量 (num_actors):        4,096
+Horizon 长度:                 24
+Batch Size:                   98,304 = 4,096 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  9
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0026', 'seed=68']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                          [I 2025-12-04 23:53:52,721] Trial 26 pruned. 
+Best trial: 13. Best value: 2531.69:  65%|██████▌   | 26/40 [32:40:32<3:35:18, 922.76s/it]Best trial: 13. Best value: 2531.69:  65%|██████▌   | 26/40 [32:40:32<3:35:18, 922.76s/it]Best trial: 13. Best value: 2531.69:  68%|██████▊   | 27/40 [32:40:32<2:20:35, 648.89s/it]
+================================================================================
+[Optuna Trial 27] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0008354103739910753
+  weight_decay                   = 1.3586342015222252e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.005059248844750017
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.0799683836055397
+  mini_epochs                    = 5
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.15435274241527858
+  flying_angular_velocity        = 2.5104902956714104
+  angvelClipMin                  = -0.2402208295654092
+  angvelClipMax                  = 0.8301143911442329
+  angvelPenaltyThresHigh         = 0.5902206873778453
+  angvelPenaltyThresLow          = -0.7306586760794384
+  rotate_reward_scale            = 1.4286090136852414
+  obj_linvel_penalty_scale       = -0.140592561620402
+  torque_penalty_scale           = -0.01393245121424119
+  rotate_penalty_scale           = -0.09753853501439225
+  axial_tilt_penalty_scale       = -1.665167818093982
+  axial_tilt_threshold           = 0.03556462970825918
+  position_penalty_scale         = -0.22848577749628474
+  flying_base_movement_penalty_scale = -0.061711296852698605
+  waypoint_tracking_reward_scale = 5.406254795232149
+  waypoint_sigma                 = 0.16545916218515647
+输出目录: outputs/TP_V1/optuna_trial_0027
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 27 训练失败
+STDERR:
+env.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0008354103739910753', 'train.ppo.weight_decay=1.3586342015222252e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.005059248844750017', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.0799683836055397', 'train.ppo.mini_epochs=5', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.15435274241527858', 'task.env.flyingHand.angularVelocity=2.5104902956714104', 'task.env.reward.angvelClipMin=-0.2402208295654092', 'task.env.reward.angvelClipMax=0.8301143911442329', 'task.env.reward.angvelPenaltyThresHigh=0.5902206873778453', 'task.env.reward.angvelPenaltyThresLow=-0.7306586760794384', 'task.env.reward.rotate_reward_scale=1.4286090136852414', 'task.env.reward.obj_linvel_penalty_scale=-0.140592561620402', 'task.env.reward.torque_penalty_scale=-0.01393245121424119', 'task.env.reward.rotate_penalty_scale=-0.09753853501439225', 'task.env.reward.axial_tilt_penalty_scale=-1.665167818093982', 'task.env.reward.axial_tilt_threshold=0.03556462970825918', 'task.env.reward.position_penalty_scale=-0.22848577749628474', 'task.env.reward.flying_base_movement_penalty_scale=-0.061711296852698605', 'task.env.reward.waypoint_tracking_reward_scale=5.406254795232149', 'task.env.reward.waypoint_sigma=0.16545916218515647', 'train.ppo.output_name=TP_V1/optuna_trial_0027', 'seed=69']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 27 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0027', 'seed=69']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                          [I 2025-12-04 23:54:05,314] Trial 27 pruned. 
+Best trial: 13. Best value: 2531.69:  68%|██████▊   | 27/40 [32:40:44<2:20:35, 648.89s/it]Best trial: 13. Best value: 2531.69:  68%|██████▊   | 27/40 [32:40:44<2:20:35, 648.89s/it]Best trial: 13. Best value: 2531.69:  70%|███████   | 28/40 [32:40:44<1:31:35, 457.99s/it]
+================================================================================
+[Optuna Trial 28] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0006489369614805612
+  weight_decay                   = 1.7512030832254208e-05
+  gamma                          = 0.992
+  tau                            = 0.95
+  e_clip                         = 0.3
+  entropy_coef                   = 0.0015213672303685372
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.07613640030108096
+  mini_epochs                    = 10
+  minibatch_size                 = 32768
+  grad_norm                      = 0.5
+  num_envs                       = 8192
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.0983508139260289
+  flying_angular_velocity        = 1.842158032909903
+  angvelClipMin                  = -0.1607684055714193
+  angvelClipMax                  = 0.7783560046644207
+  angvelPenaltyThresHigh         = 0.7337466813593585
+  angvelPenaltyThresLow          = -0.6925784121405391
+  rotate_reward_scale            = 1.257329249322922
+  obj_linvel_penalty_scale       = -0.16255008864340637
+  torque_penalty_scale           = -0.02668974563921874
+  rotate_penalty_scale           = -0.05910511499337922
+  axial_tilt_penalty_scale       = -1.0872477231377107
+  axial_tilt_threshold           = 0.03015903916190234
+  position_penalty_scale         = -0.29497859682683514
+  flying_base_movement_penalty_scale = -0.0734102789875134
+  waypoint_tracking_reward_scale = 7.998134680214227
+  waypoint_sigma                 = 0.06382756945500512
+输出目录: outputs/TP_V1/optuna_trial_0028
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 28 训练失败
+STDERR:
+.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0006489369614805612', 'train.ppo.weight_decay=1.7512030832254208e-05', 'train.ppo.gamma=0.992', 'train.ppo.tau=0.95', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.0015213672303685372', 'train.ppo.critic_coef=1.0', 'train.ppo.kl_threshold=0.07613640030108096', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=32768', 'train.ppo.grad_norm=0.5', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.0983508139260289', 'task.env.flyingHand.angularVelocity=1.842158032909903', 'task.env.reward.angvelClipMin=-0.1607684055714193', 'task.env.reward.angvelClipMax=0.7783560046644207', 'task.env.reward.angvelPenaltyThresHigh=0.7337466813593585', 'task.env.reward.angvelPenaltyThresLow=-0.6925784121405391', 'task.env.reward.rotate_reward_scale=1.257329249322922', 'task.env.reward.obj_linvel_penalty_scale=-0.16255008864340637', 'task.env.reward.torque_penalty_scale=-0.02668974563921874', 'task.env.reward.rotate_penalty_scale=-0.05910511499337922', 'task.env.reward.axial_tilt_penalty_scale=-1.0872477231377107', 'task.env.reward.axial_tilt_threshold=0.03015903916190234', 'task.env.reward.position_penalty_scale=-0.29497859682683514', 'task.env.reward.flying_base_movement_penalty_scale=-0.0734102789875134', 'task.env.reward.waypoint_tracking_reward_scale=7.998134680214227', 'task.env.reward.waypoint_sigma=0.06382756945500512', 'train.ppo.output_name=TP_V1/optuna_trial_0028', 'seed=70']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 28 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 32
+Batch Size:                   262,144 = 8,192 × 32
+Minibatch Size:               32,768
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0028', 'seed=70']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                          [I 2025-12-04 23:54:19,907] Trial 28 pruned. 
+Best trial: 13. Best value: 2531.69:  70%|███████   | 28/40 [32:40:59<1:31:35, 457.99s/it]Best trial: 13. Best value: 2531.69:  70%|███████   | 28/40 [32:40:59<1:31:35, 457.99s/it]Best trial: 13. Best value: 2531.69:  72%|███████▎  | 29/40 [32:40:59<59:34, 324.97s/it]  
+================================================================================
+[Optuna Trial 29] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0002435765102353144
+  weight_decay                   = 4.302032618039368e-05
+  gamma                          = 0.985
+  tau                            = 0.85
+  e_clip                         = 0.2
+  entropy_coef                   = 0.006948342901107014
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.03349092562816181
+  mini_epochs                    = 7
+  minibatch_size                 = 8192
+  grad_norm                      = 2.0
+  num_envs                       = 8192
+  horizon_length                 = 16
+  flying_linear_velocity         = 0.11215984698091594
+  flying_angular_velocity        = 2.030028278638415
+  angvelClipMin                  = -0.2169773916422968
+  angvelClipMax                  = 0.5009025102980744
+  angvelPenaltyThresHigh         = 0.7939647267473907
+  angvelPenaltyThresLow          = -0.6379127546147392
+  rotate_reward_scale            = 2.298704530662414
+  obj_linvel_penalty_scale       = -0.125037040672205
+  torque_penalty_scale           = -0.03123369459156701
+  rotate_penalty_scale           = -0.09114700201052538
+  axial_tilt_penalty_scale       = -1.925325158226292
+  axial_tilt_threshold           = 0.03354433303725481
+  position_penalty_scale         = -0.27376005277581805
+  flying_base_movement_penalty_scale = -0.13581338492443892
+  waypoint_tracking_reward_scale = 5.012576012186651
+  waypoint_sigma                 = 0.4739220605528584
+输出目录: outputs/TP_V1/optuna_trial_0029
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 29 训练失败
+STDERR:
+sk.env.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0002435765102353144', 'train.ppo.weight_decay=4.302032618039368e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.85', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.006948342901107014', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.03349092562816181', 'train.ppo.mini_epochs=7', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=2.0', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=16', 'task.env.flyingHand.linearVelocity=0.11215984698091594', 'task.env.flyingHand.angularVelocity=2.030028278638415', 'task.env.reward.angvelClipMin=-0.2169773916422968', 'task.env.reward.angvelClipMax=0.5009025102980744', 'task.env.reward.angvelPenaltyThresHigh=0.7939647267473907', 'task.env.reward.angvelPenaltyThresLow=-0.6379127546147392', 'task.env.reward.rotate_reward_scale=2.298704530662414', 'task.env.reward.obj_linvel_penalty_scale=-0.125037040672205', 'task.env.reward.torque_penalty_scale=-0.03123369459156701', 'task.env.reward.rotate_penalty_scale=-0.09114700201052538', 'task.env.reward.axial_tilt_penalty_scale=-1.925325158226292', 'task.env.reward.axial_tilt_threshold=0.03354433303725481', 'task.env.reward.position_penalty_scale=-0.27376005277581805', 'task.env.reward.flying_base_movement_penalty_scale=-0.13581338492443892', 'task.env.reward.waypoint_tracking_reward_scale=5.012576012186651', 'task.env.reward.waypoint_sigma=0.4739220605528584', 'train.ppo.output_name=TP_V1/optuna_trial_0029', 'seed=71']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 29 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+========
+环境数量 (num_actors):        8,192
+Horizon 长度:                 16
+Batch Size:                   131,072 = 8,192 × 16
+Minibatch Size:               8,192
+Mini Epochs:                  7
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0029', 'seed=71']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                        [I 2025-12-04 23:54:31,388] Trial 29 pruned. 
+Best trial: 13. Best value: 2531.69:  72%|███████▎  | 29/40 [32:41:10<59:34, 324.97s/it]Best trial: 13. Best value: 2531.69:  72%|███████▎  | 29/40 [32:41:10<59:34, 324.97s/it]Best trial: 13. Best value: 2531.69:  75%|███████▌  | 30/40 [32:41:10<38:29, 230.92s/it]
+================================================================================
+[Optuna Trial 30] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00037479060286934376
+  weight_decay                   = 1.1168516445926628e-05
+  gamma                          = 0.985
+  tau                            = 0.95
+  e_clip                         = 0.2
+  entropy_coef                   = 0.006077801325105677
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.0673645744133242
+  mini_epochs                    = 8
+  minibatch_size                 = 8192
+  grad_norm                      = 0.5
+  num_envs                       = 8192
+  horizon_length                 = 16
+  flying_linear_velocity         = 0.07567684881450445
+  flying_angular_velocity        = 1.5877351085572413
+  angvelClipMin                  = -0.3358997396836924
+  angvelClipMax                  = 0.8749176580994851
+  angvelPenaltyThresHigh         = 0.6734249883381416
+  angvelPenaltyThresLow          = -0.7842810201990221
+  rotate_reward_scale            = 1.0963198863690493
+  obj_linvel_penalty_scale       = -0.10670233731720241
+  torque_penalty_scale           = -0.020184979168867308
+  rotate_penalty_scale           = -0.0839862494210879
+  axial_tilt_penalty_scale       = -1.7227528286756268
+  axial_tilt_threshold           = 0.04431487976372994
+  position_penalty_scale         = -0.21322522638702304
+  flying_base_movement_penalty_scale = -0.11679923996860765
+  waypoint_tracking_reward_scale = 7.321151381358308
+  waypoint_sigma                 = 0.1306444761736577
+输出目录: outputs/TP_V1/optuna_trial_0030
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 30 训练失败
+STDERR:
+.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00037479060286934376', 'train.ppo.weight_decay=1.1168516445926628e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.95', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.006077801325105677', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.0673645744133242', 'train.ppo.mini_epochs=8', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=0.5', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=16', 'task.env.flyingHand.linearVelocity=0.07567684881450445', 'task.env.flyingHand.angularVelocity=1.5877351085572413', 'task.env.reward.angvelClipMin=-0.3358997396836924', 'task.env.reward.angvelClipMax=0.8749176580994851', 'task.env.reward.angvelPenaltyThresHigh=0.6734249883381416', 'task.env.reward.angvelPenaltyThresLow=-0.7842810201990221', 'task.env.reward.rotate_reward_scale=1.0963198863690493', 'task.env.reward.obj_linvel_penalty_scale=-0.10670233731720241', 'task.env.reward.torque_penalty_scale=-0.020184979168867308', 'task.env.reward.rotate_penalty_scale=-0.0839862494210879', 'task.env.reward.axial_tilt_penalty_scale=-1.7227528286756268', 'task.env.reward.axial_tilt_threshold=0.04431487976372994', 'task.env.reward.position_penalty_scale=-0.21322522638702304', 'task.env.reward.flying_base_movement_penalty_scale=-0.11679923996860765', 'task.env.reward.waypoint_tracking_reward_scale=7.321151381358308', 'task.env.reward.waypoint_sigma=0.1306444761736577', 'train.ppo.output_name=TP_V1/optuna_trial_0030', 'seed=72']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 30 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+========
+环境数量 (num_actors):        8,192
+Horizon 长度:                 16
+Batch Size:                   131,072 = 8,192 × 16
+Minibatch Size:               8,192
+Mini Epochs:                  8
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0030', 'seed=72']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                        [I 2025-12-04 23:54:42,809] Trial 30 pruned. 
+Best trial: 13. Best value: 2531.69:  75%|███████▌  | 30/40 [32:41:22<38:29, 230.92s/it]Best trial: 13. Best value: 2531.69:  75%|███████▌  | 30/40 [32:41:22<38:29, 230.92s/it]Best trial: 13. Best value: 2531.69:  78%|███████▊  | 31/40 [32:41:22<24:45, 165.07s/it]
+================================================================================
+[Optuna Trial 31] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00048823887464364597
+  weight_decay                   = 1.827999853959521e-05
+  gamma                          = 0.985
+  tau                            = 0.9
+  e_clip                         = 0.3
+  entropy_coef                   = 0.0050054982868846295
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.07255205021505033
+  mini_epochs                    = 10
+  minibatch_size                 = 8192
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.12741439904529964
+  flying_angular_velocity        = 1.1764227498418114
+  angvelClipMin                  = -0.39368451607290333
+  angvelClipMax                  = 0.8137498993579344
+  angvelPenaltyThresHigh         = 0.5242291615450424
+  angvelPenaltyThresLow          = -0.7512739499454116
+  rotate_reward_scale            = 1.840179767801562
+  obj_linvel_penalty_scale       = -0.08657729435022105
+  torque_penalty_scale           = -0.020575550027334882
+  rotate_penalty_scale           = -0.07648380513868833
+  axial_tilt_penalty_scale       = -1.2432036737509702
+  axial_tilt_threshold           = 0.026466839185325462
+  position_penalty_scale         = -0.23470644080801867
+  flying_base_movement_penalty_scale = -0.0905250596296873
+  waypoint_tracking_reward_scale = 8.483785664701395
+  waypoint_sigma                 = 0.45024757617962663
+输出目录: outputs/TP_V1/optuna_trial_0031
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 31 训练失败
+STDERR:
+ncil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00048823887464364597', 'train.ppo.weight_decay=1.827999853959521e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.0050054982868846295', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.07255205021505033', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.12741439904529964', 'task.env.flyingHand.angularVelocity=1.1764227498418114', 'task.env.reward.angvelClipMin=-0.39368451607290333', 'task.env.reward.angvelClipMax=0.8137498993579344', 'task.env.reward.angvelPenaltyThresHigh=0.5242291615450424', 'task.env.reward.angvelPenaltyThresLow=-0.7512739499454116', 'task.env.reward.rotate_reward_scale=1.840179767801562', 'task.env.reward.obj_linvel_penalty_scale=-0.08657729435022105', 'task.env.reward.torque_penalty_scale=-0.020575550027334882', 'task.env.reward.rotate_penalty_scale=-0.07648380513868833', 'task.env.reward.axial_tilt_penalty_scale=-1.2432036737509702', 'task.env.reward.axial_tilt_threshold=0.026466839185325462', 'task.env.reward.position_penalty_scale=-0.23470644080801867', 'task.env.reward.flying_base_movement_penalty_scale=-0.0905250596296873', 'task.env.reward.waypoint_tracking_reward_scale=8.483785664701395', 'task.env.reward.waypoint_sigma=0.45024757617962663', 'train.ppo.output_name=TP_V1/optuna_trial_0031', 'seed=73']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 31 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               8,192
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0031', 'seed=73']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                        [I 2025-12-04 23:54:53,789] Trial 31 pruned. 
+Best trial: 13. Best value: 2531.69:  78%|███████▊  | 31/40 [32:41:33<24:45, 165.07s/it]Best trial: 13. Best value: 2531.69:  78%|███████▊  | 31/40 [32:41:33<24:45, 165.07s/it]Best trial: 13. Best value: 2531.69:  80%|████████  | 32/40 [32:41:33<15:50, 118.84s/it]
+================================================================================
+[Optuna Trial 32] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0005473848430414579
+  weight_decay                   = 2.1221803635818413e-05
+  gamma                          = 0.985
+  tau                            = 0.9
+  e_clip                         = 0.3
+  entropy_coef                   = 0.004812274636941066
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.07646265920478505
+  mini_epochs                    = 10
+  minibatch_size                 = 8192
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.14854626222180276
+  flying_angular_velocity        = 1.0957516670519487
+  angvelClipMin                  = -0.3385095362153706
+  angvelClipMax                  = 0.7861530047318089
+  angvelPenaltyThresHigh         = 0.5630240186354891
+  angvelPenaltyThresLow          = -0.798622184616081
+  rotate_reward_scale            = 2.4573459171884333
+  obj_linvel_penalty_scale       = -0.09106119346535961
+  torque_penalty_scale           = -0.022992388735710745
+  rotate_penalty_scale           = -0.09257689243929126
+  axial_tilt_penalty_scale       = -1.0191133151413112
+  axial_tilt_threshold           = 0.02754232775272581
+  position_penalty_scale         = -0.24390913058318803
+  flying_base_movement_penalty_scale = -0.09936952706918337
+  waypoint_tracking_reward_scale = 7.833957210099288
+  waypoint_sigma                 = 0.4168179660931572
+输出目录: outputs/TP_V1/optuna_trial_0032
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 32 训练失败
+STDERR:
+.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0005473848430414579', 'train.ppo.weight_decay=2.1221803635818413e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.004812274636941066', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.07646265920478505', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.14854626222180276', 'task.env.flyingHand.angularVelocity=1.0957516670519487', 'task.env.reward.angvelClipMin=-0.3385095362153706', 'task.env.reward.angvelClipMax=0.7861530047318089', 'task.env.reward.angvelPenaltyThresHigh=0.5630240186354891', 'task.env.reward.angvelPenaltyThresLow=-0.798622184616081', 'task.env.reward.rotate_reward_scale=2.4573459171884333', 'task.env.reward.obj_linvel_penalty_scale=-0.09106119346535961', 'task.env.reward.torque_penalty_scale=-0.022992388735710745', 'task.env.reward.rotate_penalty_scale=-0.09257689243929126', 'task.env.reward.axial_tilt_penalty_scale=-1.0191133151413112', 'task.env.reward.axial_tilt_threshold=0.02754232775272581', 'task.env.reward.position_penalty_scale=-0.24390913058318803', 'task.env.reward.flying_base_movement_penalty_scale=-0.09936952706918337', 'task.env.reward.waypoint_tracking_reward_scale=7.833957210099288', 'task.env.reward.waypoint_sigma=0.4168179660931572', 'train.ppo.output_name=TP_V1/optuna_trial_0032', 'seed=74']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 32 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               8,192
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0032', 'seed=74']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                        [I 2025-12-04 23:55:04,678] Trial 32 pruned. 
+Best trial: 13. Best value: 2531.69:  80%|████████  | 32/40 [32:41:44<15:50, 118.84s/it]Best trial: 13. Best value: 2531.69:  80%|████████  | 32/40 [32:41:44<15:50, 118.84s/it]Best trial: 13. Best value: 2531.69:  82%|████████▎ | 33/40 [32:41:44<10:05, 86.46s/it] 
+================================================================================
+[Optuna Trial 33] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00047265835853917533
+  weight_decay                   = 3.068493003110948e-05
+  gamma                          = 0.985
+  tau                            = 0.9
+  e_clip                         = 0.3
+  entropy_coef                   = 0.004247777731475143
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.07300617705307584
+  mini_epochs                    = 10
+  minibatch_size                 = 8192
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.14366479868402557
+  flying_angular_velocity        = 1.0172191284223229
+  angvelClipMin                  = -0.3709905304838954
+  angvelClipMax                  = 0.7445594221279168
+  angvelPenaltyThresHigh         = 0.5131491379132691
+  angvelPenaltyThresLow          = -0.7647349764763611
+  rotate_reward_scale            = 1.6547927386504229
+  obj_linvel_penalty_scale       = -0.06489756534851247
+  torque_penalty_scale           = -0.016883962908672175
+  rotate_penalty_scale           = -0.08575946050841662
+  axial_tilt_penalty_scale       = -1.2607367358207735
+  axial_tilt_threshold           = 0.027453528508549607
+  position_penalty_scale         = -0.21920296145069787
+  flying_base_movement_penalty_scale = -0.08681094407869173
+  waypoint_tracking_reward_scale = 8.391761464787132
+  waypoint_sigma                 = 0.4011626952545558
+输出目录: outputs/TP_V1/optuna_trial_0033
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 33 训练失败
+STDERR:
+encil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00047265835853917533', 'train.ppo.weight_decay=3.068493003110948e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.004247777731475143', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.07300617705307584', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.14366479868402557', 'task.env.flyingHand.angularVelocity=1.0172191284223229', 'task.env.reward.angvelClipMin=-0.3709905304838954', 'task.env.reward.angvelClipMax=0.7445594221279168', 'task.env.reward.angvelPenaltyThresHigh=0.5131491379132691', 'task.env.reward.angvelPenaltyThresLow=-0.7647349764763611', 'task.env.reward.rotate_reward_scale=1.6547927386504229', 'task.env.reward.obj_linvel_penalty_scale=-0.06489756534851247', 'task.env.reward.torque_penalty_scale=-0.016883962908672175', 'task.env.reward.rotate_penalty_scale=-0.08575946050841662', 'task.env.reward.axial_tilt_penalty_scale=-1.2607367358207735', 'task.env.reward.axial_tilt_threshold=0.027453528508549607', 'task.env.reward.position_penalty_scale=-0.21920296145069787', 'task.env.reward.flying_base_movement_penalty_scale=-0.08681094407869173', 'task.env.reward.waypoint_tracking_reward_scale=8.391761464787132', 'task.env.reward.waypoint_sigma=0.4011626952545558', 'train.ppo.output_name=TP_V1/optuna_trial_0033', 'seed=75']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 33 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=======
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               8,192
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0033', 'seed=75']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:55:15,656] Trial 33 pruned. 
+Best trial: 13. Best value: 2531.69:  82%|████████▎ | 33/40 [32:41:55<10:05, 86.46s/it]Best trial: 13. Best value: 2531.69:  82%|████████▎ | 33/40 [32:41:55<10:05, 86.46s/it]Best trial: 13. Best value: 2531.69:  85%|████████▌ | 34/40 [32:41:55<06:22, 63.81s/it]
+================================================================================
+[Optuna Trial 34] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0006973998870799447
+  weight_decay                   = 2.455481486678523e-05
+  gamma                          = 0.985
+  tau                            = 0.9
+  e_clip                         = 0.3
+  entropy_coef                   = 0.0036070924014102073
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.07645011654974941
+  mini_epochs                    = 9
+  minibatch_size                 = 8192
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.1581054134211078
+  flying_angular_velocity        = 1.2778395853244744
+  angvelClipMin                  = -0.22236158997052446
+  angvelClipMax                  = 0.828189080015629
+  angvelPenaltyThresHigh         = 0.9353799273012801
+  angvelPenaltyThresLow          = -0.7350092144021576
+  rotate_reward_scale            = 1.5141115488782744
+  obj_linvel_penalty_scale       = -0.09942404153040141
+  torque_penalty_scale           = -0.013798140652386876
+  rotate_penalty_scale           = -0.07286975459543574
+  axial_tilt_penalty_scale       = -1.1422105392358979
+  axial_tilt_threshold           = 0.024309443899334655
+  position_penalty_scale         = -0.19338717755578635
+  flying_base_movement_penalty_scale = -0.06195875294198433
+  waypoint_tracking_reward_scale = 8.80971357034119
+  waypoint_sigma                 = 0.3570966155227681
+输出目录: outputs/TP_V1/optuna_trial_0034
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 34 训练失败
+STDERR:
+v.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0006973998870799447', 'train.ppo.weight_decay=2.455481486678523e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.0036070924014102073', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.07645011654974941', 'train.ppo.mini_epochs=9', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.1581054134211078', 'task.env.flyingHand.angularVelocity=1.2778395853244744', 'task.env.reward.angvelClipMin=-0.22236158997052446', 'task.env.reward.angvelClipMax=0.828189080015629', 'task.env.reward.angvelPenaltyThresHigh=0.9353799273012801', 'task.env.reward.angvelPenaltyThresLow=-0.7350092144021576', 'task.env.reward.rotate_reward_scale=1.5141115488782744', 'task.env.reward.obj_linvel_penalty_scale=-0.09942404153040141', 'task.env.reward.torque_penalty_scale=-0.013798140652386876', 'task.env.reward.rotate_penalty_scale=-0.07286975459543574', 'task.env.reward.axial_tilt_penalty_scale=-1.1422105392358979', 'task.env.reward.axial_tilt_threshold=0.024309443899334655', 'task.env.reward.position_penalty_scale=-0.19338717755578635', 'task.env.reward.flying_base_movement_penalty_scale=-0.06195875294198433', 'task.env.reward.waypoint_tracking_reward_scale=8.80971357034119', 'task.env.reward.waypoint_sigma=0.3570966155227681', 'train.ppo.output_name=TP_V1/optuna_trial_0034', 'seed=76']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 34 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+========
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               8,192
+Mini Epochs:                  9
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0034', 'seed=76']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:55:26,621] Trial 34 pruned. 
+Best trial: 13. Best value: 2531.69:  85%|████████▌ | 34/40 [32:42:06<06:22, 63.81s/it]Best trial: 13. Best value: 2531.69:  85%|████████▌ | 34/40 [32:42:06<06:22, 63.81s/it]Best trial: 13. Best value: 2531.69:  88%|████████▊ | 35/40 [32:42:06<03:59, 47.96s/it]
+================================================================================
+[Optuna Trial 35] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0004134480280778196
+  weight_decay                   = 1.6097066854250033e-05
+  gamma                          = 0.992
+  tau                            = 0.9
+  e_clip                         = 0.1
+  entropy_coef                   = 0.005547244484487935
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.0688239635554467
+  mini_epochs                    = 10
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.05634472113802634
+  flying_angular_velocity        = 2.5654201059749435
+  angvelClipMin                  = -0.2007501898129859
+  angvelClipMax                  = 0.7302142772496626
+  angvelPenaltyThresHigh         = 0.5662358247462808
+  angvelPenaltyThresLow          = -0.7769102824759805
+  rotate_reward_scale            = 1.902886278093131
+  obj_linvel_penalty_scale       = -0.17921970604194168
+  torque_penalty_scale           = -0.019845344163972902
+  rotate_penalty_scale           = -0.03077200685319912
+  axial_tilt_penalty_scale       = -1.384845103561497
+  axial_tilt_threshold           = 0.02942889627869011
+  position_penalty_scale         = -0.2708732063590563
+  flying_base_movement_penalty_scale = -0.16197079434658795
+  waypoint_tracking_reward_scale = 6.550097646500605
+  waypoint_sigma                 = 0.45949219184605894
+输出目录: outputs/TP_V1/optuna_trial_0035
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 35 训练失败
+STDERR:
+v.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0004134480280778196', 'train.ppo.weight_decay=1.6097066854250033e-05', 'train.ppo.gamma=0.992', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.1', 'train.ppo.entropy_coef=0.005547244484487935', 'train.ppo.critic_coef=1.0', 'train.ppo.kl_threshold=0.0688239635554467', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.05634472113802634', 'task.env.flyingHand.angularVelocity=2.5654201059749435', 'task.env.reward.angvelClipMin=-0.2007501898129859', 'task.env.reward.angvelClipMax=0.7302142772496626', 'task.env.reward.angvelPenaltyThresHigh=0.5662358247462808', 'task.env.reward.angvelPenaltyThresLow=-0.7769102824759805', 'task.env.reward.rotate_reward_scale=1.902886278093131', 'task.env.reward.obj_linvel_penalty_scale=-0.17921970604194168', 'task.env.reward.torque_penalty_scale=-0.019845344163972902', 'task.env.reward.rotate_penalty_scale=-0.03077200685319912', 'task.env.reward.axial_tilt_penalty_scale=-1.384845103561497', 'task.env.reward.axial_tilt_threshold=0.02942889627869011', 'task.env.reward.position_penalty_scale=-0.2708732063590563', 'task.env.reward.flying_base_movement_penalty_scale=-0.16197079434658795', 'task.env.reward.waypoint_tracking_reward_scale=6.550097646500605', 'task.env.reward.waypoint_sigma=0.45949219184605894', 'train.ppo.output_name=TP_V1/optuna_trial_0035', 'seed=77']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 35 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+======
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               16,384
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0035', 'seed=77']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:55:37,651] Trial 35 pruned. 
+Best trial: 13. Best value: 2531.69:  88%|████████▊ | 35/40 [32:42:17<03:59, 47.96s/it]Best trial: 13. Best value: 2531.69:  88%|████████▊ | 35/40 [32:42:17<03:59, 47.96s/it]Best trial: 13. Best value: 2531.69:  90%|█████████ | 36/40 [32:42:17<02:27, 36.88s/it]
+================================================================================
+[Optuna Trial 36] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0008515965229749721
+  weight_decay                   = 1.283200570048948e-05
+  gamma                          = 0.985
+  tau                            = 0.9
+  e_clip                         = 0.1
+  entropy_coef                   = 0.00441652598158536
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.05339434582940226
+  mini_epochs                    = 6
+  minibatch_size                 = 8192
+  grad_norm                      = 2.0
+  num_envs                       = 4096
+  horizon_length                 = 16
+  flying_linear_velocity         = 0.058903983610970684
+  flying_angular_velocity        = 2.7675568443649503
+  angvelClipMin                  = -0.1770015730222286
+  angvelClipMax                  = 0.7781378462551647
+  angvelPenaltyThresHigh         = 0.6701336311467709
+  angvelPenaltyThresLow          = -0.7513468315379684
+  rotate_reward_scale            = 2.1469492015681007
+  obj_linvel_penalty_scale       = -0.08191750024749758
+  torque_penalty_scale           = -0.026431333049563226
+  rotate_penalty_scale           = -0.059716149483336006
+  axial_tilt_penalty_scale       = -1.2855634510843765
+  axial_tilt_threshold           = 0.03188361993462433
+  position_penalty_scale         = -0.2879209754189354
+  flying_base_movement_penalty_scale = -0.05160985068149048
+  waypoint_tracking_reward_scale = 8.2499350429696
+  waypoint_sigma                 = 0.2996796292823354
+输出目录: outputs/TP_V1/optuna_trial_0036
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 36 训练失败
+STDERR:
+env.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0008515965229749721', 'train.ppo.weight_decay=1.283200570048948e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.1', 'train.ppo.entropy_coef=0.00441652598158536', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.05339434582940226', 'train.ppo.mini_epochs=6', 'train.ppo.minibatch_size=8192', 'train.ppo.grad_norm=2.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=16', 'task.env.flyingHand.linearVelocity=0.058903983610970684', 'task.env.flyingHand.angularVelocity=2.7675568443649503', 'task.env.reward.angvelClipMin=-0.1770015730222286', 'task.env.reward.angvelClipMax=0.7781378462551647', 'task.env.reward.angvelPenaltyThresHigh=0.6701336311467709', 'task.env.reward.angvelPenaltyThresLow=-0.7513468315379684', 'task.env.reward.rotate_reward_scale=2.1469492015681007', 'task.env.reward.obj_linvel_penalty_scale=-0.08191750024749758', 'task.env.reward.torque_penalty_scale=-0.026431333049563226', 'task.env.reward.rotate_penalty_scale=-0.059716149483336006', 'task.env.reward.axial_tilt_penalty_scale=-1.2855634510843765', 'task.env.reward.axial_tilt_threshold=0.03188361993462433', 'task.env.reward.position_penalty_scale=-0.2879209754189354', 'task.env.reward.flying_base_movement_penalty_scale=-0.05160985068149048', 'task.env.reward.waypoint_tracking_reward_scale=8.2499350429696', 'task.env.reward.waypoint_sigma=0.2996796292823354', 'train.ppo.output_name=TP_V1/optuna_trial_0036', 'seed=78']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 36 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+=========
+环境数量 (num_actors):        4,096
+Horizon 长度:                 16
+Batch Size:                   65,536 = 4,096 × 16
+Minibatch Size:               8,192
+Mini Epochs:                  6
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0036', 'seed=78']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:55:46,478] Trial 36 pruned. 
+Best trial: 13. Best value: 2531.69:  90%|█████████ | 36/40 [32:42:26<02:27, 36.88s/it]Best trial: 13. Best value: 2531.69:  90%|█████████ | 36/40 [32:42:26<02:27, 36.88s/it]Best trial: 13. Best value: 2531.69:  92%|█████████▎| 37/40 [32:42:26<01:25, 28.46s/it]
+================================================================================
+[Optuna Trial 37] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.00018697122952860112
+  weight_decay                   = 2.2930769628769785e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.3
+  entropy_coef                   = 0.007572220427916127
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.0642516023310302
+  mini_epochs                    = 10
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 32
+  flying_linear_velocity         = 0.08935099456653108
+  flying_angular_velocity        = 2.27202437877646
+  angvelClipMin                  = -0.36179693652992595
+  angvelClipMax                  = 0.6721738779082538
+  angvelPenaltyThresHigh         = 0.8765838170329034
+  angvelPenaltyThresLow          = -0.5301135374611047
+  rotate_reward_scale            = 1.7163519357944732
+  obj_linvel_penalty_scale       = -0.11510378076749436
+  torque_penalty_scale           = -0.02982437366174196
+  rotate_penalty_scale           = -0.04848531515376428
+  axial_tilt_penalty_scale       = -1.4875470845929997
+  axial_tilt_threshold           = 0.03956505147637704
+  position_penalty_scale         = -0.23895800161428818
+  flying_base_movement_penalty_scale = -0.07947146020572005
+  waypoint_tracking_reward_scale = 7.303807607187526
+  waypoint_sigma                 = 0.49241117554217423
+输出目录: outputs/TP_V1/optuna_trial_0037
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 37 训练失败
+STDERR:
+.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.00018697122952860112', 'train.ppo.weight_decay=2.2930769628769785e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.9', 'train.ppo.e_clip=0.3', 'train.ppo.entropy_coef=0.007572220427916127', 'train.ppo.critic_coef=0.5', 'train.ppo.kl_threshold=0.0642516023310302', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=32', 'task.env.flyingHand.linearVelocity=0.08935099456653108', 'task.env.flyingHand.angularVelocity=2.27202437877646', 'task.env.reward.angvelClipMin=-0.36179693652992595', 'task.env.reward.angvelClipMax=0.6721738779082538', 'task.env.reward.angvelPenaltyThresHigh=0.8765838170329034', 'task.env.reward.angvelPenaltyThresLow=-0.5301135374611047', 'task.env.reward.rotate_reward_scale=1.7163519357944732', 'task.env.reward.obj_linvel_penalty_scale=-0.11510378076749436', 'task.env.reward.torque_penalty_scale=-0.02982437366174196', 'task.env.reward.rotate_penalty_scale=-0.04848531515376428', 'task.env.reward.axial_tilt_penalty_scale=-1.4875470845929997', 'task.env.reward.axial_tilt_threshold=0.03956505147637704', 'task.env.reward.position_penalty_scale=-0.23895800161428818', 'task.env.reward.flying_base_movement_penalty_scale=-0.07947146020572005', 'task.env.reward.waypoint_tracking_reward_scale=7.303807607187526', 'task.env.reward.waypoint_sigma=0.49241117554217423', 'train.ppo.output_name=TP_V1/optuna_trial_0037', 'seed=79']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 37 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+======
+环境数量 (num_actors):        4,096
+Horizon 长度:                 32
+Batch Size:                   131,072 = 4,096 × 32
+Minibatch Size:               16,384
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0037', 'seed=79']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:55:57,330] Trial 37 pruned. 
+Best trial: 13. Best value: 2531.69:  92%|█████████▎| 37/40 [32:42:36<01:25, 28.46s/it]Best trial: 13. Best value: 2531.69:  92%|█████████▎| 37/40 [32:42:36<01:25, 28.46s/it]Best trial: 13. Best value: 2531.69:  95%|█████████▌| 38/40 [32:42:36<00:46, 23.18s/it]
+================================================================================
+[Optuna Trial 38] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0003216581955106129
+  weight_decay                   = 2.7618891173382138e-05
+  gamma                          = 0.985
+  tau                            = 0.95
+  e_clip                         = 0.1
+  entropy_coef                   = 0.004703132026014044
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.04004656977339545
+  mini_epochs                    = 9
+  minibatch_size                 = 32768
+  grad_norm                      = 1.0
+  num_envs                       = 4096
+  horizon_length                 = 16
+  flying_linear_velocity         = 0.11972598778593538
+  flying_angular_velocity        = 1.7355226452631376
+  angvelClipMin                  = -0.3006810332385591
+  angvelClipMax                  = 0.8535682796663222
+  angvelPenaltyThresHigh         = 0.9433774774438191
+  angvelPenaltyThresLow          = -0.723404849612225
+  rotate_reward_scale            = 1.4543990843251962
+  obj_linvel_penalty_scale       = -0.19155112656358586
+  torque_penalty_scale           = -0.012425130974671373
+  rotate_penalty_scale           = -0.09980106784155156
+  axial_tilt_penalty_scale       = -1.3844279971238627
+  axial_tilt_threshold           = 0.046064398745366865
+  position_penalty_scale         = -0.25753870100859155
+  flying_base_movement_penalty_scale = -0.06818109505957093
+  waypoint_tracking_reward_scale = 9.453253275491287
+  waypoint_sigma                 = 0.41078955957114516
+输出目录: outputs/TP_V1/optuna_trial_0038
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 38 训练失败
+STDERR:
+ncil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0003216581955106129', 'train.ppo.weight_decay=2.7618891173382138e-05', 'train.ppo.gamma=0.985', 'train.ppo.tau=0.95', 'train.ppo.e_clip=0.1', 'train.ppo.entropy_coef=0.004703132026014044', 'train.ppo.critic_coef=1.0', 'train.ppo.kl_threshold=0.04004656977339545', 'train.ppo.mini_epochs=9', 'train.ppo.minibatch_size=32768', 'train.ppo.grad_norm=1.0', 'task.env.numEnvs=4096', 'train.ppo.horizon_length=16', 'task.env.flyingHand.linearVelocity=0.11972598778593538', 'task.env.flyingHand.angularVelocity=1.7355226452631376', 'task.env.reward.angvelClipMin=-0.3006810332385591', 'task.env.reward.angvelClipMax=0.8535682796663222', 'task.env.reward.angvelPenaltyThresHigh=0.9433774774438191', 'task.env.reward.angvelPenaltyThresLow=-0.723404849612225', 'task.env.reward.rotate_reward_scale=1.4543990843251962', 'task.env.reward.obj_linvel_penalty_scale=-0.19155112656358586', 'task.env.reward.torque_penalty_scale=-0.012425130974671373', 'task.env.reward.rotate_penalty_scale=-0.09980106784155156', 'task.env.reward.axial_tilt_penalty_scale=-1.3844279971238627', 'task.env.reward.axial_tilt_threshold=0.046064398745366865', 'task.env.reward.position_penalty_scale=-0.25753870100859155', 'task.env.reward.flying_base_movement_penalty_scale=-0.06818109505957093', 'task.env.reward.waypoint_tracking_reward_scale=9.453253275491287', 'task.env.reward.waypoint_sigma=0.41078955957114516', 'train.ppo.output_name=TP_V1/optuna_trial_0038', 'seed=80']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 38 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+========
+环境数量 (num_actors):        4,096
+Horizon 长度:                 16
+Batch Size:                   65,536 = 4,096 × 16
+Minibatch Size:               32,768
+Mini Epochs:                  9
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0038', 'seed=80']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:56:06,426] Trial 38 pruned. 
+Best trial: 13. Best value: 2531.69:  95%|█████████▌| 38/40 [32:42:45<00:46, 23.18s/it]Best trial: 13. Best value: 2531.69:  95%|█████████▌| 38/40 [32:42:45<00:46, 23.18s/it]Best trial: 13. Best value: 2531.69:  98%|█████████▊| 39/40 [32:42:45<00:18, 18.96s/it]
+================================================================================
+[Optuna Trial 39] 开始训练
+================================================================================
+试验参数:
+  learning_rate                  = 0.0005936938368350505
+  weight_decay                   = 1.4373090009309608e-05
+  gamma                          = 0.99
+  tau                            = 0.85
+  e_clip                         = 0.2
+  entropy_coef                   = 0.005251867878929306
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.07340358310628
+  mini_epochs                    = 10
+  minibatch_size                 = 16384
+  grad_norm                      = 0.5
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.1984895650776985
+  flying_angular_velocity        = 2.1756771787814424
+  angvelClipMin                  = -0.2535891124503218
+  angvelClipMax                  = 0.8992203826090839
+  angvelPenaltyThresHigh         = 0.5007155905004976
+  angvelPenaltyThresLow          = -0.6951754613207441
+  rotate_reward_scale            = 1.572520546453569
+  obj_linvel_penalty_scale       = -0.1758898497089189
+  torque_penalty_scale           = -0.021301208507933038
+  rotate_penalty_scale           = -0.04356343489429577
+  axial_tilt_penalty_scale       = -1.322012395412532
+  axial_tilt_threshold           = 0.023032003418054725
+  position_penalty_scale         = -0.18995127389234254
+  flying_base_movement_penalty_scale = -0.11466714230437472
+  waypoint_tracking_reward_scale = 5.853545784603371
+  waypoint_sigma                 = 0.3186035531234836
+输出目录: outputs/TP_V1/optuna_trial_0039
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (162,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+[错误] Trial 39 训练失败
+STDERR:
+.env.pencil_tilt_threshold=0.06', 'task.env.actionSpace.disableRingLittleFinger=True', 'train.ppo.learning_rate=0.0005936938368350505', 'train.ppo.weight_decay=1.4373090009309608e-05', 'train.ppo.gamma=0.99', 'train.ppo.tau=0.85', 'train.ppo.e_clip=0.2', 'train.ppo.entropy_coef=0.005251867878929306', 'train.ppo.critic_coef=2.0', 'train.ppo.kl_threshold=0.07340358310628', 'train.ppo.mini_epochs=10', 'train.ppo.minibatch_size=16384', 'train.ppo.grad_norm=0.5', 'task.env.numEnvs=8192', 'train.ppo.horizon_length=24', 'task.env.flyingHand.linearVelocity=0.1984895650776985', 'task.env.flyingHand.angularVelocity=2.1756771787814424', 'task.env.reward.angvelClipMin=-0.2535891124503218', 'task.env.reward.angvelClipMax=0.8992203826090839', 'task.env.reward.angvelPenaltyThresHigh=0.5007155905004976', 'task.env.reward.angvelPenaltyThresLow=-0.6951754613207441', 'task.env.reward.rotate_reward_scale=1.572520546453569', 'task.env.reward.obj_linvel_penalty_scale=-0.1758898497089189', 'task.env.reward.torque_penalty_scale=-0.021301208507933038', 'task.env.reward.rotate_penalty_scale=-0.04356343489429577', 'task.env.reward.axial_tilt_penalty_scale=-1.322012395412532', 'task.env.reward.axial_tilt_threshold=0.023032003418054725', 'task.env.reward.position_penalty_scale=-0.18995127389234254', 'task.env.reward.flying_base_movement_penalty_scale=-0.11466714230437472', 'task.env.reward.waypoint_tracking_reward_scale=5.853545784603371', 'task.env.reward.waypoint_sigma=0.3186035531234836', 'train.ppo.output_name=TP_V1/optuna_trial_0039', 'seed=81']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+
+[错误] Trial 39 训练失败
+异常类型: TrialPruned
+异常信息: 
+
+完整调用栈:
+Traceback (most recent call last):
+  File "optuna/tune_teacher.py", line 297, in objective
+    raise optuna.exceptions.TrialPruned()
+optuna.exceptions.TrialPruned
+
+进程返回码: 1
+STDOUT最后500字符:
+======
+环境数量 (num_actors):        8,192
+Horizon 长度:                 24
+Batch Size:                   196,608 = 8,192 × 24
+Minibatch Size:               16,384
+Mini Epochs:                  10
+观察维度 (obs_shape):         162
+动作维度 (actions_num):       19
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 1.0000
+
+
+STDERR最后500字符:
+utput_name=TP_V1/optuna_trial_0039', 'seed=81']
+Traceback (most recent call last):
+  File "train.py", line 151, in main
+    train_result = agent.train()
+  File "/home/user/Code/LinkerPenspin/penspin/algo/ppo/ppo_rl_teacher.py", line 415, in train
+    self.writer.add_scalar('curriculum/progress', self.env.time_warper.progress, self.agent_steps)
+AttributeError: 'TimeWarpingOrchestrator' object has no attribute 'progress'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+                                                                                       [I 2025-12-04 23:56:19,713] Trial 39 pruned. 
+Best trial: 13. Best value: 2531.69:  98%|█████████▊| 39/40 [32:42:59<00:18, 18.96s/it]Best trial: 13. Best value: 2531.69:  98%|█████████▊| 39/40 [32:42:59<00:18, 18.96s/it]Best trial: 13. Best value: 2531.69: 100%|██████████| 40/40 [32:42:59<00:00, 17.25s/it]Best trial: 13. Best value: 2531.69: 100%|██████████| 40/40 [32:42:59<00:00, 2944.48s/it]
+
+================================================================================
+优化完成！
+================================================================================
+完成的试验数:     40
+成功完成的试验:   21
+最佳综合评分:     2531.69
+最佳试验编号:     13
+
+最佳超参数:
+--------------------------------------------------------------------------------
+  learning_rate                  = 0.0004988620204062084
+  weight_decay                   = 1.1073239861215819e-05
+  gamma                          = 0.99
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.002953067408129904
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.07994355842066564
+  mini_epochs                    = 9
+  minibatch_size                 = 16384
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  flying_linear_velocity         = 0.07342083828556274
+  flying_angular_velocity        = 1.9483294472562382
+  angvelClipMin                  = -0.2531536273678795
+  angvelClipMax                  = 0.8221276384763581
+  angvelPenaltyThresHigh         = 0.65477426123904
+  angvelPenaltyThresLow          = -0.7977987753439719
+  rotate_reward_scale            = 1.2749973970970874
+  obj_linvel_penalty_scale       = -0.15014485319378934
+  torque_penalty_scale           = -0.02398319337298298
+  rotate_penalty_scale           = -0.09671560759396386
+  axial_tilt_penalty_scale       = -1.9410579908184946
+  axial_tilt_threshold           = 0.041676147157687214
+  position_penalty_scale         = -0.28891224992715936
+  flying_base_movement_penalty_scale = -0.0713603140923449
+  waypoint_tracking_reward_scale = 6.645477814909902
+  waypoint_sigma                 = 0.03695038685068187
+================================================================================
+
+最佳参数已保存到: optuna/best_params_TP_V1.txt
+参数重要性图已保存到: optuna/param_importances_TP_V1.html
+优化历史图已保存到: optuna/optimization_history_TP_V1.html

@@ -6,7 +6,7 @@ eval_cache_name: debug
 
 env:
   initPoseMode: 'high'
-  numEnvs: ${resolve_default:8192,${...num_envs}}
+  numEnvs: ${resolve_default:4096,${...num_envs}}
   numObservations: 126 # 这个参数在vec_tast用到 21*2*3
   # ============================================================
   # numActions 说明：
@@ -20,7 +20,7 @@ env:
   # │ 无 Flying + 禁用 ring/little   │ 13 DoF                     │
   # └─────────────────────────────────────────────────────────────┘
   # ============================================================
-  numActions: 27 # Flying Hand (6) + 全部手指 (21) = 27
+  numActions: 21 # 默认关闭 Flying Hand，使用固定底座的 21 DoF
   envSpacing: 0.5
   
   # ============================================================
@@ -42,7 +42,7 @@ env:
   #   - 角速度: 2.0 rad/s (约 115°/s，允许适度翻转)
   # ============================================================
   flyingHand:
-    enabled: True              # 是否启用 Flying Hand
+    enabled: False             # 默认关闭 Flying Hand（可在命令行开启）
     defaultHeight: 0.35        # 默认悬浮高度 (m)
     heightLower: 0.30          # 最低高度限制 (m)
     heightUpper: 0.40          # 最高高度限制 (m)
@@ -55,10 +55,20 @@ env:
     basePgain: 10000.0         # 位置增益 (极高以实现刚性位控)
     baseDgain: 200.0           # 速度增益 (配合高P增益的阻尼)
   asset:
-    # Flying Hand URDF (带 6 DoF 浮空底座)
-    # 原始 URDF: 'assets/linker_hand/L25_dof_urdf.urdf' (21 DoF, 固定底座)
-    # Flying URDF: 'assets/linker_hand/L25_dof_urdf_flying.urdf' (27 DoF, 浮空底座)
-    handAsset: 'assets/linker_hand/L25_dof_urdf_flying.urdf' # Flying Hand
+    # 默认使用固定底座 URDF，禁用 Flying Hand
+    # Flying 版本: 'assets/linker_hand/L25_dof_urdf_flying.urdf' (27 DoF)
+    handAsset: 'assets/linker_hand/L25_dof_urdf.urdf'
+  
+  # ============================================================
+  # 手部基座初始化位置 (Hand Base Initial Pose)
+  # ============================================================
+  # 这些值来自 interactive_tune.py 的输出
+  # 用于非 Flying Hand 模式下设置手的 URDF Transform
+  # Flying Hand 模式下这些值由虚拟关节的初始值控制
+  # ============================================================
+  handBaseInit:
+    position: [0.0, 0.0, 0.35]    # [px, py, pz] 米
+    rotation: [0.0, -1.31, 0.0]   # [rx, ry, rz] 欧拉角（弧度）
   
   # ============================================================
   # 动作空间配置 (Action Space Configuration)
@@ -88,10 +98,11 @@ env:
     controlFrequencyInv: 10  # 20Hz
     # PD 增益和力矩限制已调整以适配 LinkerPen (45g)
     # 原始参数 (pgain=3, dgain=0.1, torque_limit=0.7) 对应 20g 的笔
-    pgain: 6                  # 提高位置增益，增强刚性
-    dgain: 0.2                # 相应提高阻尼
-    action_scale: 0.04167
-    torque_limit: 1.5         # 提高力矩限制以支持更大的 PD 输出
+    # 第一次更改 (pgain=6, dgain=0.2, torque_limit=1.5,action_scale=0.04167) ，动作很软反应迟缓
+    pgain: 15                  # 提高位置增益，增强刚性
+    dgain: 0.35                # 相应提高阻尼
+    action_scale: 0.1
+    torque_limit: 4         # 提高力矩限制以支持更大的 PD 输出
 
   # ============================================================
   # 旋转轴配置 (Rotation Axis Configuration)
@@ -126,7 +137,7 @@ env:
   relative_z_drop_threshold: 0.15  # 物体高度偏离初始位置超过此值则重置（上升或下降都算，单位:米）
   pencil_tilt_threshold: 0.08      # LinkerPen 两端高度差超过此值视为倾倒（单位:米，对应约 26° 倾斜）
 
-  grasp_cache_name: 'internal_linker'
+  grasp_cache_name: '3_30000_49_nofly'
 
   # Random forces applied to the object
   forceScale: 2.0
@@ -142,6 +153,20 @@ env:
     render_slowness: 1
 
   reward:
+    # ============================================================
+    # 角速度奖励参数 (Angular Velocity Reward)
+    # ============================================================
+    # 支持两种模式:
+    # 1. Clip-based (默认): r = clip(ω, angvelClipMin, angvelClipMax)
+    # 2. Gaussian-kernel: r = exp(-||ω - target_angvel||² / angvel_sigma²)
+    #
+    # 使用 Gaussian kernel 时设置 use_gaussian_angvel_reward: True
+    # ============================================================
+    use_gaussian_angvel_reward: True     # 是否使用高斯核角速度奖励
+    target_angvel: 3.14                   # 目标角速度 (rad/s), π rad/s ≈ 0.5 Hz
+    angvel_sigma: 1.0                     # 高斯核带宽 (σ), 越小奖励越陡峭
+    
+    # Clip-based 参数 (use_gaussian_angvel_reward=False 时使用)
     angvelClipMin: -0.5
     angvelClipMax: 0.5
     angvelPenaltyThresHigh: 1.0
@@ -186,9 +211,26 @@ env:
     # 推荐值: 
     # - waypoint_tracking_reward_scale: 0.1 ~ 1.0 (根据与 rotate_reward 的相对重要性调整)
     # - waypoint_sigma: 0.05 ~ 0.1 (越小要求越精确)
-    waypoint_tracking_reward_scale: 0.0       # 默认禁用，填充 waypoint 数据后启用
+    waypoint_tracking_reward_scale: 5.0       # 默认禁用，填充 waypoint 数据后启用
     waypoint_sigma: 0.05                      # 高斯核带宽
     waypoint_half_period_symmetric: True      # 笔具有180°对称性
+    
+    # ============================================================
+    # [Anti-Hacking] EMA 平滑和惩罚参数
+    # ============================================================
+    # 目的: 防止策略通过高频振荡 exploit 奖励系统
+    # 
+    # EMA 平滑 (仅用于速度门控):
+    # - ema_alpha: 平滑系数 (0.1~0.3)，越小越平滑但响应越慢
+    # 
+    # 惩罚参数 (基于瞬时速度):
+    # - jitter_penalty_scale: 速度变化率惩罚权重 (负值)
+    # - reverse_penalty_scale: 反向旋转惩罚权重 (负值)
+    # ============================================================
+    ema_alpha: 0.15                           # EMA 平滑系数 (仅用于速度门控)
+    jitter_penalty_scale: -0.5                # Jitter 惩罚权重 (负值)
+    reverse_penalty_scale: -1.0               # 反向旋转惩罚权重 (负值)
+    log_scale_beta: 1.0                       # 对数缩放灵敏度控制参数
   # Modified
   baseObjScale: 1.0
   randomization:
@@ -288,7 +330,6 @@ env:
     enable_obj_restitution: True
     enable_tactile: True         # Teacher默认开启触觉信息
     contact_form: 'gpu_contact'
-    contact_input: 'binary'
     enable_obj_linvel: True      # Teacher默认开启物体线速度信息，3维 [新增]
     enable_obj_angvel: True      # Teacher默认开启物体角速度信息，3维
     enable_ft_pos: True          # Teacher默认开启指尖位置信息，15维
@@ -311,6 +352,43 @@ env:
 
   # set to True if you use camera sensors in the environment
   enableCameraSensors: False
+
+  # ============================================================
+  # Space E 课程学习配置 (Curriculum Learning Configuration)
+  # ============================================================
+  # 基于动力学同构（Isomorphic Dynamics）原理的时空扭曲课程
+  #
+  # 核心思想：
+  # - 训练初期：物理世界"变慢变软"，让 Agent 有更多反应时间
+  # - 训练后期：逐渐恢复真实物理，最终在真实速度下工作
+  #
+  # 缩放因子 α 的物理意义：
+  # - α = 0.1: 时间流逝慢 10 倍，重力只有 1% (9.81 → 0.098)
+  # - α = 0.5: 时间流逝慢 2 倍，重力只有 25% (9.81 → 2.45)
+  # - α = 1.0: 真实世界速度，完整重力 (9.81)
+  #
+  # 支持模式：
+  # - 'SpaceA': Baseline，无任何缩放 (α ≡ 1.0)
+  # - 'SpaceD': 仅物理缩放，无观测/奖励逆缩放（可能导致 Value 漂移）
+  # - 'SpaceE': 完整动力学同构缩放（推荐）
+  #
+  # 注意事项：
+  # 1. Isaac Gym 的 gravity 是全局参数，所有环境必须同步更新
+  # 2. alpha_start 不建议低于 0.1，否则可能触发 PhysX sleep_threshold
+  # 3. ratio_threshold 控制物理更新触发阈值 (5% 相对变化)
+  #
+  # 成功指标配置：
+  # - success_rot_threshold: 成功旋转角度阈值 (rad)
+  # - 自适应阈值: effective_threshold = success_rot_threshold * alpha
+  # ============================================================
+  curriculum:
+    mode: 'SpaceA'               # 模式: 'SpaceE' (推荐), 'SpaceA' (Baseline), 'SpaceD' (仅物理缩放)
+    alpha_start: 0.1             # 初始时间缩放因子 (0.1 = 10倍慢放, 重力约 1%)
+    alpha_end: 1.0               # 最终时间缩放因子 (1.0 = 实时)
+    curriculum_steps: 100000000  # 课程持续总步数 (约 1亿步 / 300M 总步数)
+    ratio_threshold: 0.05        # 物理更新触发阈值 (5% 相对变化)
+    success_rot_threshold: 10.0  # 成功旋转角度阈值 (rad), 约 1.6 圈
+    use_adaptive_threshold: True # 是否使用自适应阈值 (threshold * alpha)
 
 sim:
   dt: 0.005 # 200 Hz

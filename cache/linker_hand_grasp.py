@@ -1,12 +1,12 @@
 """
 python cache/linker_hand_grasp.py
-LinkerHandGrasp - 生成基于Flying Hand的抓取初始化缓存
+python cache/linker_hand_grasp.py --no-headless  --num-envs 1
 
-使用interactive_tune.py中的triangle_grasp预设生成61维缓存:
-- 27维 hand_actual_dof: 手部实际物理位置（用于设置初始物理状态，避免穿模爆炸）
-- 27维 hand_target_dof: 手部目标位置（用于设置PD控制目标，产生抓握力）
-- 3维 object_pos: 物体位置
-- 4维 object_rot: 物体旋转
+LinkerHandGrasp - 生成抓取初始化缓存（支持 Flying / 非 Flying Hand）
+
+使用 interactive_tune.py 中的 triangle_grasp 预设生成缓存:
+- Flying Hand: 61维 [hand_actual(27) + hand_target(27) + obj_pos(3) + obj_rot(4)]
+- 非 Flying Hand: 49维 [hand_actual(21) + hand_target(21) + obj_pos(3) + obj_rot(4)]
 
 关键设计说明（零力矩陷阱解决方案）:
 - 物理位置(actual): 仿真稳定后的手指实际位置，被笔挤开后的状态
@@ -44,6 +44,17 @@ DEFAULT_CONFIG = {
     'target_samples': 30000,            # 目标生成样本数
     'stability_steps': 100,              # 需要坚持的稳定步数
     'cache_filename': 'grasp_cache.npy', # 输出缓存文件名
+
+    # 模式配置
+    'disable_flying_hand': True,        # 默认生成 非Flying Hand 版本
+    
+    # Space E 课程学习配置
+    'alpha': 0.3,                       # 时间缩放因子 (0.1-1.0)，与训练 alpha_start 一致
+    
+    # 手部基座初始化位置（来自 interactive_tune.py 的输出）
+    # 无论是否开启 Flying Hand，都使用这些值初始化手部基座 Transform
+    'hand_base_init_pos': [0.0, 0.0, 0.35],    # 手部基座位置 [px, py, pz]
+    'hand_base_init_rot': [0.0, -1.31, 0.0],   # 手部基座旋转 [rx, ry, rz] 欧拉角
     
     # 随机种子
     'seed': 42,                         # 随机种子
@@ -58,6 +69,7 @@ DEFAULT_CONFIG = {
 # 使用示例:
 # python cache/linker_hand_grasp.py --target-samples 1000 --stability-steps 30 --num-envs 8
 # python cache/linker_hand_grasp.py --no-headless --relative-z-drop-threshold 0.08 --pencil-tilt-threshold 0.15
+# python cache/linker_hand_grasp.py --alpha 0.3  # 使用与训练相同的 alpha 生成缓存
 # python cache/linker_hand_grasp.py --help  # 查看所有可用参数
 
 def parse_args():
@@ -87,6 +99,28 @@ def parse_args():
                        help=f'需要坚持的稳定步数，默认: {DEFAULT_CONFIG["stability_steps"]}')
     parser.add_argument('--cache-filename', type=str, default=DEFAULT_CONFIG['cache_filename'],
                        help=f'输出缓存文件名，默认: {DEFAULT_CONFIG["cache_filename"]}')
+
+    # 模式开关
+    parser.add_argument('--disable-flying-hand', action='store_true', default=DEFAULT_CONFIG['disable_flying_hand'],
+                       help='禁用 Flying Hand，生成非浮空底座版本的缓存 (21 DOF)')
+    parser.add_argument('--enable-flying-hand', action='store_true',
+                       help='启用 Flying Hand，生成浮空底座版本的缓存 (27 DOF)')
+    
+    # Space E 课程学习配置
+    parser.add_argument('--alpha', type=float, default=DEFAULT_CONFIG['alpha'],
+                       help=f'时间缩放因子 (0.1-1.0)，用于生成与训练相同物理环境的缓存。'
+                            f'默认: {DEFAULT_CONFIG["alpha"]}。'
+                            f'例如: --alpha 0.3 使用 alpha=0.3 的物理环境生成缓存')
+    
+    # 手部基座初始化位置（从 interactive_tune.py 复制）
+    parser.add_argument('--hand-base-pos', type=float, nargs=3, 
+                       default=DEFAULT_CONFIG['hand_base_init_pos'],
+                       metavar=('PX', 'PY', 'PZ'),
+                       help=f'手部基座位置 [px, py, pz]，默认: {DEFAULT_CONFIG["hand_base_init_pos"]}')
+    parser.add_argument('--hand-base-rot', type=float, nargs=3,
+                       default=DEFAULT_CONFIG['hand_base_init_rot'],
+                       metavar=('RX', 'RY', 'RZ'),
+                       help=f'手部基座旋转 [rx, ry, rz] 欧拉角，默认: {DEFAULT_CONFIG["hand_base_init_rot"]}')
     
     # 随机种子
     parser.add_argument('--seed', type=int, default=DEFAULT_CONFIG['seed'],
@@ -101,11 +135,20 @@ def parse_args():
     # 处理互斥参数
     if args.no_headless:
         args.headless = False
+    if args.enable_flying_hand:
+        args.disable_flying_hand = False
+    
+    # 验证 alpha 范围
+    if not 0.1 <= args.alpha <= 1.0:
+        parser.error(f'--alpha 必须在 0.1 到 1.0 之间，当前值: {args.alpha}')
     
     return args
 
-# 解析命令行参数
+# 解析命令行参数并清理 sys.argv
 args = parse_args()
+
+# 清理 sys.argv，只保留脚本名，避免与 Hydra 冲突
+sys.argv = [sys.argv[0]]
 
 # isaacgym必须在torch之前导入
 from isaacgym import gymapi
@@ -125,8 +168,12 @@ OmegaConf.register_new_resolver('resolve_default', lambda default, arg: default 
 
 from penspin.tasks.linker_hand_hora import LinkerHandHora
 from penspin.utils.robot_config import (
+    NUM_DOF,
     NUM_TOTAL_DOF_FLYING,
     FLYING_DOF_INDICES,
+    INDEX_FINGER_INDICES,
+    MIDDLE_FINGER_INDICES,
+    THUMB_FINGER_INDICES,
 )
 
 # 物体状态维度: 3 位置 + 4 旋转 = 7
@@ -135,9 +182,9 @@ NUM_OBJECT_DIMS = 7
 
 class LinkerHandGrasp(LinkerHandHora):
     """
-    基于Flying Hand的抓取姿态生成器
+    抓取姿态生成器（支持 Flying / 非 Flying Hand）
     
-    生成的缓存格式: [hand_dof(27), object_pos(3), object_rot(4)] = 34维
+    支持 Space E 时间缩放：使用 --alpha 参数在指定的物理环境下生成缓存
     """
     
     def __init__(self, config, sim_device, graphics_device_id, headless):
@@ -148,11 +195,51 @@ class LinkerHandGrasp(LinkerHandHora):
         config['env']['randomization']['scaleListInit'] = False   # 禁用缓存加载
         config['env']['numEnvs'] = args.num_envs  # 使用命令行参数
         # 禁用手指禁用功能以避免动作维度不匹配问题
-        # （缓存生成需要完整的27 DOF）
+        # （缓存生成需要完整的手指 DOF）
         if 'actionSpace' in config['env']:
             config['env']['actionSpace']['disableRingLittleFinger'] = False
+        self.disable_flying_hand = config.get('disable_flying_hand', False)
+        if self.disable_flying_hand:
+            config['env']['flyingHand']['enabled'] = False
+            config['env']['asset']['handAsset'] = 'assets/linker_hand/L25_dof_urdf.urdf'
+            config['env']['numActions'] = NUM_DOF
+        else:
+            config['env']['flyingHand']['enabled'] = True
+            config['env']['asset']['handAsset'] = 'assets/linker_hand/L25_dof_urdf_flying.urdf'
+            config['env']['numActions'] = NUM_TOTAL_DOF_FLYING
+        
+        # ============================================================
+        # Space E 课程学习配置：使用指定的 alpha 生成缓存
+        # ============================================================
+        # 设置 curriculum 配置，让父类 LinkerHandHora 使用正确的 alpha
+        # 这确保生成缓存时的物理环境与训练初期一致
+        alpha = args.alpha
+        if 'curriculum' not in config['env']:
+            config['env']['curriculum'] = {}
+        config['env']['curriculum']['mode'] = 'SpaceE' if alpha < 1.0 else 'SpaceA'
+        config['env']['curriculum']['alpha_start'] = alpha
+        config['env']['curriculum']['alpha_end'] = alpha  # 生成时保持固定 alpha
+        print(f"[LinkerHandGrasp] Space E 配置: alpha={alpha:.2f}, mode={config['env']['curriculum']['mode']}")
+        
+        # 保存 Flying Hand 初始位置和姿态（从命令行参数读取）
+        # 这些值将在 _init_object_pose 中使用
+        self.flying_base_init_pos = list(args.hand_base_pos)  # 从命令行参数获取
+        self.flying_base_init_rot = list(args.hand_base_rot)  # 从命令行参数获取
+        
+        print(f"[LinkerHandGrasp] 手部基座初始位置: {self.flying_base_init_pos}")
+        print(f"[LinkerHandGrasp] 手部基座初始旋转: {self.flying_base_init_rot} (欧拉角 rx, ry, rz)")
         
         super().__init__(config, sim_device, graphics_device_id, headless)
+        
+        # 如果 alpha < 1.0，应用 Space E 物理缩放
+        if alpha < 1.0:
+            print(f"[LinkerHandGrasp] 应用 Space E 物理缩放...")
+            self.apply_curriculum_physics()
+
+        self.base_offset = 0 if self.disable_flying_hand else len(FLYING_DOF_INDICES)
+        self.index_slice = slice(self.base_offset + INDEX_FINGER_INDICES[0], self.base_offset + INDEX_FINGER_INDICES[-1] + 1)
+        self.middle_slice = slice(self.base_offset + MIDDLE_FINGER_INDICES[0], self.base_offset + MIDDLE_FINGER_INDICES[-1] + 1)
+        self.thumb_slice = slice(self.base_offset + THUMB_FINGER_INDICES[0], self.base_offset + THUMB_FINGER_INDICES[-1] + 1)
         
         # [逻辑修正]
         self.num_canonical_poses = 3
@@ -163,11 +250,12 @@ class LinkerHandGrasp(LinkerHandHora):
         self.saved_pose_counts = torch.zeros(self.num_canonical_poses, dtype=torch.long, device=self.device)
         self.env_current_pose_id = torch.full((self.num_envs,), -1, dtype=torch.long, device=self.device)
         
-        # 保存的抓取状态缓存: 61维 
-        # [hand_actual(27) + hand_target(27) + object_pos(3) + object_rot(4)]
+        # 保存的抓取状态缓存: [hand_actual + hand_target + object_pos + object_rot]
+        # - Flying Hand: 27*2 + 7 = 61
+        # - 非 Flying: 21*2 + 7 = 49
         # - hand_actual: 仿真后实际位置（用于物理初始化，避免穿模）
         # - hand_target: 原始目标位置（用于PD控制，产生抓握力）
-        self.cache_dim = NUM_TOTAL_DOF_FLYING * 2 + NUM_OBJECT_DIMS  # 27*2 + 7 = 61
+        self.cache_dim = self.num_linker_hand_dofs * 2 + NUM_OBJECT_DIMS
         self.saved_grasping_states = torch.zeros(
             (0, self.cache_dim), 
             dtype=torch.float32, 
@@ -241,6 +329,40 @@ class LinkerHandGrasp(LinkerHandHora):
         
         self.grasp_counter = 0
         self.canonical_poses = None
+    
+    def _init_object_pose(self):
+        """覆盖父类方法，使用命令行参数中的基座位置来设置手的 Transform
+        
+        注意：无论是否开启 Flying Hand，都使用相同的手部基座初始位置
+        - 非 Flying Hand：直接设置 URDF 的 Transform
+        - Flying Hand：虚拟关节控制基座位置，但初始 Transform 也需要正确设置
+        """
+        linker_hand_start_pose = gymapi.Transform()
+        
+        # 统一使用命令行参数中的手部基座位置
+        linker_hand_start_pose.p = gymapi.Vec3(*self.flying_base_init_pos)
+        
+        # 将欧拉角 (rx, ry, rz) 转换为四元数
+        # 注意：这里使用 ZYX 顺序（先绕 Z 轴，再绕 Y 轴，最后绕 X 轴）
+        import math
+        rx, ry, rz = self.flying_base_init_rot
+        quat_x = gymapi.Quat.from_axis_angle(gymapi.Vec3(1, 0, 0), rx)
+        quat_y = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), ry)
+        quat_z = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 0, 1), rz)
+        # 组合旋转: Z * Y * X
+        linker_hand_start_pose.r = quat_z * quat_y * quat_x
+        
+        if not self.disable_flying_hand:
+            # Flying Hand 模式：使用单位变换，因为虚拟关节会控制位置
+            linker_hand_start_pose.p = gymapi.Vec3(0, 0, 0)
+            linker_hand_start_pose.r = gymapi.Quat(0, 0, 0, 1)
+        
+        # 物体初始位置（占位用，实际由 reset_idx 设置）
+        object_start_pose = gymapi.Transform()
+        object_start_pose.p = gymapi.Vec3(0, 0, 0.5)  # 随便放个位置
+        object_start_pose.r = gymapi.Quat(0, 0, 0, 1)
+        
+        return linker_hand_start_pose, object_start_pose
         
     def is_cache_complete(self):
         """检查是否所有姿态都达到了目标配额"""
@@ -253,13 +375,15 @@ class LinkerHandGrasp(LinkerHandHora):
         object_type = self.config["env"].get("object_type", "pencil")
         poses = self.canonical_pose_dict.get(object_type, self.canonical_pose_dict['pencil'])
         
-        # 转换为tensor格式: [num_poses, 34]
+        # 转换为 tensor 格式
+        # 非 Flying Hand 模式：始终保存完整 27 维数据（前 6 维用于 Transform，后 21 维用于手指 DOF）
+        # Flying Hand 模式：保存完整 27 维数据（全部用于 DOF）
         pose_list = []
         for pose in poses:
-            hand_dof = torch.tensor(pose['hand_dof'], dtype=torch.float32, device=self.device)
+            hand_dof_full = torch.tensor(pose['hand_dof'], dtype=torch.float32, device=self.device)  # 27 维
             obj_pos = torch.tensor(pose['object_pos'], dtype=torch.float32, device=self.device)
             obj_rot = torch.tensor(pose['object_rot'], dtype=torch.float32, device=self.device)
-            full_pose = torch.cat([hand_dof, obj_pos, obj_rot])
+            full_pose = torch.cat([hand_dof_full, obj_pos, obj_rot])  # 27+3+4=34
             pose_list.append(full_pose)
             
         self.canonical_poses = torch.stack(pose_list)  # [num_poses, 34]
@@ -300,27 +424,34 @@ class LinkerHandGrasp(LinkerHandHora):
         self.env_current_pose_id[env_ids] = selected_pose_ids
         
         # 4. 根据 ID 获取具体的姿态数据
-        selected_poses = self.canonical_poses[selected_pose_ids]  # [num_envs, 34]
+        selected_poses = self.canonical_poses[selected_pose_ids]
         
         # 分解姿态
-        hand_dof = selected_poses[:, :NUM_TOTAL_DOF_FLYING]  # [num_envs, 27]
-        object_pos = selected_poses[:, NUM_TOTAL_DOF_FLYING:NUM_TOTAL_DOF_FLYING+3]  # [num_envs, 3]
-        object_rot = selected_poses[:, NUM_TOTAL_DOF_FLYING+3:]  # [num_envs, 4]
+        # canonical_poses 中始终存储 27 维手部数据 + 7 维物体数据
+        hand_dof_full = selected_poses[:, :27]  # 完整 27 维
+        object_pos = selected_poses[:, 27:30]
+        object_rot = selected_poses[:, 30:34]
+        
+        # 根据 Flying Hand 模式处理手部数据
+        if self.disable_flying_hand:
+            # 非 Flying Hand 模式：只使用后 21 维手指 DOF
+            hand_dof = hand_dof_full[:, 6:]  # [N, 21] 手指 DOF
+        else:
+            # Flying Hand 模式：使用完整 27 维
+            hand_dof = hand_dof_full
         
         # 添加随机扰动
         if self.config["env"].get("randomize_init", True):
-            # 手部DOF扰动 (Flying base位置更大扰动)
+            # 手部DOF扰动
             hand_noise = torch.zeros_like(hand_dof)
-            # Flying base位置扰动
-            hand_noise[:, 0:3] = torch.randn_like(hand_noise[:, 0:3]) * 0.01
-            # Flying base旋转扰动
-            hand_noise[:, 3:6] = torch.randn_like(hand_noise[:, 3:6]) * 0.05
-            # 手指关节扰动 - 只对active手指 (index, middle, thumb)
-            # Active DOF: index(6-9), middle(14-17), thumb(22-26)
-            # Skip little(10-13) and ring(18-21) as they are disabled
-            hand_noise[:, 6:10] = torch.randn_like(hand_noise[:, 6:10]) * 0.05  # index
-            hand_noise[:, 14:18] = torch.randn_like(hand_noise[:, 14:18]) * 0.05  # middle
-            hand_noise[:, 22:27] = torch.randn_like(hand_noise[:, 22:27]) * 0.05  # thumb
+            # Flying Hand 模式下对前 6 维 base DOF 添加扰动
+            if not self.disable_flying_hand:
+                hand_noise[:, 0:3] = torch.randn_like(hand_noise[:, 0:3]) * 0.01  # 位置扰动
+                hand_noise[:, 3:6] = torch.randn_like(hand_noise[:, 3:6]) * 0.05  # 旋转扰动
+            # 手指扰动（slice 相对于当前 hand_dof 的维度）
+            hand_noise[:, self.index_slice] = torch.randn_like(hand_noise[:, self.index_slice]) * 0.05
+            hand_noise[:, self.middle_slice] = torch.randn_like(hand_noise[:, self.middle_slice]) * 0.05
+            hand_noise[:, self.thumb_slice] = torch.randn_like(hand_noise[:, self.thumb_slice]) * 0.05
             hand_dof = hand_dof + hand_noise
             
             # 物体位置扰动
@@ -328,13 +459,13 @@ class LinkerHandGrasp(LinkerHandHora):
             object_pos = object_pos + pos_noise
             
         # 应用手部DOF
-        self.linker_hand_dof_pos[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_dof
+        self.linker_hand_dof_pos[env_ids, :self.num_linker_hand_dofs] = hand_dof
         self.linker_hand_dof_vel[env_ids, :] = 0.0
         
         # 设置目标位置
-        self.prev_targets[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_dof
-        self.cur_targets[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_dof
-        self.init_pose_buf[env_ids, :NUM_TOTAL_DOF_FLYING] = hand_dof
+        self.prev_targets[env_ids, :self.num_linker_hand_dofs] = hand_dof
+        self.cur_targets[env_ids, :self.num_linker_hand_dofs] = hand_dof
+        self.init_pose_buf[env_ids, :self.num_linker_hand_dofs] = hand_dof
         
         # 应用物体状态
         object_indices = self.object_indices[env_ids]
@@ -443,10 +574,10 @@ class LinkerHandGrasp(LinkerHandHora):
         # ================================================================
         
         # 实际位置: 仿真稳定后的手指位置（被物体挤开）
-        hand_actual = self.linker_hand_dof_pos[final_env_ids, :NUM_TOTAL_DOF_FLYING].clone()
+        hand_actual = self.linker_hand_dof_pos[final_env_ids, :self.num_linker_hand_dofs].clone()
         
         # 目标位置: 原始意图（手指试图达到的位置，产生夹紧力）
-        hand_target = self.init_pose_buf[final_env_ids, :NUM_TOTAL_DOF_FLYING].clone()
+        hand_target = self.init_pose_buf[final_env_ids, :self.num_linker_hand_dofs].clone()
 
         object_indices = self.object_indices[final_env_ids]
         object_pos = self.root_state_tensor[object_indices, 0:3].clone()
@@ -499,6 +630,7 @@ def main(config):
     
     # 转换配置
     cfg_task = omegaconf_to_dict(config.task)
+    cfg_task['disable_flying_hand'] = args.disable_flying_hand
     
     # 使用命令行参数覆盖配置
     cfg_task['env']['relative_z_drop_threshold'] = args.relative_z_drop_threshold
@@ -507,6 +639,16 @@ def main(config):
     cfg_task['target_samples'] = args.target_samples
     cfg_task['stability_steps'] = args.stability_steps
     cfg_task['cache_filename'] = args.cache_filename
+    if args.disable_flying_hand:
+        cfg_task['env']['flyingHand']['enabled'] = False
+        cfg_task['env']['asset']['handAsset'] = 'assets/linker_hand/L25_dof_urdf.urdf'
+        cfg_task['env']['numActions'] = NUM_DOF
+        cfg_task['env']['numObservations'] = 6 * NUM_DOF
+    else:
+        cfg_task['env']['flyingHand']['enabled'] = True
+        cfg_task['env']['asset']['handAsset'] = 'assets/linker_hand/L25_dof_urdf_flying.urdf'
+        cfg_task['env']['numActions'] = NUM_TOTAL_DOF_FLYING
+        cfg_task['env']['numObservations'] = 6 * NUM_TOTAL_DOF_FLYING
     
     # 创建环境
     env = LinkerHandGrasp(
@@ -519,6 +661,7 @@ def main(config):
     print(f"[main] 创建了 {env.num_envs} 个环境")
     print(f"[main] 缓存维度: {env.cache_dim}")
     print(f"[main] 早期终止阈值: z_drop={env.relative_z_drop_threshold:.3f}m, tilt={env.pencil_tilt_threshold:.3f}m")
+    print(f"[main] Flying Hand: {'禁用' if env.disable_flying_hand else '启用'}")
     
     # ================================================================
     # 配置参数（使用命令行参数）
@@ -662,7 +805,11 @@ def main(config):
     print(f"[main] 失败原因统计: z_drop={fail_z_drop}, tilt={fail_tilt}")
     
     # 导出缓存
-    cache_filename = f"cache/{env.num_canonical_poses}_{env.target_per_pose * env.num_canonical_poses}_{env.cache_dim}_grasp_cache.npy"
+    total_samples = env.target_per_pose * env.num_canonical_poses
+    mode_suffix = "nofly" if env.disable_flying_hand else "flying"
+    use_custom_filename = args.cache_filename != DEFAULT_CONFIG['cache_filename']
+    cache_filename = args.cache_filename if use_custom_filename else f"cache/{env.num_canonical_poses}_{total_samples}_{env.cache_dim}_{mode_suffix}_grasp_cache.npy"
+    Path(cache_filename).parent.mkdir(parents=True, exist_ok=True)
     env.export_cache(cache_filename)
     
     print("[main] 完成!")

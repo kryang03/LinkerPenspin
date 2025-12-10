@@ -1,0 +1,920 @@
+==========================================
+启动命令
+==========================================
+完整命令:
+CUDA_VISIBLE_DEVICES=0 \
+python train.py task=LinkerHandHora headless=True seed=42 \
+  train.ppo.output_name=LinkerHandHora/spaceE_curriculum_test_20251207_173336 \
+  train.algo=PPOTeacher \
+  task.env.grasp_cache_name=3_30000_49_nofly \
+  task.env.flyingHand.enabled=False \
+  task.env.asset.handAsset='assets/linker_hand/L25_dof_urdf.urdf' \
+  task.env.numActions=21 \
+  task.env.numObservations=126 \
+  train.ppo.max_agent_steps=10000000000 \
+  task.env.initPoseMode=low \
+  task.env.relative_z_drop_threshold=0.04 \
+  task.env.pencil_tilt_threshold=0.04 \
+  
+==========================================
+
+Importing module 'gym_38' (/home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_38.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/user/Code/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+PyTorch version 2.4.1
+Device count 1
+/home/user/Code/isaacgym/python/isaacgym/_bindings/src/gymtorch
+Using /home/user/.cache/torch_extensions/py38_cu121 as PyTorch extensions root...
+Emitting ninja build file /home/user/.cache/torch_extensions/py38_cu121/gymtorch/build.ninja...
+Building extension module gymtorch...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+ninja: no work to do.
+Loading extension module gymtorch...
+task_name: LinkerHandHora
+experiment: 
+num_envs: 
+seed: 42
+physics_engine: physx
+pipeline: gpu
+sim_device: cuda:0
+rl_device: cuda:0
+graphics_device_id: 0
+num_threads: 4
+solver_type: 1
+num_subscenes: 0
+test: False
+checkpoint: 
+headless: True
+task: 
+    name: LinkerHandHora
+    physics_engine: physx
+    on_evaluation: False
+    eval_cache_name: debug
+    env: 
+        initPoseMode: low
+        numEnvs: 8192
+        numObservations: 126
+        numActions: 21
+        envSpacing: 0.5
+        flyingHand: 
+            enabled: False
+            defaultHeight: 0.35
+            heightLower: 0.3
+            heightUpper: 0.4
+            xyLimit: 0.05
+            linearVelocity: 0.1
+            angularVelocity: 2.0
+            basePgain: 10000.0
+            baseDgain: 200.0
+        asset: 
+            handAsset: assets/linker_hand/L25_dof_urdf.urdf
+        handBaseInit: 
+            position: [0.0, 0.0, 0.35]
+            rotation: [0.0, -1.31, 0.0]
+        actionSpace: 
+            disableRingLittleFinger: True
+        episodeLength: 400
+        enableDebugVis: False
+        aggregateMode: 1
+        controller: 
+            torque_control: True
+            controlFrequencyInv: 10
+            pgain: 6
+            dgain: 0.2
+            action_scale: 0.04167
+            torque_limit: 1.5
+        rotation_axis: [0, 0, 1]
+        genGrasps: False
+        genGraspCategory: pencil
+        clipObservations: 5.0
+        clipActions: 1.0
+        relative_z_drop_threshold: 0.04
+        pencil_tilt_threshold: 0.04
+        grasp_cache_name: 3_30000_49_nofly
+        forceScale: 2.0
+        randomForceProbScalar: 0.25
+        forceDecay: 0.9
+        forceDecayInterval: 0.08
+        enable_obj_ends: True
+        hora: 
+            propHistoryLen: 30
+            critic_obs_dim: 100
+            point_cloud_sampled_dim: 100
+            render_slowness: 1
+        reward: 
+            use_gaussian_angvel_reward: True
+            target_angvel: 3.14
+            angvel_sigma: 1.0
+            angvelClipMin: -0.5
+            angvelClipMax: 0.5
+            angvelPenaltyThresHigh: 1.0
+            angvelPenaltyThresLow: -0.5
+            rotate_reward_scale: 1.0
+            obj_linvel_penalty_scale: -0.3
+            torque_penalty_scale: -0.01
+            rotate_penalty_scale: 0.0
+            axial_tilt_penalty_scale: -1.5
+            axial_tilt_threshold: 0.03
+            position_penalty_scale: -0.1
+            flying_base_movement_penalty_scale: -0.1
+            waypoint_tracking_reward_scale: 0.2
+            waypoint_sigma: 0.05
+            waypoint_half_period_symmetric: True
+        baseObjScale: 1.0
+        randomization: 
+            randomizeMass: True
+            randomizeMassLower: 0.035
+            randomizeMassUpper: 0.048
+            randomizeCOM: True
+            randomizeCOMLower: -0.002
+            randomizeCOMUpper: 0.002
+            randomizeFriction: True
+            randomizeFrictionLower: 0.4
+            randomizeFrictionUpper: 1.2
+            randomizeRestitution: True
+            randomizeRestitutionLower: 0.1
+            randomizeRestitutionUpper: 0.5
+            randomizeScale: True
+            randomize_hand_scale: False
+            scaleListInit: True
+            randomizeScaleList: [1.0]
+            randomizeScaleLower: 1.0
+            randomizeScaleUpper: 1.0
+            randomizePDGains: True
+            randomizePGainLower: 2.5
+            randomizePGainUpper: 3.5
+            randomizeDGainLower: 0.09
+            randomizeDGainUpper: 0.11
+            obs_noise_e_scale: 0.01
+            obs_noise_t_scale: 0.005
+            pose_noise_scale: 0
+            action_noise_e_scale: 0.01
+            action_noise_t_scale: 0.005
+            jointNoiseScale: 0.0
+            noisy_rpy_scale: 0.1
+            noisy_pos_scale: 0.02
+        privInfo: 
+            enableObjPos: True
+            enableObjMass: True
+            enableObjCOM: True
+            enableObjFriction: True
+            enable_obj_restitution: True
+            enable_tactile: True
+            contact_form: gpu_contact
+            contact_input: binary
+            enable_obj_linvel: True
+            enable_obj_angvel: True
+            enable_ft_pos: True
+            enable_obj_orientation: True
+            enable_ft_orientation: False
+            enable_ft_linvel: True
+            enable_ft_angvel: False
+            enable_hand_scale: False
+        object: 
+            type: cylinder_linkerpen
+            evalObjectType: None
+            sampleProb: [1.0]
+        useVHACD: False
+        enableCameraSensors: False
+        curriculum: 
+            mode: SpaceE
+            alpha_start: 0.3
+            alpha_end: 1.0
+            curriculum_steps: 100000000
+            ratio_threshold: 0.05
+            success_rot_threshold: 10.0
+            use_adaptive_threshold: True
+    sim: 
+        dt: 0.005
+        substeps: 1
+        up_axis: z
+        use_gpu_pipeline: True
+        gravity: [0.0, 0.0, -9.81]
+        physx: 
+            num_threads: 4
+            solver_type: 1
+            use_gpu: True
+            num_position_iterations: 8
+            num_velocity_iterations: 0
+            max_gpu_contact_pairs: 8388608
+            num_subscenes: 0
+            contact_offset: 0.002
+            rest_offset: 0.0
+            bounce_threshold_velocity: 0.2
+            max_depenetration_velocity: 1000.0
+            default_buffer_size_multiplier: 5.0
+            contact_collection: 1
+train: 
+    seed: 42
+    algo: PPOTeacher
+    network: 
+        mlp: 
+            units: [512, 256, 128]
+        priv_mlp: 
+            units: [256, 128, 8]
+        point_mlp: 
+            units: [32, 32, 32]
+        contact_mlp: 
+            units: [32, 32, 32]
+        use_point_transformer: False
+    load_path: 
+    demon_path: None
+    ppo: 
+        output_name: LinkerHandHora/spaceE_curriculum_test_20251207_173336
+        multi_gpu: False
+        normalize_input: True
+        normalize_value: True
+        normalize_priv: True
+        normalize_point_cloud: True
+        value_bootstrap: True
+        num_actors: 8192
+        normalize_advantage: True
+        gamma: 0.99
+        tau: 0.95
+        learning_rate: 0.005
+        weight_decay: 0.0001
+        kl_threshold: 0.02
+        is_demon: True
+        horizon_length: 12
+        minibatch_size: 16384
+        mini_epochs: 5
+        clip_value: True
+        critic_coef: 4
+        entropy_coef: 0.0
+        e_clip: 0.2
+        bounds_loss_coef: 0.0
+        distill_loss_coef: 0.0
+        bc_loss_coef: 1.0
+        truncate_grads: True
+        grad_norm: 1.0
+        save_best_after: 50000000
+        save_frequency: 500
+        max_agent_steps: 500000000
+        priv_info: True
+        proprio_mode: True
+        input_mode: proprio-ends
+        use_point_cloud_info: True
+        proprio_len: 30
+        distill: False
+        priv_info_embed_dim: 8
+        proprio_adapt: False
+        asymm_actor_critic: False
+        critic_info_dim: 100
+        enable_latent_loss: False
+        use_l1: False
+    padapt: 
+        action_imitation: False
+        cache_suffix: stage2
+        with_noisy_quat: False
+        with_goal_quat: False
+        iter_per_step: 1
+        expert_fine_contact: False
+        contact_distillation: False
+        conv_with_batch_norm: False
+        use_deformable_conv: False
+        use_temporal_transformer: False
+        use_position_encoder: False
+        separate_temporal_fusion: False
+Start Building the Environment
+Hand asset file: assets/linker_hand/L25_dof_urdf.urdf
+---- Object Setup (LinkerPen) ----
+Object type: cylinder_linkerpen
+---- Object List ----
+using 1 training objects: ['linkerpen']
+
+[角速度奖励] 使用 Gaussian Kernel 模式:
+  目标角速度: 3.14 rad/s (0.500 Hz)
+  高斯核带宽 σ: 1.00
+
+======================================================================
+动作空间配置 (Action Space Configuration)
+======================================================================
+Flying Hand 启用:     False
+禁用无名指和小拇指:   True
+策略动作维度:         13
+仿真 DOF 总数:        21
+----------------------------------------------------------------------
+手部动作维度:         13
+  策略索引 [0-3]  -> middle [仿真 0-3]
+  策略索引 [4-7]  -> index  [仿真 8-11]
+  策略索引 [8-12] -> thumb  [仿真 16-20]
+禁用的仿真 DOF:       [4, 5, 6, 7, 12, 13, 14, 15]
+======================================================================
+
+[PrivInfo Verify] OK: priv_info_dim=64, total_span=64, slices=11
+
+================================================================================
+启用的特权信息 (Privileged Information) 配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定启用]
+obj_mass                       [ 3: 4]         1        [固定启用]
+obj_friction                   [ 4: 5]         1        [固定启用]
+obj_com                        [ 5: 8]         3        [固定启用]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓ 已启用
+obj_linvel                     [12:15]         3        ✓ 已启用
+obj_angvel                     [15:18]         3        ✓ 已启用
+fingertip_position             [18:33]         15       ✓ 已启用
+fingertip_linvel               [33:48]         15       ✓ 已启用
+obj_restitution                [48:49]         1        ✓ 已启用
+tactile                        [49:64]         15       ✓ 已启用
+--------------------------------------------------------------------------------
+未启用的可选特权信息:
+fingertip_orientation                                   ✗ 未启用
+fingertip_angvel                                        ✗ 未启用
+hand_scale                                              ✗ 未启用
+--------------------------------------------------------------------------------
+总计: 12 项启用, 总维度 = 64
+priv_info_dim (缓冲区大小) = 64
+================================================================================
+
+Not connected to PVD
++++ Using GPU PhysX
+Physics Engine: PhysX
+Physics Device: cuda:0
+GPU Pipeline: enabled
+[Asset] Using submesh convex decomposition for hand collision
+LinkerPen loaded: radius=0.009m, length=0.18m (no scale applied)
+
+================================================================================
+环境初始化 - 显存相关参数
+================================================================================
+num_envs (环境数量):        8192
+环境间距 (spacing):         0.5
+每行环境数 (num_per_row):   90
+手部刚体数量:               22
+物体刚体数量:               1
+总刚体数/环境:              23
+================================================================================
+开始创建 8192 个并行环境...
+================================================================================
+
+环境创建进度: 0/8192 (0.0%)
+======================================================================
+物体物理属性（随机化后的最终值）
+======================================================================
+随机化配置:
+  - 质量随机化: True [0.035, 0.048]
+  - 质心随机化: True [-0.002, 0.002]
+  - 摩擦随机化: True [0.4, 1.2]
+  - 恢复系数随机化: True [0.1, 0.5]
+本环境实际值:
+  - 总质量: 0.0454 kg (45.38 g)
+  - 摩擦系数: 0.8091
+  - 恢复系数: 0.3006
+  - 质心偏移: [0.0012404535787167228, 0.0014682892743204147, 0.0016529622102258853]
+
+====================================================================================================
+IsaacGym 物体物理属性验证 (Object Physical Properties Verification)
+====================================================================================================
+
+--- 刚体属性 (Rigid Body Properties) ---
+刚体数量: 1
+
+  [Link 0]
+    质量 (mass):           0.045378 kg (45.38 g)
+    质心 (COM):            (0.001240, 0.001468, 0.001653) m
+    惯量 (inertia):
+      Ixx: 1.77093738e-04, Ixy: 0.00000000e+00, Ixz: 0.00000000e+00
+      Iyx: 0.00000000e+00, Iyy: 1.77093738e-04, Iyz: 0.00000000e+00
+      Izx: 0.00000000e+00, Izy: 0.00000000e+00, Izz: 2.47233288e-06
+    flags:                 0
+
+  总质量 (Total Mass): 0.045378 kg (45.38 g)
+
+--- 形状属性 (Shape Properties) ---
+形状数量: 3
+
+  [Shape 0]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 1]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+  [Shape 2]
+    摩擦系数 (friction):       0.8091
+    恢复系数 (restitution):    0.3006
+    滚动摩擦 (rolling_friction): 0.0000
+    扭转摩擦 (torsion_friction): 0.0000
+    接触偏移 (contact_offset):  0.002000
+    静止偏移 (rest_offset):     0.000000
+    合规性 (compliance):       0.000000
+    厚度 (thickness):          0.000000
+
+--- 自由度属性 (DOF Properties) ---
+自由度数量: 0
+
+--- 预期值对比 (Expected from pen_gen.py) ---
+  预期尼龙主体质量:  24.39 g
+  预期铝头质量 (x2): 8.27 g × 2 = 16.54 g
+  预期总质量:        40.93 g
+  预期半径:          9 mm
+  预期总长度:        180 mm (150 + 15×2)
+环境创建进度: 2048/8192 (25.0%)环境创建进度: 4096/8192 (50.0%)环境创建进度: 6144/8192 (75.0%)环境创建进度: 8191/8192 (100.0%)动作空间已更新: (13,) (策略输出维度: 13)
+Contact Tensor Dimension [1, numRigidBody, 3] torch.Size([8192, 23, 3])
+[LinkerHandHora] 加载缓存: cache/3_30000_49_nofly_grasp_cache.npy
+  缓存形状: torch.Size([30000, 49])
+  缓存格式: 61维(actual+target)
+[旋转轴] 使用三维向量格式: [0, 0, 1] (归一化后: [0.0, 0.0, 1.0])
+
+======================================================================
+Space E 时空扭曲编排器 (Time-Warping Orchestrator)
+======================================================================
+  模式:           SpaceE
+  Alpha 范围:     0.30 -> 1.00
+  课程步数:       1.00e+08
+  相对变化阈值:   5.0%
+  当前 Alpha:     0.300
+----------------------------------------------------------------------
+  [SpaceE] 完整动力学同构缩放（推荐）
+  物理层: g'=α²g, Kp'=α²Kp, Kd'=αKd, τ'=α²τ
+  观测层: v_obs=v_sim/α, F_obs=F_sim/α²
+  奖励层: r_final=r_raw×α
+======================================================================
+
+
+[Space E Curriculum] 更新物理参数 Alpha = 0.300 (Progress: 0.0%)
+  -> 重力: -0.8829 m/s² (原始: -9.81, 缩放: 0.0900)
+  -> DOF 属性已更新: Kp_scale=0.0900, Kd_scale=0.3000, τ_scale=0.0900
+  -> 手部 Kp: 0.5400, Kd: 0.0600
+[TP_Waypoints] 正在从 7 个原始点生成密集插值 (180°对称性扩展)...
+[TP_Waypoints] 使用 180° 对称性扩展模式
+[TP_Waypoints] 原始数据相位范围: [24.2°, 162.0°]
+[TP_Waypoints] 扩展后数据点数: 14
+[TP_Waypoints] 已生成 360 个密集 waypoint
+[Waypoint Tracking] 已启用，sigma=0.05, 180°对称=True
+[Waypoint Tracking] 密集点数: 360, 比较手指: middle, index, thumb (9维)
+
+================================================================================
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+显存相关配置参数 (Memory-Critical Configuration)
+================================================================================
+环境数量 (num_actors):        8,192
+Horizon 长度:                 12
+Batch Size:                   98,304 = 8,192 × 12
+Minibatch Size:               16,384
+Mini Epochs:                  5
+观察维度 (obs_shape):         126
+动作维度 (actions_num):       13
+特权信息维度 (priv_info):     64
+Critic信息维度:               100
+点云缓冲维度:                 100
+本体感觉历史长度:             30
+================================================================================
+
+[Space E] Initializing curriculum physics with α = 0.3000
+
+[Space E Curriculum] 更新物理参数 Alpha = 0.300 (Progress: 0.0%)
+  -> 重力: -0.8829 m/s² (原始: -9.81, 缩放: 0.0900)
+  -> DOF 属性已更新: Kp_scale=0.0900, Kd_scale=0.3000, τ_scale=0.0900
+  -> 手部 Kp: 0.5400, Kd: 0.0600
+-----------------------
+episode rewards: 2.60 | episode lengths: 32.75
+episode rot angle(rad): 0.83
+episode waypoint tracking reward: 0.01
+success rate (rot>6): 0.0000 (0/2551)
+best success rate: 0.0006
+Terminations: Fall=366 | Drop=1931 | Overspeed=186
+Agent Steps: 0009M | FPS: 59234.8 | Last FPS: 58934.3 | Collect Time: 2.2 min | Train RL Time: 0.6 min | Current Best: -10000.00
+-----------------------
+episode rewards: 9.42 | episode lengths: 134.74
+episode rot angle(rad): 0.69
+episode waypoint tracking reward: 0.04
+success rate (rot>6): 0.0000 (0/581)
+best success rate: 0.0041
+Terminations: Fall=86 | Drop=276 | Overspeed=40
+Agent Steps: 0019M | FPS: 60084.6 | Last FPS: 62110.6 | Collect Time: 4.3 min | Train RL Time: 1.2 min | Current Best: -10000.00
+-----------------------
+episode rewards: 15.38 | episode lengths: 189.95
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.06
+success rate (rot>6): 0.0000 (0/459)
+best success rate: 0.0041
+Terminations: Fall=99 | Drop=147 | Overspeed=38
+Agent Steps: 0029M | FPS: 60502.7 | Last FPS: 62548.9 | Collect Time: 6.3 min | Train RL Time: 1.8 min | Current Best: -10000.00
+-----------------------
+episode rewards: 18.59 | episode lengths: 211.96
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.06
+success rate (rot>6): 0.0000 (0/469)
+best success rate: 0.0041
+Terminations: Fall=65 | Drop=156 | Overspeed=38
+Agent Steps: 0039M | FPS: 60790.0 | Last FPS: 61485.4 | Collect Time: 8.4 min | Train RL Time: 2.4 min | Current Best: -10000.00
+-----------------------
+episode rewards: 20.79 | episode lengths: 226.08
+episode rot angle(rad): 0.64
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/447)
+best success rate: 0.0041
+Terminations: Fall=50 | Drop=158 | Overspeed=38
+Agent Steps: 0049M | FPS: 60943.7 | Last FPS: 61460.7 | Collect Time: 10.4 min | Train RL Time: 3.0 min | Current Best: -10000.00
+-----------------------
+episode rewards: 21.59 | episode lengths: 231.45
+episode rot angle(rad): 0.63
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/387)
+best success rate: 0.0041
+Terminations: Fall=49 | Drop=119 | Overspeed=24
+Agent Steps: 0059M | FPS: 61095.1 | Last FPS: 61763.6 | Collect Time: 12.5 min | Train RL Time: 3.6 min | Current Best: 21.55
+-----------------------
+episode rewards: 22.70 | episode lengths: 237.06
+episode rot angle(rad): 0.62
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/407)
+best success rate: 0.0041
+Terminations: Fall=56 | Drop=125 | Overspeed=25
+Agent Steps: 0068M | FPS: 60965.6 | Last FPS: 62037.3 | Collect Time: 14.6 min | Train RL Time: 4.2 min | Current Best: 22.71
+-----------------------
+episode rewards: 23.13 | episode lengths: 238.98
+episode rot angle(rad): 0.63
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/417)
+best success rate: 0.0041
+Terminations: Fall=44 | Drop=144 | Overspeed=23
+Agent Steps: 0078M | FPS: 61088.5 | Last FPS: 61622.4 | Collect Time: 16.6 min | Train RL Time: 4.8 min | Current Best: 23.16
+-----------------------
+episode rewards: 23.50 | episode lengths: 240.96
+episode rot angle(rad): 0.64
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/444)
+best success rate: 0.0041
+Terminations: Fall=31 | Drop=155 | Overspeed=31
+Agent Steps: 0088M | FPS: 61159.4 | Last FPS: 60819.5 | Collect Time: 18.7 min | Train RL Time: 5.4 min | Current Best: 23.53
+-----------------------
+episode rewards: 23.62 | episode lengths: 241.85
+episode rot angle(rad): 0.64
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/421)
+best success rate: 0.0041
+Terminations: Fall=29 | Drop=147 | Overspeed=32
+Agent Steps: 0098M | FPS: 61238.2 | Last FPS: 62050.8 | Collect Time: 20.7 min | Train RL Time: 6.0 min | Current Best: 23.64
+-----------------------
+episode rewards: 24.21 | episode lengths: 244.66
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/434)
+best success rate: 0.0041
+Terminations: Fall=35 | Drop=133 | Overspeed=32
+Agent Steps: 0108M | FPS: 61313.2 | Last FPS: 60813.3 | Collect Time: 22.8 min | Train RL Time: 6.6 min | Current Best: 24.29
+-----------------------
+episode rewards: 24.10 | episode lengths: 243.16
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/439)
+best success rate: 0.0041
+Terminations: Fall=40 | Drop=139 | Overspeed=36
+Agent Steps: 0118M | FPS: 61386.9 | Last FPS: 61390.9 | Collect Time: 24.8 min | Train RL Time: 7.2 min | Current Best: 24.29
+-----------------------
+episode rewards: 24.38 | episode lengths: 246.22
+episode rot angle(rad): 0.64
+episode waypoint tracking reward: 0.07
+success rate (rot>6): 0.0000 (0/387)
+best success rate: 0.0041
+Terminations: Fall=36 | Drop=99 | Overspeed=34
+Agent Steps: 0127M | FPS: 61318.8 | Last FPS: 58726.2 | Collect Time: 26.9 min | Train RL Time: 7.8 min | Current Best: 24.54
+-----------------------
+episode rewards: 24.98 | episode lengths: 253.07
+episode rot angle(rad): 0.66
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/367)
+best success rate: 0.0041
+Terminations: Fall=23 | Drop=107 | Overspeed=20
+Agent Steps: 0137M | FPS: 61377.1 | Last FPS: 62330.9 | Collect Time: 28.9 min | Train RL Time: 8.4 min | Current Best: 24.98
+-----------------------
+episode rewards: 24.98 | episode lengths: 253.08
+episode rot angle(rad): 0.67
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/392)
+best success rate: 0.0041
+Terminations: Fall=29 | Drop=100 | Overspeed=28
+Agent Steps: 0147M | FPS: 61434.4 | Last FPS: 62134.3 | Collect Time: 30.9 min | Train RL Time: 9.0 min | Current Best: 25.08
+-----------------------
+episode rewards: 25.02 | episode lengths: 253.12
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0026 (1/381)
+best success rate: 0.0041
+Terminations: Fall=23 | Drop=115 | Overspeed=37
+Agent Steps: 0157M | FPS: 61509.2 | Last FPS: 61419.3 | Collect Time: 33.0 min | Train RL Time: 9.6 min | Current Best: 25.22
+-----------------------
+episode rewards: 24.86 | episode lengths: 252.94
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/370)
+best success rate: 0.0041
+Terminations: Fall=34 | Drop=102 | Overspeed=22
+Agent Steps: 0167M | FPS: 61574.2 | Last FPS: 61601.6 | Collect Time: 35.0 min | Train RL Time: 10.2 min | Current Best: 25.22
+-----------------------
+episode rewards: 25.05 | episode lengths: 253.74
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/378)
+best success rate: 0.0041
+Terminations: Fall=35 | Drop=92 | Overspeed=26
+Agent Steps: 0177M | FPS: 61615.4 | Last FPS: 61074.7 | Collect Time: 37.0 min | Train RL Time: 10.8 min | Current Best: 25.22
+-----------------------
+episode rewards: 24.84 | episode lengths: 250.55
+episode rot angle(rad): 0.65
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/409)
+best success rate: 0.0041
+Terminations: Fall=45 | Drop=116 | Overspeed=39
+Agent Steps: 0186M | FPS: 61600.1 | Last FPS: 59315.6 | Collect Time: 39.1 min | Train RL Time: 11.4 min | Current Best: 25.22
+-----------------------
+episode rewards: 25.20 | episode lengths: 253.08
+episode rot angle(rad): 0.64
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/412)
+best success rate: 0.0050
+Terminations: Fall=44 | Drop=95 | Overspeed=32
+Agent Steps: 0196M | FPS: 61591.7 | Last FPS: 62701.6 | Collect Time: 41.1 min | Train RL Time: 12.0 min | Current Best: 25.25
+-----------------------
+episode rewards: 25.31 | episode lengths: 253.45
+episode rot angle(rad): 0.63
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/406)
+best success rate: 0.0050
+Terminations: Fall=28 | Drop=88 | Overspeed=39
+Agent Steps: 0206M | FPS: 61622.7 | Last FPS: 62114.4 | Collect Time: 43.1 min | Train RL Time: 12.6 min | Current Best: 25.36
+-----------------------
+episode rewards: 26.01 | episode lengths: 258.97
+episode rot angle(rad): 0.63
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/385)
+best success rate: 0.0052
+Terminations: Fall=29 | Drop=98 | Overspeed=35
+Agent Steps: 0216M | FPS: 61657.6 | Last FPS: 62677.4 | Collect Time: 45.2 min | Train RL Time: 13.2 min | Current Best: 26.05
+-----------------------
+episode rewards: 25.98 | episode lengths: 259.50
+episode rot angle(rad): 0.62
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/371)
+best success rate: 0.0052
+Terminations: Fall=38 | Drop=63 | Overspeed=41
+Agent Steps: 0226M | FPS: 61696.4 | Last FPS: 63250.9 | Collect Time: 47.2 min | Train RL Time: 13.8 min | Current Best: 26.15
+-----------------------
+episode rewards: 26.06 | episode lengths: 260.25
+episode rot angle(rad): 0.60
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/358)
+best success rate: 0.0059
+Terminations: Fall=40 | Drop=69 | Overspeed=27
+Agent Steps: 0236M | FPS: 61734.7 | Last FPS: 62155.0 | Collect Time: 49.2 min | Train RL Time: 14.4 min | Current Best: 26.15
+-----------------------
+episode rewards: 26.67 | episode lengths: 266.00
+episode rot angle(rad): 0.59
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/363)
+best success rate: 0.0059
+Terminations: Fall=17 | Drop=69 | Overspeed=36
+Agent Steps: 0245M | FPS: 61759.3 | Last FPS: 61475.3 | Collect Time: 51.2 min | Train RL Time: 15.0 min | Current Best: 26.69
+-----------------------
+episode rewards: 27.42 | episode lengths: 272.24
+episode rot angle(rad): 0.58
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/385)
+best success rate: 0.0059
+Terminations: Fall=40 | Drop=82 | Overspeed=39
+Agent Steps: 0255M | FPS: 61711.5 | Last FPS: 61689.1 | Collect Time: 53.3 min | Train RL Time: 15.6 min | Current Best: 27.49
+-----------------------
+episode rewards: 27.80 | episode lengths: 273.51
+episode rot angle(rad): 0.59
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0028 (1/358)
+best success rate: 0.0059
+Terminations: Fall=27 | Drop=68 | Overspeed=24
+Agent Steps: 0265M | FPS: 61733.8 | Last FPS: 62677.7 | Collect Time: 55.3 min | Train RL Time: 16.2 min | Current Best: 27.81
+-----------------------
+episode rewards: 27.91 | episode lengths: 273.69
+episode rot angle(rad): 0.58
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/349)
+best success rate: 0.0059
+Terminations: Fall=30 | Drop=73 | Overspeed=31
+Agent Steps: 0275M | FPS: 61747.4 | Last FPS: 63920.0 | Collect Time: 57.4 min | Train RL Time: 16.8 min | Current Best: 28.11
+-----------------------
+episode rewards: 28.15 | episode lengths: 275.52
+episode rot angle(rad): 0.58
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/359)
+best success rate: 0.0059
+Terminations: Fall=46 | Drop=56 | Overspeed=26
+Agent Steps: 0285M | FPS: 61762.2 | Last FPS: 63005.6 | Collect Time: 59.4 min | Train RL Time: 17.4 min | Current Best: 28.27
+-----------------------
+episode rewards: 28.47 | episode lengths: 279.05
+episode rot angle(rad): 0.56
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/339)
+best success rate: 0.0059
+Terminations: Fall=27 | Drop=63 | Overspeed=34
+Agent Steps: 0295M | FPS: 61781.1 | Last FPS: 63465.9 | Collect Time: 61.4 min | Train RL Time: 18.0 min | Current Best: 28.55
+-----------------------
+episode rewards: 28.86 | episode lengths: 282.31
+episode rot angle(rad): 0.56
+episode waypoint tracking reward: 0.08
+success rate (rot>6): 0.0000 (0/361)
+best success rate: 0.0090
+Terminations: Fall=44 | Drop=50 | Overspeed=25
+Agent Steps: 0304M | FPS: 61803.6 | Last FPS: 63610.6 | Collect Time: 63.4 min | Train RL Time: 18.6 min | Current Best: 28.85
+-----------------------
+episode rewards: 28.98 | episode lengths: 284.54
+episode rot angle(rad): 0.54
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0026 (1/378)
+best success rate: 0.0090
+Terminations: Fall=22 | Drop=63 | Overspeed=35
+Agent Steps: 0314M | FPS: 61760.9 | Last FPS: 61548.3 | Collect Time: 65.5 min | Train RL Time: 19.2 min | Current Best: 29.05
+-----------------------
+episode rewards: 29.13 | episode lengths: 284.36
+episode rot angle(rad): 0.53
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/340)
+best success rate: 0.0090
+Terminations: Fall=21 | Drop=59 | Overspeed=32
+Agent Steps: 0324M | FPS: 61776.6 | Last FPS: 61758.5 | Collect Time: 67.6 min | Train RL Time: 19.8 min | Current Best: 29.14
+-----------------------
+episode rewards: 29.19 | episode lengths: 284.79
+episode rot angle(rad): 0.52
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/373)
+best success rate: 0.0090
+Terminations: Fall=35 | Drop=69 | Overspeed=22
+Agent Steps: 0334M | FPS: 61788.4 | Last FPS: 62688.4 | Collect Time: 69.6 min | Train RL Time: 20.3 min | Current Best: 29.30
+-----------------------
+episode rewards: 29.52 | episode lengths: 286.97
+episode rot angle(rad): 0.51
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/350)
+best success rate: 0.0090
+Terminations: Fall=21 | Drop=58 | Overspeed=27
+Agent Steps: 0344M | FPS: 61799.6 | Last FPS: 63420.6 | Collect Time: 71.6 min | Train RL Time: 20.9 min | Current Best: 29.56
+-----------------------
+episode rewards: 29.75 | episode lengths: 289.57
+episode rot angle(rad): 0.49
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/355)
+best success rate: 0.0090
+Terminations: Fall=33 | Drop=53 | Overspeed=29
+Agent Steps: 0353M | FPS: 61814.3 | Last FPS: 62873.0 | Collect Time: 73.6 min | Train RL Time: 21.5 min | Current Best: 29.97
+-----------------------
+episode rewards: 30.12 | episode lengths: 292.53
+episode rot angle(rad): 0.48
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/350)
+best success rate: 0.0090
+Terminations: Fall=23 | Drop=47 | Overspeed=29
+Agent Steps: 0363M | FPS: 61828.5 | Last FPS: 62133.5 | Collect Time: 75.7 min | Train RL Time: 22.1 min | Current Best: 30.18
+-----------------------
+episode rewards: 30.33 | episode lengths: 294.95
+episode rot angle(rad): 0.48
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/346)
+best success rate: 0.0090
+Terminations: Fall=30 | Drop=39 | Overspeed=26
+Agent Steps: 0373M | FPS: 61791.2 | Last FPS: 59185.9 | Collect Time: 77.8 min | Train RL Time: 22.7 min | Current Best: 30.31
+-----------------------
+episode rewards: 30.52 | episode lengths: 296.56
+episode rot angle(rad): 0.47
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/331)
+best success rate: 0.0090
+Terminations: Fall=24 | Drop=45 | Overspeed=21
+Agent Steps: 0383M | FPS: 61809.7 | Last FPS: 62365.9 | Collect Time: 79.8 min | Train RL Time: 23.3 min | Current Best: 30.53
+-----------------------
+episode rewards: 30.62 | episode lengths: 297.08
+episode rot angle(rad): 0.48
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/305)
+best success rate: 0.0090
+Terminations: Fall=25 | Drop=38 | Overspeed=26
+Agent Steps: 0393M | FPS: 61819.2 | Last FPS: 63576.8 | Collect Time: 81.8 min | Train RL Time: 23.9 min | Current Best: 30.60
+-----------------------
+episode rewards: 30.93 | episode lengths: 299.31
+episode rot angle(rad): 0.48
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/363)
+best success rate: 0.0090
+Terminations: Fall=33 | Drop=54 | Overspeed=27
+Agent Steps: 0403M | FPS: 61832.4 | Last FPS: 62120.9 | Collect Time: 83.8 min | Train RL Time: 24.5 min | Current Best: 31.06
+-----------------------
+episode rewards: 31.22 | episode lengths: 302.14
+episode rot angle(rad): 0.47
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/319)
+best success rate: 0.0090
+Terminations: Fall=21 | Drop=33 | Overspeed=22
+Agent Steps: 0412M | FPS: 61839.6 | Last FPS: 63975.2 | Collect Time: 85.9 min | Train RL Time: 25.1 min | Current Best: 31.25
+-----------------------
+episode rewards: 31.54 | episode lengths: 304.91
+episode rot angle(rad): 0.47
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/343)
+best success rate: 0.0090
+Terminations: Fall=37 | Drop=35 | Overspeed=28
+Agent Steps: 0422M | FPS: 61848.1 | Last FPS: 61887.3 | Collect Time: 87.9 min | Train RL Time: 25.7 min | Current Best: 31.57
+-----------------------
+episode rewards: 31.52 | episode lengths: 305.27
+episode rot angle(rad): 0.45
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/336)
+best success rate: 0.0090
+Terminations: Fall=18 | Drop=48 | Overspeed=28
+Agent Steps: 0432M | FPS: 61835.9 | Last FPS: 58405.6 | Collect Time: 90.0 min | Train RL Time: 26.3 min | Current Best: 31.60
+-----------------------
+episode rewards: 31.41 | episode lengths: 304.05
+episode rot angle(rad): 0.46
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/313)
+best success rate: 0.0090
+Terminations: Fall=19 | Drop=29 | Overspeed=29
+Agent Steps: 0442M | FPS: 61825.1 | Last FPS: 62820.2 | Collect Time: 92.0 min | Train RL Time: 26.9 min | Current Best: 31.60
+-----------------------
+episode rewards: 31.53 | episode lengths: 304.51
+episode rot angle(rad): 0.47
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/329)
+best success rate: 0.0090
+Terminations: Fall=18 | Drop=41 | Overspeed=30
+Agent Steps: 0452M | FPS: 61837.0 | Last FPS: 62466.8 | Collect Time: 94.1 min | Train RL Time: 27.5 min | Current Best: 31.63
+-----------------------
+episode rewards: 31.23 | episode lengths: 301.16
+episode rot angle(rad): 0.46
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/299)
+best success rate: 0.0090
+Terminations: Fall=22 | Drop=43 | Overspeed=22
+Agent Steps: 0462M | FPS: 61845.7 | Last FPS: 62740.5 | Collect Time: 96.1 min | Train RL Time: 28.1 min | Current Best: 31.63
+-----------------------
+episode rewards: 31.18 | episode lengths: 300.04
+episode rot angle(rad): 0.46
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/317)
+best success rate: 0.0090
+Terminations: Fall=22 | Drop=50 | Overspeed=31
+Agent Steps: 0471M | FPS: 61854.9 | Last FPS: 61360.6 | Collect Time: 98.1 min | Train RL Time: 28.7 min | Current Best: 31.63
+-----------------------
+episode rewards: 31.34 | episode lengths: 302.05
+episode rot angle(rad): 0.47
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/319)
+best success rate: 0.0090
+Terminations: Fall=22 | Drop=43 | Overspeed=24
+Agent Steps: 0481M | FPS: 61869.7 | Last FPS: 63170.1 | Collect Time: 100.1 min | Train RL Time: 29.3 min | Current Best: 31.63
+-----------------------
+episode rewards: 31.26 | episode lengths: 301.62
+episode rot angle(rad): 0.46
+episode waypoint tracking reward: 0.09
+success rate (rot>6): 0.0000 (0/314)
+best success rate: 0.0090
+Terminations: Fall=26 | Drop=46 | Overspeed=33
+Agent Steps: 0491M | FPS: 61879.4 | Last FPS: 63295.5 | Collect Time: 102.1 min | Train RL Time: 29.9 min | Current Best: 31.63
+max steps achieved
+Final best reward: 31.63
+Final success rate: 0.0090
+Final mean rotation angle (rad): 0.4559
+
+OPTUNA_METRICS: reward=31.6280 success_rate=0.0090 mean_rot_angle=0.4559

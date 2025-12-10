@@ -49,6 +49,8 @@ from penspin.utils.robot_config import (
     FLYING_RELATIVE_Z_LIMIT,
     FLYING_RELATIVE_ROT_LIMIT,
 )
+# Import Time-Warping Orchestrator for Space E Curriculum Learning
+from penspin.utils.time_warping import TimeWarpingOrchestrator
 
 # 刚体的 位置 (3) + 姿态 (4, 四元数) + 线速度 (3) + 角速度 (3)
 RIGID_BODY_STATES = 13
@@ -64,7 +66,6 @@ OBJ_CANON_POS = [-0.12593473494052887, 0.027405261993408203, 0.5] # 3pose
 
 # Contact上下界
 CONTACT_THRESH = 0.02
-TACTILE_FORCE_MAX = 4.0
 
 class LinkerHandHora(VecTask):
     def __init__(self, config, sim_device, graphics_device_id, headless):
@@ -225,7 +226,6 @@ class LinkerHandHora(VecTask):
         self.rb_forces = torch.zeros((self.num_envs, self.num_bodies, 3), dtype=torch.float, device=self.device)
 
         self.last_contacts = torch.zeros((self.num_envs, self.num_contacts), dtype=torch.float, device=self.device)
-        self.contact_thresh = torch.zeros((self.num_envs, self.num_contacts), dtype=torch.float, device=self.device)
 
         # ================================================================
         # 加载抓取缓存 (Grasp Cache)
@@ -307,7 +307,8 @@ class LinkerHandHora(VecTask):
         # --- calculate velocity at control frequency instead of simulated frequency
         self.object_pos_prev = self.object_pos.clone()
         self.object_rot_prev = self.object_rot.clone()
-        self.ft_pos_prev = self.fingertip_pos.clone()
+        # 使用世界坐标系位置用于速度计算
+        self.ft_pos_prev_world = self.fingertip_pos_world.clone()
         self.ft_rot_prev = self.fingertip_orientation.clone()
         self.dof_vel_prev = self.dof_vel_finite_diff.clone()
         
@@ -328,6 +329,42 @@ class LinkerHandHora(VecTask):
         self.p_gain = torch.ones((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float) * self.p_gain
         self.d_gain = torch.ones((self.num_envs, self.num_dofs), device=self.device, dtype=torch.float) * self.d_gain
 
+        # ============================================================
+        # Space E 时空扭曲课程学习初始化
+        # ============================================================
+        # 初始化时空扭曲编排器
+        curriculum_config = config['env'].get('curriculum', {})
+        self.time_warper = TimeWarpingOrchestrator(curriculum_config)
+        
+        # 缓存原始物理参数 (Baseline Values)
+        # 这些值将作为 alpha=1.0 时的参考，所有缩放都基于这些值计算
+        # 必须深拷贝，因为后续我们会直接修改 sim_params
+        self.base_gravity = list(config['sim']['gravity'])  # [0, 0, -9.81]
+        self.base_pgain = config['env']['controller']['pgain']
+        self.base_dgain = config['env']['controller']['dgain']
+        self.base_torque_limit = config['env']['controller']['torque_limit']
+        
+        # 缓存 PhysX 求解器阈值 (用于 Space E 动态缩放)
+        # 低 alpha 下速度被缩放为 v_sim = alpha * v_real
+        # 如果不缩放阈值，原本应该反弹的碰撞会变成粘性接触
+        physx_config = config['sim'].get('physx', {})
+        self.base_bounce_threshold = physx_config.get('bounce_threshold_velocity', 0.2)
+        self.base_contact_offset = physx_config.get('contact_offset', 0.002)
+        
+        # Flying Hand 的基础参数缓存
+        if self.flying_hand_enabled:
+            self.base_flying_pgain = config['env']['flyingHand']['basePgain']
+            self.base_flying_dgain = config['env']['flyingHand']['baseDgain']
+        else:
+            # 非 Flying Hand 模式，设置默认值（不会被使用）
+            self.base_flying_pgain = 1000.0
+            self.base_flying_dgain = 50.0
+        
+        # 首次应用物理参数（在 alpha_start 阶段）
+        # 注意：此时 envs 和 sim 已经创建完成（super().__init__ 调用后）
+        self.apply_curriculum_physics()
+        # ============================================================
+
         # debug and understanding statistics
         self.evaluate = self.config['on_evaluation']
         self.evaluate_cache_name = self.config['eval_cache_name']
@@ -347,6 +384,12 @@ class LinkerHandHora(VecTask):
 
         self.total_rot_angle = torch.zeros(self.num_envs, device=self.device)  # 累计旋转角度
         self.current_angvel = torch.zeros(self.num_envs, device=self.device)  # 当前角速度（用于early termination）
+        
+        # ============================================================
+        # [Anti-Hacking] EMA 速度平滑和 Jitter 惩罚相关状态变量
+        # ============================================================
+        self.angvel_ema = torch.zeros(self.num_envs, device=self.device)          # EMA 平滑后的角速度
+        self.prev_spin_velocity = torch.zeros(self.num_envs, device=self.device)  # 上一帧的角速度（用于 jitter 惩罚）
 
         # 添加终止原因记录计数器
         self.termination_counts = {
@@ -405,6 +448,27 @@ class LinkerHandHora(VecTask):
         # 当前相位缓冲区 (用于 debug 输出)
         self.current_phase_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
 
+        # ============================================================
+        # [Config Check] 打印实际运行参数（消除硬编码打印）
+        # ============================================================
+        print("\n" + "="*80)
+        print("[Config Check] 实际运行参数 (Python 内存值)")
+        print("="*80)
+        print(f"  > P-Gain (Base):         {self.base_pgain:.4f}")
+        print(f"  > D-Gain (Base):         {self.base_dgain:.4f}")
+        print(f"  > Torque Limit:          {self.torque_limit:.4f}")
+        print(f"  > Action Scale:          {self.action_scale:.4f}")
+        print(f"  > Alpha Start:           {self.time_warper.alpha_start:.4f}")
+        print(f"  > Alpha End:             {self.time_warper.alpha_end:.4f}")
+        print(f"  > Alpha Current:         {self.time_warper.current_alpha:.4f}")
+        print(f"  > Relative Z Drop Thres: {self.relative_z_drop_threshold:.4f}")
+        print(f"  > Pencil Tilt Thres:     {self.pencil_tilt_threshold:.4f}")
+        print(f"  > Num Envs:              {self.num_envs}")
+        print(f"  > Num Actions:           {self.num_actions}")
+        print(f"  > Flying Hand:           {self.flying_hand_enabled}")
+        print(f"  > Disable Ring/Little:   {self.disable_ring_little}")
+        print("="*80 + "\n")
+
     def _create_envs(self, num_envs, spacing, num_per_row):
         self._create_ground_plane()
         # envSpacing = 0.5，划出1m*1m立方体区域
@@ -428,6 +492,7 @@ class LinkerHandHora(VecTask):
         self.hand_indices = []
         self.hand_actors = []
         self.object_indices = []
+        self.object_handles = []  # 存储 object actor handles 以便运行时更新 Shape Properties
         self.object_type_at_env = []
 
         self.obj_point_clouds = []
@@ -461,7 +526,7 @@ class LinkerHandHora(VecTask):
                 self.gym.begin_aggregate(env_ptr, max_agg_bodies * 20, max_agg_shapes * 20, True)
 
             # add hand - collision filter = -1 to use asset collision filters set in mjcf loader
-            hand_actor = self.gym.create_actor(env_ptr, self.hand_asset, hand_pose, 'hand', i, -1, 1)
+            hand_actor = self.gym.create_actor(env_ptr, self.hand_asset, hand_pose, 'hand', i, 0, 1)
             self.gym.set_actor_dof_properties(env_ptr, hand_actor, linker_hand_dof_props)
             hand_idx = self.gym.get_actor_index(env_ptr, hand_actor, gymapi.DOMAIN_SIM)
             self.hand_indices.append(hand_idx)
@@ -470,13 +535,42 @@ class LinkerHandHora(VecTask):
             # ============ 碰撞过滤器设置 ============
             # 获取手部 actor 的所有刚体形状属性
             hand_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, hand_actor)
-            # 为所有 link 设置相同的 collision filter
-            # 在 Isaac Gym 中，拥有相同非零 filter ID 的形状之间**不会**发生碰撞
-            # 但它们会与 filter ID 为 0 的物体（如地面、交互物体）发生碰撞
-            for shape_prop in hand_shape_props:
-                shape_prop.filter = 1  # 将手部所有部件设为组 1，避免自碰撞
-                shape_prop.restitution = 0.0  # 减少碰撞时的弹跳
-                shape_prop.friction = 0.8     # 增加抓取摩擦力
+            
+            # 获取刚体名称和形状索引映射
+            hand_body_names = self.gym.get_asset_rigid_body_names(self.hand_asset)
+            body_shape_indices = self.gym.get_asset_rigid_body_shape_indices(self.hand_asset)
+            
+            for body_idx, body_name in enumerate(hand_body_names):
+                start = body_shape_indices[body_idx].start
+                count = body_shape_indices[body_idx].count
+            for body_idx, body_name in enumerate(hand_body_names):
+                start = body_shape_indices[body_idx].start
+                count = body_shape_indices[body_idx].count
+                
+                if count > 0:
+                # 【特殊处理】：如果你真的非常想让 thumb_joint0 不撞任何东西
+                    if "thumb_joint0" in body_name:
+                        # 设置一个非常特殊的 filter ID (比如 128)
+                        # 在 Isaac Gym 默认机制下，如果其他物体 filter 是 0
+                        # 0 会撞一切，所以单纯改 filter 不足以完全屏蔽。
+                        # 但通常我们只需要它不撞特定的手指。
+                        
+                        # 更好的方法是使用 contact_offset 欺骗物理引擎
+                        for k in range(start, start + count):
+                            # 将接触偏移设为极小负数，使其极难触发碰撞接触生成
+                            # 意思是：只有当物体陷入它内部 1米 深时才算碰撞
+                            # 实际上这让它变成了“幽灵”
+                            hand_shape_props[k].contact_offset = -1.0 
+                            hand_shape_props[k].rest_offset = -1.0
+                    else:
+                        # 其他部件正常设置
+                        for k in range(start, start + count):
+                            hand_shape_props[k].filter = 0 # 设为 0 以解决穿模
+                            hand_shape_props[k].restitution = 0.0
+                            hand_shape_props[k].friction = 0.8
+                            # 确保正常的 contact_offset
+                            hand_shape_props[k].contact_offset = 0.002                
+
             # 将修改后的属性应用回去
             self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_shape_props)
             # ========================================
@@ -502,6 +596,7 @@ class LinkerHandHora(VecTask):
             ])
             object_idx = self.gym.get_actor_index(env_ptr, object_handle, gymapi.DOMAIN_SIM)
             self.object_indices.append(object_idx)
+            self.object_handles.append(object_handle)  # 存储 handle 以便运行时更新 Shape Properties
             
             # LinkerPen 使用实际尺寸，不需要缩放
             self.obj_scale = 1.0
@@ -599,7 +694,8 @@ class LinkerHandHora(VecTask):
                 self.gym.end_aggregate(env_ptr)
 
             # for training record, visualized in tensorboard
-            if self.with_camera:
+            # FIX: Only create camera for the first environment to prevent freeze/OOM
+            if self.with_camera and i == 0:
                 self.vid_record_tensor = self._create_camera(env_ptr)
 
             self.envs.append(env_ptr)
@@ -639,15 +735,238 @@ class LinkerHandHora(VecTask):
 
         return torch_vid_record_tensor
 
+    def apply_curriculum_physics(self):
+        """
+        将当前的时空扭曲因子 α 应用到 Physics Engine。
+        
+        此函数执行以下物理参数更新：
+        1. 全局重力 (Global Gravity): g' = α² × g
+        2. 手部 PD 刚度 (Stiffness/Kp): Kp' = α² × Kp
+        3. 手部 PD 阻尼 (Damping/Kd): Kd' = α × Kd
+        4. 力矩限制 (Effort Limit): τ' = α² × τ
+        5. Flying Base PD 参数（当前直接取消flying base）
+        
+        注意：
+        - 此函数开销较大（需要暂停物理线程重写属性）
+        - 只应在 alpha 发生显著变化时调用（由 PPO 训练循环控制）
+        - 不应在 step() 中调用
+        
+        关于 Flying Hand 的处理：
+        - Flying Base 的 Kp/Kd 必须参与缩放
+        - 否则在 Space E (α=0.1) 中，物体变轻 100 倍
+        - 但 Flying Base 相对物体是"无限硬"的，会导致动量守恒失配
+        """
+        alpha = self.time_warper.current_alpha
+        
+        # 如果是 SpaceA 模式 (α=1.0)，跳过更新（保持原始参数）
+        if self.time_warper.mode == 'SpaceA' and alpha == 1.0:
+            return
+        
+        print(f"\n[Space E Curriculum] 更新物理参数 Alpha = {alpha:.3f} "
+              f"(Progress: {self.time_warper.get_progress()*100:.1f}%)")
+        
+        # 获取缩放系数
+        g_scale = self.time_warper.gravity_scale
+        kp_scale = self.time_warper.stiffness_scale
+        kd_scale = self.time_warper.damping_scale
+        eff_scale = self.time_warper.effort_scale
+        
+        # ============================================================
+        # 1. 更新全局重力 (Global Gravity)
+        # ============================================================
+        # 获取当前的 sim params
+        sim_params = self.gym.get_sim_params(self.sim)
+        
+        # 计算新的重力向量
+        new_gravity = gymapi.Vec3(
+            self.base_gravity[0] * g_scale,
+            self.base_gravity[1] * g_scale,
+            self.base_gravity[2] * g_scale
+        )
+        sim_params.gravity = new_gravity
+        
+        # 应用到 Sim
+        # 注意: set_sim_params 在 PhysX backend 上通常支持 gravity 实时变更
+        self.gym.set_sim_params(self.sim, sim_params)
+        print(f"  -> 重力: {new_gravity.z:.4f} m/s² (原始: {self.base_gravity[2]:.2f}, 缩放: {g_scale:.4f})")
+        
+        # ============================================================
+        # 2. 更新 Actor DOF 属性 (Stiffness, Damping, Effort)
+        # ============================================================
+        # 注意: 我们必须基于"原始"属性缩放，而不是"当前"属性
+        # 这样可以防止累积误差
+        
+        for i in range(self.num_envs):
+            hand_actor = self.hand_actors[i]
+            dof_props = self.gym.get_actor_dof_properties(self.envs[i], hand_actor)
+            
+            # 遍历所有 DOF
+            for j in range(self.num_linker_hand_dofs):
+                # 判断是 Flying Base 还是 Hand Joint
+                is_flying_joint = (self.flying_hand_enabled and j < NUM_FLYING_DOF)
+                
+                # --- Stiffness (Kp) ---
+                if is_flying_joint:
+                    base_kp = self.base_flying_pgain
+                elif self.torque_control:
+                    base_kp = 0.0  # 力控模式 Kp=0
+                else:
+                    base_kp = self.base_pgain
+                
+                dof_props['stiffness'][j] = base_kp * kp_scale
+                
+                # --- Damping (Kd) ---
+                if is_flying_joint:
+                    base_kd = self.base_flying_dgain
+                elif self.torque_control:
+                    base_kd = 0.0
+                else:
+                    base_kd = self.base_dgain
+                
+                dof_props['damping'][j] = base_kd * kd_scale
+                
+                # --- Effort Limit ---
+                if is_flying_joint:
+                    base_eff = 100000.0  # Flying base 使用极大力矩
+                else:
+                    base_eff = self.base_torque_limit
+                
+                dof_props['effort'][j] = base_eff * eff_scale
+            
+            # 应用属性到该环境的 Actor
+            self.gym.set_actor_dof_properties(self.envs[i], hand_actor, dof_props)
+        
+        # ============================================================
+        # 3. 更新类内部用于 PD 计算的 Tensor
+        # ============================================================
+        # 在 update_low_level_control 中会用到 self.p_gain 和 self.d_gain
+        if self.torque_control:
+            # 手部 PD（力矩模式下通常 Kp=0，但也可能非0）
+            self.p_gain[:] = self.base_pgain * kp_scale
+            self.d_gain[:] = self.base_dgain * kd_scale
+            
+            # Flying Base 的 PD（始终是位置控制）
+            if self.flying_hand_enabled:
+                self.p_gain[:, :NUM_FLYING_DOF] = self.base_flying_pgain * kp_scale
+                self.d_gain[:, :NUM_FLYING_DOF] = self.base_flying_dgain * kd_scale
+            
+            # 更新力矩限制
+            self.torque_limit = self.base_torque_limit * eff_scale
+        
+        print(f"  -> DOF 属性已更新: Kp_scale={kp_scale:.4f}, Kd_scale={kd_scale:.4f}, τ_scale={eff_scale:.4f}")
+        print(f"  -> 手部 Kp: {self.base_pgain * kp_scale:.4f}, Kd: {self.base_dgain * kd_scale:.4f}")
+        if self.flying_hand_enabled:
+            print(f"  -> Flying Base Kp: {self.base_flying_pgain * kp_scale:.2f}, Kd: {self.base_flying_dgain * kd_scale:.2f}")
+        
+        # ============================================================
+        # 4. 更新 PhysX 求解器阈值 (通过 time_warper 统一管理)
+        # ============================================================
+        # 获取当前 sim_params (包含之前设置的重力)
+        sim_params = self.gym.get_sim_params(self.sim)
+        
+        # 从 time_warper 获取缩放后的 PhysX 参数
+        physx_params = self.time_warper.get_scaled_physx_params(
+            self.base_bounce_threshold,
+            self.base_contact_offset
+        )
+        
+        # 应用 bounce_threshold_velocity
+        sim_params.physx.bounce_threshold_velocity = physx_params['bounce_threshold_velocity']
+        
+        # 可以考虑仅在低 alpha 时更新 contact_offset，当前逻辑是始终更新
+        # if physx_params['needs_contact_offset_update']:
+        sim_params.physx.contact_offset = physx_params['contact_offset']
+        print(f"  -> PhysX contact_offset (全局 SimParams): {physx_params['contact_offset']:.5f}")
+        
+        # 应用更新后的 sim_params
+        self.gym.set_sim_params(self.sim, sim_params)
+        print(f"  -> PhysX bounce_threshold: {physx_params['bounce_threshold_velocity']:.4f} (原始: {self.base_bounce_threshold:.2f})")
+        
+        # ============================================================
+        # 5. 【关键修复】更新 Actor 级别的 Shape Properties
+        # ============================================================
+        # 注意：Actor 级别的 Shape Properties 会覆盖全局 SimParams！
+        # 必须逐个环境更新，否则 contact_offset 不会生效
+        scaled_contact_offset = physx_params['contact_offset']
+        # rest_offset 也需要缩放，但目前初始值就是0，暂且占位
+        scaled_rest_offset = 0  
+        
+        num_updated_envs = 0
+        for env_idx, env_ptr in enumerate(self.envs):
+            # === 更新手部 Actor 的 Shape Properties ===
+            hand_actor = self.hand_actors[env_idx]
+            hand_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, hand_actor)
+            
+            for prop in hand_shape_props:
+                # 跳过 thumb_joint0 的特殊碰撞过滤设置（contact_offset=-1.0）
+                if prop.contact_offset < 0:
+                    continue
+                prop.contact_offset = scaled_contact_offset
+                prop.rest_offset = scaled_rest_offset
+            
+            self.gym.set_actor_rigid_shape_properties(env_ptr, hand_actor, hand_shape_props)
+            
+            # === 更新物体 Actor 的 Shape Properties ===
+            object_handle = self.object_handles[env_idx]
+            object_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)
+            
+            for prop in object_shape_props:
+                prop.contact_offset = scaled_contact_offset
+                prop.rest_offset = scaled_rest_offset
+            
+            self.gym.set_actor_rigid_shape_properties(env_ptr, object_handle, object_shape_props)
+            num_updated_envs += 1
+        
+        print(f"  -> Actor Shape Properties 已更新: {num_updated_envs} 个环境")
+        print(f"     contact_offset={scaled_contact_offset:.5f}, rest_offset={scaled_rest_offset:.5f}")
+        
+        # === 验证打印：读取实际生效的 Shape Properties ===
+        if len(self.envs) > 0:
+            # 只检查第一个环境作为验证
+            env0 = self.envs[0]
+            hand_props_verify = self.gym.get_actor_rigid_shape_properties(env0, self.hand_actors[0])
+            obj_props_verify = self.gym.get_actor_rigid_shape_properties(env0, self.object_handles[0])
+            
+            # 找到第一个非特殊的手部 shape
+            hand_co = None
+            for prop in hand_props_verify:
+                if prop.contact_offset >= 0:
+                    hand_co = prop.contact_offset
+                    break
+            
+            obj_co = obj_props_verify[0].contact_offset if obj_props_verify else None
+            
+            print(f"  -> [验证] 实际生效值 - Hand: {hand_co:.5f}, Object: {obj_co:.5f}")
+            
+            # 检查是否与预期一致
+            if hand_co is not None and abs(hand_co - scaled_contact_offset) > 1e-6:
+                print(f"  -> [警告] Hand contact_offset 设置可能未生效！预期={scaled_contact_offset:.5f}, 实际={hand_co:.5f}")
+            if obj_co is not None and abs(obj_co - scaled_contact_offset) > 1e-6:
+                print(f"  -> [警告] Object contact_offset 设置可能未生效！预期={scaled_contact_offset:.5f}, 实际={obj_co:.5f}")
+
     def reset_idx(self, env_ids):
         if self.randomize_pd_gains:
+            # ================= [Fix Start] =================
+            # 获取当前的缩放系数
+            kp_scale = self.time_warper.stiffness_scale  # alpha^2
+            kd_scale = self.time_warper.damping_scale    # alpha
+            
+            # 对随机化范围进行缩放
+            p_lower = self.randomize_p_gain_lower * kp_scale
+            p_upper = self.randomize_p_gain_upper * kp_scale
+            d_lower = self.randomize_d_gain_lower * kd_scale
+            d_upper = self.randomize_d_gain_upper * kd_scale
+            
+            # 使用缩放后的范围进行随机化
             self.p_gain[env_ids] = torch_rand_float(
-                self.randomize_p_gain_lower, self.randomize_p_gain_upper, (len(env_ids), self.num_dofs),
+                p_lower, p_upper, (len(env_ids), self.num_dofs),
                 device=self.device).squeeze(1)
             self.d_gain[env_ids] = torch_rand_float(
-                self.randomize_d_gain_lower, self.randomize_d_gain_upper, (len(env_ids), self.num_dofs),
+                d_lower, d_upper, (len(env_ids), self.num_dofs),
                 device=self.device).squeeze(1)
-
+            # ================= [Fix End] =================
+        # 这两个噪声变量 random_obs_noise_e 和 random_action_noise_e 的物理量纲是 位置（Position） 或 角度（Rotation, radians）
+        # 几何类的噪声不需要随 Alpha 缩放
         self.random_obs_noise_e[env_ids] = torch.normal(0, self.random_obs_noise_e_scale, size=(len(env_ids), self.num_dofs), device=self.device, dtype=torch.float)
         self.random_action_noise_e[env_ids] = torch.normal(0, self.random_action_noise_e_scale, size=(len(env_ids), self.num_dofs), device=self.device, dtype=torch.float)
         # reset rigid body forces
@@ -742,7 +1061,6 @@ class LinkerHandHora(VecTask):
         self.init_object_z_buf[env_ids] = self.root_state_tensor[self.object_indices[env_ids], 2].clone()
 
         # reset tactile
-        self.contact_thresh[env_ids] = CONTACT_THRESH
         self.last_contacts[env_ids] = 0.0
 
         self.progress_buf[env_ids] = 0
@@ -764,6 +1082,28 @@ class LinkerHandHora(VecTask):
         # 从仿真器刷新最新的物理状态，确保后续读取的数据是最新的
         # 具体实现依赖于所使用的仿真后端（Isaac Gym）
 
+        # ==============================================================
+        # Space E: 观测逆缩放 (Observation Inverse Scaling)
+        # ==============================================================
+        # 目的: 使 Agent 感知到"真实世界尺度"的速度和力
+        # 原理: 仿真中 v_sim = α * v_real, F_sim = α² * F_real
+        #       逆缩放: v_obs = v_sim / α, F_obs = F_sim / α²
+        # 这样 Agent 总是感知到 α=1 时的真实物理量级
+        v_scale = self.time_warper.obs_velocity_scale  # = 1/α
+        f_scale = self.time_warper.obs_force_scale     # = 1/α²
+        
+        # 对速度类变量应用逆缩放 (用于后续特权信息)
+        # 注意：这些是 view/reference，缩放会影响原始数据
+        # 我们创建缩放后的副本用于观测，不修改原始仿真数据
+        self.object_linvel_scaled = self.object_linvel * v_scale
+        self.object_angvel_scaled = self.object_angvel * v_scale
+        self.fingertip_linvel_scaled = self.fingertip_linvel * v_scale
+        self.fingertip_angvel_scaled = self.fingertip_angvel * v_scale
+        
+        # 对力类变量应用逆缩放 (用于触觉处理)
+        # contact_forces_scaled 将在触觉处理中使用
+        self.contact_forces_scaled = self.contact_forces * f_scale
+
         # --------------------------------------------------------------
         # 1. 关节位置观测噪声 (Joint Position Observation Noise)
         # --------------------------------------------------------------
@@ -780,51 +1120,48 @@ class LinkerHandHora(VecTask):
         # 触觉传感处理 (Tactile Sensing Processing) - 基于分量阈值筛选版
         # 基于每个力分量和对应的阈值进行筛选，输出缩放后的展平三维力向量
         # --------------------------------------------------------------
-        # 注意: self.contact_thresh 现在预期是与展平后的触觉数据形状兼容的张量
-        # 例如，如果 num_envs = N, num_sensor_handles = 5，那么 self.contact_thresh 预期形状是 (N, 15)
+        # 注意: 使用统一的 CONTACT_THRESH 常量进行阈值过滤
 
         if self.config['env']['privInfo']['enable_tactile']:
             # 获取并克隆当前的总接触力张量，形状 (num_envs, num_bodies, 3)
-            contacts = self.contact_forces.clone()
-
-            # 提取与触觉传感器句柄对应的接触力，形状变为 (num_envs, num_sensor_handles, 3)
-            contacts_at_sensors = contacts[:, self.sensor_handle_indices, :]
-
-            # **修改点 1: 先展平 contacts_at_sensors，然后进行分量阈值比较**
-            # 展平提取到的三维力向量，形状变为 (num_envs, num_sensor_handles * 3)
-            # 这是为了与形状为 (num_envs, num_sensor_handles * 3) 的 self.contact_thresh 进行逐元素比较
-            flattened_contacts = torch.flatten(contacts_at_sensors, start_dim=1) # 形状: (N, M*3)
-
-            # **修改点 2: 基于每个力分量和对应的阈值进行筛选**
-            # 创建一个布尔型掩码：flattened_contacts 中每个分量是否 >= self.contact_thresh 中对应分量的阈值
-            # 这里的 self.contact_thresh 预期形状与 flattened_contacts 兼容，例如 (num_envs, num_sensor_handles * 3)
-            component_threshold_mask = (flattened_contacts >= self.contact_thresh) # 形状: (N, M*3)
-
-            # 应用分量阈值掩码：如果分量小于其对应的阈值，则将其置零
-            # 将布尔掩码转换为浮点型进行乘法
-            filtered_flattened_forces = flattened_contacts * component_threshold_mask.float() # 形状: (N, M*3)
-            # 防止除以零或缩放参考值过小的情况 ，TACTILE_FORCE_MAX是预期的最大力大小，用于将分量大致映射到 [-1, 1]
-            if TACTILE_FORCE_MAX <= 1e-6:
-                # 如果最大力参考值接近零，所有非零的力都应该变得非常大或无穷大
-                # 实际处理中，如果参考值接近零，且过滤后的力也接近零，结果就是零
-                scaled_flattened_forces = torch.zeros_like(filtered_flattened_forces)
-            else:
-                # 对过滤后的展平力向量的每个分量应用缩放
-                # 范围 [-TACTILE_FORCE_MAX, TACTILE_FORCE_MAX] 大致映射到 [-1, 1]
-                scaled_flattened_forces = filtered_flattened_forces / TACTILE_FORCE_MAX
-                # 限制缩放后的值在 [-1, 1] 范围内，提高数值鲁棒性
-                scaled_flattened_forces = torch.clamp(scaled_flattened_forces, -1.0, 1.0)
-
-            # 最终 agent 感知到的触觉信息是缩放后的展平三维力向量
-            # self.sensed_contacts 的形状是 (num_envs, num_sensor_handles * 3)
-            # 其中包含 num_sensor_handles 个传感器的 Fx, Fy, Fz 值依次排列，小于对应分量阈值的已置零
-            self.sensed_contacts = scaled_flattened_forces
-
+            # Space E: 使用逆缩放后的力 (F_obs = F_sim / α²)
+            contacts = self.contact_forces_scaled.clone() # (N, num_bodies, 3)
+            
+            # 2. 提取传感器数据，保持 (N, M, 3) 形状，不要急着 flatten
+            contacts_at_sensors = contacts[:, self.sensor_handle_indices, :] # (N, M, 3)
+            
+            # ================= [New Logic Start] =================
+            
+            # 3. 计算力的模长 (Magnitude)
+            # shape: (N, M, 1)
+            contact_magnitudes = torch.norm(contacts_at_sensors, dim=-1, keepdim=True)
+            
+            # 4. 基于模长的阈值过滤 (Magnitude Thresholding)
+            # 修复了分量过滤导致的斜向力丢失问题
+            # 使用统一的 CONTACT_THRESH 常量
+            mask = (contact_magnitudes >= CONTACT_THRESH) # (N, M, 1)
+            
+            # 应用掩码：小于阈值的力全零，大于阈值的保留原始向量方向和大小
+            filtered_contacts = contacts_at_sensors * mask.float()
+            
+            # 5. 对数缩放 (Logarithmic Scaling)
+            # log_scale_beta 用于控制灵敏度。
+            # beta=1.0 时: 0.1N -> 0.095, 1.0N -> 0.69, 4.0N -> 1.6
+            # beta=10.0 时: 0.1N -> 0.69 (极度敏感), 4.0N -> 3.7
+            # 推荐使用 beta=1.0 或 2.0，既保持小力线性，又压缩大力
+            log_scale_beta = self.config['env']['reward']['log_scale_beta']
+            
+            # 变换公式: sign(x) * log(1 + beta * |x|)
+            # 这种变换保留了正负号（方向），同时压缩了幅度
+            scaled_contacts = torch.sign(filtered_contacts) * torch.log1p(log_scale_beta * torch.abs(filtered_contacts))
+            
+            # 6. 展平 (Flatten)
+            # 最终输出形状 (N, M*3)
+            self.sensed_contacts = torch.flatten(scaled_contacts, start_dim=1)
             # 如果启用了可视化，复制感知数据到 CPU 用于调试显示
             if self.viewer:
                 # debug_contacts 的形状是 (num_envs, num_sensor_handles, 3)
-                # 表现的是每个分力在被TACTILE_FORCE_MAX缩放之前的状态
-                self.debug_contacts = filtered_flattened_forces.reshape(self.num_envs, -1, 3).detach().cpu().numpy() 
+                self.debug_contacts = filtered_contacts.detach().cpu().numpy() 
        
         # --------------------------------------------------------------
         # 3. 物体端点跟踪 (Object End Points Tracking)
@@ -916,10 +1253,11 @@ class LinkerHandHora(VecTask):
 
         # 重置相关的速度信息缓冲
         # 在接触或碰撞时记录的物体和指尖线速度/角速度，在重置时也需要清零或用当前值填充
-        self.obj_linvel_at_cf[at_reset_env_ids] = self.object_linvel[at_reset_env_ids]
-        self.obj_angvel_at_cf[at_reset_env_ids] = self.object_angvel[at_reset_env_ids]
-        self.ft_linvel_at_cf[at_reset_env_ids] = self.fingertip_linvel[at_reset_env_ids]
-        self.ft_angvel_at_cf[at_reset_env_ids] = self.fingertip_angvel[at_reset_env_ids]
+        # Space E: 使用逆缩放后的速度 (v_obs = v_sim / α)
+        self.obj_linvel_at_cf[at_reset_env_ids] = self.object_linvel_scaled[at_reset_env_ids]
+        self.obj_angvel_at_cf[at_reset_env_ids] = self.object_angvel_scaled[at_reset_env_ids]
+        self.ft_linvel_at_cf[at_reset_env_ids] = self.fingertip_linvel_scaled[at_reset_env_ids]
+        self.ft_angvel_at_cf[at_reset_env_ids] = self.fingertip_angvel_scaled[at_reset_env_ids]
 
         # 将重置标志位 at_reset_buf 设置为 0，表示这些环境已经完成重置处理
         self.at_reset_buf[at_reset_env_ids] = 0
@@ -985,6 +1323,10 @@ class LinkerHandHora(VecTask):
         # self.rigid_body_states 形状可能是 (num_envs, num_bodies, RIGID_BODY_STATES)
         # 提取指尖的刚体状态
         fingertip_states = self.rigid_body_states[:, self.fingertip_handles].clone()
+        # Space E: 对 fingertip_states 中的速度分量进行逆缩放 (与 priv_buf 保持一致)
+        # RIGID_BODY_STATES = 13: pos(3) + rot(4) + linvel(3) + angvel(3)
+        # 速度分量在索引 7:13 (linvel 7:10, angvel 10:13)
+        fingertip_states[:, :, 7:13] = fingertip_states[:, :, 7:13] * self.time_warper.obs_velocity_scale
         # 将指尖的刚体状态展平并存入 critic_info_buf
         # 形状变为 (num_envs, len(self.fingertip_handles) * RIGID_BODY_STATES)
         self.critic_info_buf[:, 10:10 + RIGID_BODY_STATES * len(self.fingertip_handles)] = fingertip_states.reshape(self.num_envs, -1)
@@ -1087,10 +1429,54 @@ class LinkerHandHora(VecTask):
         # 5. 计算这一帧的"公转"速度 (rad/s)
         spin_velocity = angle_delta / (self.control_freq_inv * self.dt)
         
+        # ==============================================================
+        # Space E: 奖励输入还原缩放 (Reward Input Restoration)
+        # ==============================================================
+        # 目的: 将仿真中的角速度还原到"真实世界尺度"
+        # 原理: ω_sim = α * ω_real (仿真中时间放慢α倍，角速度变为α倍)
+        #       还原: ω_real = ω_sim / α = ω_sim * reward_input_scale
+        # 这样 rotate_reward 的阈值和clip值在所有α下保持一致
+        reward_input_scale = self.time_warper.reward_input_scale  # = 1/α
+        spin_velocity_scaled = spin_velocity * reward_input_scale
+        
         # 6. 计算奖励
         # 旋转轴的模长表示期望的旋转方向强度（已归一化为1）
         # angle_delta 已经包含了方向信息（与旋转轴同向为正）
-        vec_dot = spin_velocity  # 与旋转轴同向旋转时为正
+        vec_dot = spin_velocity_scaled  # 与旋转轴同向旋转时为正（已还原到真实世界尺度）
+        
+        # ==============================================================
+        # [Anti-Hacking] EMA 速度平滑 (Exponential Moving Average)
+        # ==============================================================
+        # 目的: 用于速度门控的平滑信号，防止高频振荡 exploit waypoint 奖励
+        # 机制: ema_t = α * v_curr + (1-α) * ema_{t-1}
+        # 注意: 主奖励/惩罚使用瞬时速度 vec_dot，EMA 仅用于速度门控
+        # ==============================================================
+        self.angvel_ema = self.ema_alpha * vec_dot + (1.0 - self.ema_alpha) * self.angvel_ema
+        
+        # ==============================================================
+        # [Anti-Hacking] Jitter 惩罚 (速度变化率惩罚)
+        # ==============================================================
+        # 目的: 惩罚速度的急剧变化，鼓励平稳旋转
+        # 公式: jitter_penalty = (v_t - v_{t-1})^2
+        # 注意: 使用瞬时速度计算，外部 scale 由 jitter_penalty_scale 控制 (负值)
+        # ==============================================================
+        velocity_diff = vec_dot - self.prev_spin_velocity
+        jitter_penalty = velocity_diff ** 2
+        # 更新上一帧速度
+        self.prev_spin_velocity = vec_dot.clone()
+        
+        # ==============================================================
+        # [Anti-Hacking] 反向旋转惩罚 (Reverse Rotation Penalty)
+        # ==============================================================
+        # 目的: 惩罚与目标方向相反的旋转
+        # 公式: reverse_penalty = |v| (当 v < 0 时)
+        # 注意: 使用瞬时速度计算，外部 scale 由 reverse_penalty_scale 控制 (负值)
+        # ==============================================================
+        reverse_penalty = torch.where(
+            vec_dot < 0,
+            torch.abs(vec_dot),
+            torch.zeros_like(vec_dot)
+        )
         
         # 保存当前角速度用于early termination判断
         self.current_angvel = vec_dot.clone()
@@ -1099,12 +1485,28 @@ class LinkerHandHora(VecTask):
         angdiff = quat_to_axis_angle(quat_mul(self.object_rot, quat_conjugate(self.object_rot_prev)))
         object_angvel = angdiff / (self.control_freq_inv * self.dt)
         
-        # 奖励只针对与期望方向一致的旋转，且不超过设定的最大速度
-        rotate_reward = torch.clip(vec_dot, max=self.angvel_clip_max, min=self.angvel_clip_min)
-        # vec_dot 的值低于 angvel_penalty_threshold_low或高于angvel_penalty_threshold_high时，才会开始施加惩罚
-        penalty_overspeed = torch.relu(vec_dot - self.angvel_penalty_threshold_high)
-        penalty_reverse_rotation = torch.relu(self.angvel_penalty_threshold_low-vec_dot)
-        rotate_penalty = penalty_overspeed + penalty_reverse_rotation
+        # ============================================================
+        # 旋转奖励计算 (支持两种模式)
+        # ============================================================
+        # 注意: 使用瞬时速度 vec_dot 进行奖励计算
+        if self.use_gaussian_angvel_reward:
+            # Gaussian Kernel 模式: r = exp(-||ω - ω_target||² / σ²)
+            # 优点: 平滑、有明确的目标速度、不会奖励过快旋转
+            # 适合需要精确速度控制的任务 (如 Triangle Pass)
+            angvel_error = vec_dot - self.target_angvel
+            rotate_reward = torch.exp(-(angvel_error ** 2) / (self.angvel_sigma ** 2))
+            # 惩罚反向旋转 (负角速度) - 高斯核对负值也给予奖励，需要额外处理
+            rotate_reward = torch.where(vec_dot < 0, torch.zeros_like(rotate_reward), rotate_reward)
+            # Gaussian 模式下不使用额外的 rotate_penalty (反向旋转由 reverse_penalty 处理)
+            rotate_penalty = torch.zeros_like(rotate_reward)
+        else:
+            # Clip-based 模式 (原逻辑): r = clip(ω, min, max)
+            # 奖励只针对与期望方向一致的旋转，且不超过设定的最大速度
+            rotate_reward = torch.clip(vec_dot, max=self.angvel_clip_max, min=self.angvel_clip_min)
+            # vec_dot 的值低于 angvel_penalty_threshold_low或高于angvel_penalty_threshold_high时，才会开始施加惩罚
+            penalty_overspeed = torch.relu(vec_dot - self.angvel_penalty_threshold_high)
+            penalty_reverse_rotation = torch.relu(self.angvel_penalty_threshold_low - vec_dot)
+            rotate_penalty = penalty_overspeed + penalty_reverse_rotation
         # 累计旋转角度（用于统计圈数）
         # 使用 angle_delta（投影角度变化量）
         # angle_delta 已经包含方向信息（与旋转轴同向为正）
@@ -1132,19 +1534,43 @@ class LinkerHandHora(VecTask):
             )
             
             # 获取当前指尖位置 (相对于手基座，展平为15维)
-            # fingertip_pos 是 (num_envs, 15) 的绝对位置
-            # 需要转换为相对于手基座的位置（与采集时保持一致）
-            # 暂时使用绝对位置，后续可优化
+            # fingertip_pos 已经是相对于手基座的位置（与 waypoint 采集时保持一致）
             current_fingertip_pos = self.fingertip_pos.reshape(self.num_envs, -1)  # (num_envs, 15)
             
             # 计算高斯核奖励
             # 如果禁用了无名指和小拇指，只比较中指、食指、大拇指 (后9维)
-            waypoint_tracking_reward = compute_waypoint_tracking_reward(
+            raw_tracking_reward = compute_waypoint_tracking_reward(
                 current_fingertip_pos,
                 target_fingertip_pos,
                 sigma=self.waypoint_sigma,
                 finger_mask=self.waypoint_finger_mask
             )
+            
+            # 5. [Anti-Hacking] 高斯速度门控 (Gaussian Velocity Gating)
+            # -------------------------------------------------------------
+            # 目的: 只有在转速接近 target_angvel 时才给予姿态奖励。
+            # 机制: Gate = exp(- (v_ema - v_target)^2 / sigma^2)
+            # 使用 EMA 平滑后的速度，防止高频振荡 exploit waypoint 奖励
+            # -------------------------------------------------------------
+            
+            # angvel_ema 是 EMA 平滑后的公转速度 (rad/s)，Space E 已将其还原为真实世界尺度
+            # 计算速度误差
+            gate_vel_error = self.angvel_ema - self.target_angvel
+            
+            # 计算高斯门控值 (范围 0.0 ~ 1.0)
+            # 使用 self.angvel_sigma 确保与主旋转奖励的宽容度一致
+            velocity_gate = torch.exp(-(gate_vel_error ** 2) / (self.angvel_sigma ** 2))
+            
+            # 强制约束: 如果反向旋转或静止 (angvel_ema <= 0)，门控强制为 0
+            # 虽然高斯在 0 处已经很小 (exp(-3.14^2)≈0)，但硬截断更安全
+            velocity_gate = torch.where(self.angvel_ema <= 1e-2, torch.zeros_like(velocity_gate), velocity_gate)
+            
+            # 应用门控
+            waypoint_tracking_reward = raw_tracking_reward * velocity_gate
+            
+            # [Optional Debug] 偶尔打印门控状态，确认没有被死锁
+            # if self.agent_steps % 5000 == 0:
+            #     print(f"[Gate] Avg EMA Vel: {self.angvel_ema.mean():.2f}, Target: {self.target_angvel:.2f}, Avg Gate: {velocity_gate.mean():.3f}")
         else:
             waypoint_tracking_reward = torch.zeros(self.num_envs, device=self.device)
         
@@ -1176,21 +1602,24 @@ class LinkerHandHora(VecTask):
                 print(f"  [对比] 原 vec_dot (会被自转污染): {(object_angvel * self.rot_axis_buf).sum(-1)[0].item():.4f}")
                 print(f"  rotate_reward: {rotate_reward[0].item():.4f}")
                 print("="*75)
-        elif self.viewer is not None and not hasattr(self, '_debug_spin_counter'):
-            self._debug_spin_counter = 0
-            print("\n[DEBUG] spin_check 调试模式已启用（新算法: 任意轴投影），将每50步输出一次详细信息")
+        # elif self.viewer is not None and not hasattr(self, '_debug_spin_counter'):
+        #     self._debug_spin_counter = 0
+        #     print("\n[DEBUG] spin_check 调试模式已启用（新算法: 任意轴投影），将每50步输出一次详细信息")
         
         # 计算物体线速度惩罚，这里不使用self.object_linvel，而是用位置差分计算
         # 在仿真中，物理计算频率（Physics Freq, e.g., 1000Hz）通常远高于控制频率（Control Freq, e.g., 50Hz）。 self.object_linvel 只是这 20 个物理步中最后一步的速度。如果物体刚好在那一步发生了碰撞（Contact），瞬时速度可能会剧烈抖动（高频噪声），而位置差分则平滑了这一过程。
         object_linvel = ((self.object_pos - self.object_pos_prev) / (self.control_freq_inv * self.dt)).clone()
         object_linvel_penalty = torch.norm(object_linvel, p=1, dim=-1)
         # TODO: move this to a more appropriate place
-        self.obj_angvel_at_cf = object_angvel
-        self.obj_linvel_at_cf = object_linvel
+        # Space E: 对速度应用逆缩放 (v_obs = v_sim / α)，使 Agent 感知真实世界尺度
+        v_scale = self.time_warper.obs_velocity_scale
+        self.obj_angvel_at_cf = object_angvel * v_scale
+        self.obj_linvel_at_cf = object_linvel * v_scale
         # 对旋转四元数的乘法
         ft_angdiff = quat_to_axis_angle(quat_mul(self.fingertip_orientation.reshape(-1, 4), quat_conjugate(self.ft_rot_prev.reshape(-1, 4)))).reshape(-1, 3*FINGERTIP_CNT)
-        self.ft_angvel_at_cf = ft_angdiff / (self.control_freq_inv * self.dt)
-        self.ft_linvel_at_cf = ((self.fingertip_pos - self.ft_pos_prev) / (self.control_freq_inv * self.dt))
+        self.ft_angvel_at_cf = ft_angdiff / (self.control_freq_inv * self.dt) * v_scale
+        # 指尖线速度计算使用世界坐标系位置（速度是位置的变化率，与参考系无关）
+        self.ft_linvel_at_cf = ((self.fingertip_pos_world - self.ft_pos_prev_world) / (self.control_freq_inv * self.dt)) * v_scale
         # ============================================================
         # 轴向倾斜惩罚 (Axial Tilt Penalty)
         # ============================================================
@@ -1220,8 +1649,8 @@ class LinkerHandHora(VecTask):
 
         # 惩罚在z轴上的位置偏离
         position_penalty = (self.object_pos[:, 2] - OBJ_CANON_POS[2]) ** 2
-        # 未使用，惩罚指尖与物体的距离
-        finger_obj_penalty = ((self.fingertip_pos - self.object_pos.repeat(1, FINGERTIP_CNT)) ** 2).sum(-1)
+        # 未使用，惩罚指尖与物体的距离（使用世界坐标系）
+        finger_obj_penalty = ((self.fingertip_pos_world - self.object_pos.repeat(1, FINGERTIP_CNT)) ** 2).sum(-1)
 
         # ============================================================
         # Flying base 移动惩罚
@@ -1249,8 +1678,21 @@ class LinkerHandHora(VecTask):
             position_penalty, self._get_reward_scale_by_name('position_penalty'),
             rotate_penalty, self._get_reward_scale_by_name('rotate_penalty'),
             flying_base_movement_penalty, self._get_reward_scale_by_name('flying_base_movement_penalty'),
-            waypoint_tracking_reward, self._get_reward_scale_by_name('waypoint_tracking_reward')
+            waypoint_tracking_reward, self._get_reward_scale_by_name('waypoint_tracking_reward'),
+            jitter_penalty, self._get_reward_scale_by_name('jitter_penalty'),
+            reverse_penalty, self._get_reward_scale_by_name('reverse_penalty')
         )
+        
+        # ==============================================================
+        # Space E: 奖励输出缩放 (Reward Output Scaling / Time Dilation)
+        # ==============================================================
+        # 目的: 补偿慢时间世界中"多收集奖励"的偏差
+        # 原理: 当 α < 1 时，仿真时间变慢，同样真实时间内收集的奖励变多
+        #       缩放: r_final = r_raw * α (α越小，单步奖励越小)
+        # 这样总奖励与真实时间成正比，保持价值函数估计的一致性
+        reward_output_scale = self.time_warper.reward_output_scale  # = α
+        self.rew_buf[:] = self.rew_buf * reward_output_scale
+        
         self.reset_buf[:] = self.check_termination(self.object_pos)
         
         #mean都是对envs维度，compute_reward 函数本身计算的是当前这个时间步获得的即时奖励
@@ -1260,13 +1702,26 @@ class LinkerHandHora(VecTask):
         # extras部分是传入ppo中的infos
         # _get_reward_scale_by_name()要更改 configs/task/LinkerHandHora.yaml中的scale
         self.extras['timestep_reward_sum'] = self.rew_buf.mean() # rew_buf 已经是各项加权求和后的总奖励，所以这里不变
+        
+        # === 奖励 (reward, 正值 scale) ===
+        self.extras['reward/rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward')).mean()
+        self.extras['reward/waypoint_tracking_reward'] = (waypoint_tracking_reward * self._get_reward_scale_by_name('waypoint_tracking_reward')).mean()
+        
+        # === 惩罚 (penalty, 负值 scale) ===
         self.extras['penalty/object_linvel_penalty'] = (object_linvel_penalty * self._get_reward_scale_by_name('obj_linvel_penalty')).mean()
-        self.extras['rotation_reward'] = (rotate_reward * self._get_reward_scale_by_name('rotate_reward')).mean()
         self.extras['penalty/torques'] = (torque_penalty * self._get_reward_scale_by_name('torque_penalty')).mean()
         self.extras['penalty/axial_tilt_penalty'] = (axial_tilt_penalty * self._get_reward_scale_by_name('axial_tilt_penalty')).mean()
         self.extras['penalty/object_position_penalty'] = (position_penalty * self._get_reward_scale_by_name('position_penalty')).mean()
         self.extras['penalty/rotate_penalty'] = (rotate_penalty * self._get_reward_scale_by_name('rotate_penalty')).mean()
         self.extras['penalty/flying_base_movement_penalty'] = (flying_base_movement_penalty * self._get_reward_scale_by_name('flying_base_movement_penalty')).mean()
+        self.extras['penalty/jitter_penalty'] = (jitter_penalty * self._get_reward_scale_by_name('jitter_penalty')).mean()
+        self.extras['penalty/reverse_penalty'] = (reverse_penalty * self._get_reward_scale_by_name('reverse_penalty')).mean()
+        
+        # === 原始值 (未加权) ===
+        self.extras['raw/jitter_penalty'] = jitter_penalty.mean()
+        self.extras['raw/reverse_penalty'] = reverse_penalty.mean()
+        self.extras['raw/angvel_ema'] = self.angvel_ema.mean()
+        
         self.extras['finger_obj_penalty(NOT USED)'] = finger_obj_penalty.mean()
         self.extras['vel/roll_angvel'] = torch.abs(object_angvel[:, 0]).mean()
         self.extras['vel/pitch_angvel'] = torch.abs(object_angvel[:, 1]).mean()
@@ -1276,8 +1731,7 @@ class LinkerHandHora(VecTask):
         self.extras['vel/old_vec_dot(HACK)'] = (object_angvel * self.rot_axis_buf).sum(-1).mean()  # 原算法：会被自转污染
         # sparse，不能在每个时间步直接对所有环境取平均值
         self.extras['rot_angle'] = rot_angle
-        # Waypoint tracking 奖励日志
-        self.extras['reward/waypoint_tracking_reward'] = (waypoint_tracking_reward * self._get_reward_scale_by_name('waypoint_tracking_reward')).mean()
+        # Waypoint tracking 额外日志
         self.extras['reward/waypoint_tracking_reward_per_env'] = waypoint_tracking_reward * self._get_reward_scale_by_name('waypoint_tracking_reward')  # 每个环境的值
         self.extras['phase/current_phase'] = self.current_phase_buf.mean()  # 平均相位 (0~2π)
         self.extras['phase/current_phase_deg'] = (self.current_phase_buf * 180 / 3.14159).mean()  # 平均相位 (度)
@@ -1289,6 +1743,9 @@ class LinkerHandHora(VecTask):
         self.extras['termination/object_below_threshold_count'] = self.termination_counts['object_below_threshold']
         self.extras['termination/pencil_tilt_count'] = self.termination_counts['pencil_tilt']
         self.extras['termination/angular_velocity_too_high_count'] = self.termination_counts['angular_velocity_too_high']
+        # 输出当前终止原因张量，供 ppo_rl_teacher 计算 survival_rate
+        # 0: 未终止, 1: max_episode_length, 2: object_below_threshold, 3: pencil_tilt, 4: angular_velocity_too_high
+        self.extras['termination_reason'] = self.current_termination_reason.clone()
 
         if self.evaluate:
             for i in range(len(self.object_type_list)):
@@ -1343,6 +1800,9 @@ class LinkerHandHora(VecTask):
                     
                     print(f"[演示] 环境{eid}本轮累计转笔圈数: {turns:.2f}, 终止原因: {reason_text}")
             self.total_rot_angle[env_ids] = 0.0
+            # [Anti-Hacking] 重置 EMA 和 jitter 惩罚相关状态
+            self.angvel_ema[env_ids] = 0.0
+            self.prev_spin_velocity[env_ids] = 0.0
             self.reset_idx(env_ids)
         self.compute_observations()
 
@@ -1353,7 +1813,6 @@ class LinkerHandHora(VecTask):
                 for i, contact_idx in enumerate(list(self.sensor_handle_indices)):
 
                     # 用于Viewer界面的可视化，对于所有sensor_handles，可视化接触力范数 > CONTACT_THRESH的刚体
-                    # debug_contacts表现的是每个分力在被TACTILE_FORCE_MAX缩放之前的状态
                     contact_norm = np.linalg.norm(self.debug_contacts[env, i])
                     if contact_norm > CONTACT_THRESH:
                         fx = self.debug_contacts[env, i, 0]
@@ -1438,7 +1897,8 @@ class LinkerHandHora(VecTask):
         self.object_rot_prev[:] = self.object_rot
         self.object_pos_prev[:] = self.object_pos
         self.ft_rot_prev[:] = self.fingertip_orientation
-        self.ft_pos_prev[:] = self.fingertip_pos
+        # 使用世界坐标系位置用于速度计算
+        self.ft_pos_prev_world[:] = self.fingertip_pos_world
         self.dof_vel_prev[:] = self.dof_vel_finite_diff
         # 保存 Flying base 的当前位置用于下一步速度计算
         if self.flying_hand_enabled:
@@ -1667,7 +2127,23 @@ class LinkerHandHora(VecTask):
         self.object_linvel = self.root_state_tensor[self.object_indices, 7:10]
         self.object_angvel = self.root_state_tensor[self.object_indices, 10:RIGID_BODY_STATES]
         self.fingertip_states = self.rigid_body_states[:, self.fingertip_handles]
-        self.fingertip_pos = self.fingertip_states[:, :, :3].reshape(self.num_envs, -1)
+        # 世界坐标系下的指尖位置 (保留用于速度计算等)
+        self.fingertip_pos_world = self.fingertip_states[:, :, :3].reshape(self.num_envs, -1)
+        
+        # ============================================================
+        # 计算相对于手部基座的指尖位置 (Base-Relative Frame)
+        # ============================================================
+        # hand_base_pos: 手部基座在世界坐标系中的位置 (num_envs, 3)
+        # 对于 Flying Hand: 这是 root_state_tensor 中的位置
+        # 对于固定基座: 同样使用 root_state_tensor（虽然固定，但保持一致性）
+        self.hand_base_pos = self.root_state_tensor[self.hand_indices, :3]  # (num_envs, 3)
+        
+        # 将每个指尖位置减去手部基座位置，得到相对位置
+        # fingertip_pos_world: (num_envs, 15) = (num_envs, 5指 * 3维)
+        # hand_base_pos: (num_envs, 3) -> repeat 5次 -> (num_envs, 15)
+        self.fingertip_pos = self.fingertip_pos_world - self.hand_base_pos.repeat(1, FINGERTIP_CNT)
+        
+        # 保持其他属性不变（使用世界坐标系）
         self.fingertip_orientation = self.fingertip_states[:, :, 3:7].reshape(self.num_envs, -1)
         self.fingertip_linvel = self.fingertip_states[:, :, 7:10].reshape(self.num_envs, -1)
         self.fingertip_angvel = self.fingertip_states[:, :, 10:RIGID_BODY_STATES].reshape(self.num_envs, -1)
@@ -1896,6 +2372,24 @@ class LinkerHandHora(VecTask):
         self.angvel_clip_max = r_config['angvelClipMax']
         self.angvel_penalty_threshold_high = r_config['angvelPenaltyThresHigh']
         self.angvel_penalty_threshold_low  = r_config['angvelPenaltyThresLow']
+        
+        # Gaussian kernel 角速度奖励参数
+        self.use_gaussian_angvel_reward = r_config.get('use_gaussian_angvel_reward', False)
+        self.target_angvel = r_config.get('target_angvel', 3.14)  # 目标角速度 (rad/s)
+        self.angvel_sigma = r_config.get('angvel_sigma', 1.0)     # 高斯核带宽
+        
+        # [Anti-Hacking] EMA 平滑参数 (仅用于速度门控)
+        self.ema_alpha = r_config.get('ema_alpha', 0.15)  # EMA 平滑系数 (较小值=更平滑)
+        
+        if self.use_gaussian_angvel_reward:
+            print(f"\n[角速度奖励] 使用 Gaussian Kernel 模式:")
+            print(f"  目标角速度: {self.target_angvel:.2f} rad/s ({self.target_angvel/(2*3.14159):.3f} Hz)")
+            print(f"  高斯核带宽 σ: {self.angvel_sigma:.2f}")
+            print(f"\n[Anti-Hacking] EMA 速度门控:")
+            print(f"  EMA α: {self.ema_alpha:.3f}")
+        else:
+            print(f"\n[角速度奖励] 使用 Clip-based 模式:")
+            print(f"  Clip 范围: [{self.angvel_clip_min:.2f}, {self.angvel_clip_max:.2f}]")
 
     def _setup_action_space_config(self, env_config):
         """
@@ -2036,7 +2530,7 @@ class LinkerHandHora(VecTask):
         hand_asset_options.disable_gravity = True
         hand_asset_options.thickness = 0.001
         hand_asset_options.angular_damping = 0.01
-        
+        # IsaacGym没有这个参数hand_asset_options.enable_self_collisions = True
         # Flying Hand 特有配置：打印加载信息
         if self.flying_hand_enabled:
             print("\n" + "="*60)
@@ -2335,7 +2829,6 @@ class LinkerHandHora(VecTask):
 
     def _init_object_pose(self):
         linker_hand_start_pose = gymapi.Transform()
-        linker_hand_start_pose.p = gymapi.Vec3(0, 0, 0)
         
         # ====================================================================
         # 手部初始 Transform 设置
@@ -2345,14 +2838,29 @@ class LinkerHandHora(VecTask):
         #   - DOF[3-5]: virtual_rx, virtual_ry, virtual_rz (旋转，欧拉角)
         #   - Transform 必须是单位变换，否则 DOF 控制的旋转会叠加到 Transform 上
         #   - 这与 interactive_tune.py 保持一致
-        # 普通模式：手固定在底座上，使用旧的 Transform 旋转
+        # 普通模式：从配置文件读取手部基座初始位置
+        #   - handBaseInit.position: [px, py, pz]
+        #   - handBaseInit.rotation: [rx, ry, rz] 欧拉角
         # ====================================================================
         if self.flying_hand_enabled:
-            # Flying Hand: 使用单位四元数，所有变换由 DOF 控制
+            # Flying Hand: 使用单位变换，所有变换由 DOF 控制
+            linker_hand_start_pose.p = gymapi.Vec3(0, 0, 0)
             linker_hand_start_pose.r = gymapi.Quat(0, 0, 0, 1)
         else:
-            # 普通模式: 保持原有的绕 Y 轴旋转 -75°
-            linker_hand_start_pose.r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), math.radians(-75))
+            # 普通模式: 从配置读取手部基座位置
+            hand_base_init = self.config['env'].get('handBaseInit', {})
+            base_pos = hand_base_init.get('position', [0.0, 0.0, 0.35])
+            base_rot = hand_base_init.get('rotation', [0.0, -1.31, 0.0])  # 欧拉角 [rx, ry, rz]
+            
+            linker_hand_start_pose.p = gymapi.Vec3(base_pos[0], base_pos[1], base_pos[2])
+            
+            # 将欧拉角转换为四元数 (ZYX 顺序)
+            rx, ry, rz = base_rot
+            quat_x = gymapi.Quat.from_axis_angle(gymapi.Vec3(1, 0, 0), rx)
+            quat_y = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), ry)
+            quat_z = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 0, 1), rz)
+            # 组合旋转: Z * Y * X
+            linker_hand_start_pose.r = quat_z * quat_y * quat_x
         
         # ====================================================================
         # 物体初始位置设置
@@ -2393,8 +2901,10 @@ class LinkerHandHora(VecTask):
             # 手悬浮在 ~0.35m，物体放在 0.65m 安全位置
             object_start_pose.p.z = self.flying_default_height + 0.1
         else:
-            # 普通模式: 使用固定高度
-            object_start_pose.p.z = 0.07
+            # 普通模式: 物体放在手上方，使用配置中的手部高度
+            hand_base_init = self.config['env'].get('handBaseInit', {})
+            base_pos = hand_base_init.get('position', [0.0, 0.0, 0.35])
+            object_start_pose.p.z = base_pos[2] + 0.2  # 手部 Z + 0.2m
         
         return linker_hand_start_pose, object_start_pose
 
@@ -2407,7 +2917,9 @@ def compute_hand_reward(
     position_penalty, position_penalty_scale: float,
     rotate_penalty, rotate_penalty_scale: float,
     flying_base_movement_penalty, flying_base_movement_penalty_scale: float,
-    waypoint_tracking_reward, waypoint_tracking_reward_scale: float
+    waypoint_tracking_reward, waypoint_tracking_reward_scale: float,
+    jitter_penalty, jitter_penalty_scale: float,
+    reverse_penalty, reverse_penalty_scale: float
 ):
     reward = rotate_reward_scale * rotate_reward
     reward = reward + object_linvel_penalty * object_linvel_penalty_scale
@@ -2417,6 +2929,10 @@ def compute_hand_reward(
     reward = reward + rotate_penalty * rotate_penalty_scale
     reward = reward + flying_base_movement_penalty * flying_base_movement_penalty_scale
     reward = reward + waypoint_tracking_reward * waypoint_tracking_reward_scale
+    # [Anti-Hacking] Jitter 和 Reverse 惩罚
+    # jitter_penalty_scale 和 reverse_penalty_scale 应为负值
+    reward = reward + jitter_penalty * jitter_penalty_scale
+    reward = reward + reverse_penalty * reverse_penalty_scale
     return reward
 
 
