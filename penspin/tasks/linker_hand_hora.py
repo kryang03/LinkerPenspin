@@ -1793,7 +1793,7 @@ class LinkerHandHora(VecTask):
                     elif reason_code == 3:
                         reason_text = f"铅笔倾倒(高度差阈值={self.pencil_tilt_threshold:.2f}m, 实际={actual_value:.3f}m)"
                     elif reason_code == 4:
-                        threshold = 10.0 * self.angvel_penalty_threshold_high
+                        threshold = 4.0 * self.target_angvel
                         reason_text = f"角速度过大(阈值={threshold:.2f}rad/s, 实际={abs(actual_value):.2f}rad/s)"
                     else:
                         reason_text = f"未知原因({reason_code})"
@@ -2036,9 +2036,9 @@ class LinkerHandHora(VecTask):
         z_deviation = torch.abs(self.init_object_z_buf - object_pos[:, -1])  # 偏离了多少（绝对值）
         reset_z = torch.greater(z_deviation, self.relative_z_drop_threshold)  # 偏离超过阈值
         
-        # 新增：角速度过大的early termination（超过最高转速阈值的10倍）
+        # 新增：角速度过大的early termination（超过高斯核速度值的4倍）
         # 用于过滤初始化时发生碰撞导致的异常高速旋转
-        angvel_too_high = torch.greater(torch.abs(self.current_angvel), 10.0 * self.angvel_penalty_threshold_high)
+        angvel_too_high = torch.greater(torch.abs(self.current_angvel), 4.0 * self.target_angvel)
         
         resets = reset_z
         

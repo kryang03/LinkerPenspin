@@ -1,0 +1,569 @@
+
+================================================================================
+Optuna 超参数优化 - RL Teacher PPO (统一架构)
+================================================================================
+GPU ID:           0
+试验次数:         40
+每次训练步数:     400,000,000
+数据库:           sqlite:///optuna/hpo_TP_V4.db
+Study名称:        TP_V4
+加载已有study:    True
+架构说明:         SpaceE 统一架构 (alpha_start 作为搜索参数)
+  alpha_start:    [0.25, 1.0] (Optuna 搜索)
+  alpha_end:      1.0 (固定)
+  注: alpha_start=1.0 等效于原 SpaceA Baseline
+================================================================================
+
+[I 2025-12-10 20:16:58,987] A new study created in RDB with name: TP_V4
+Study状态: 已加载
+
+开始优化...
+
+  0%|          | 0/40 [00:00<?, ?it/s][Space E] Alpha: 0.531 -> 1.0
+
+================================================================================
+[Optuna Trial 0] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.5309050891355218
+  learning_rate                  = 0.0008927180304353628
+  weight_decay                   = 2.6975154833351135e-05
+  gamma                          = 0.985
+  tau                            = 0.85
+  e_clip                         = 0.1
+  entropy_coef                   = 0.0022838315689740368
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.02896849809425902
+  kl_adaptive_factor             = 1.1
+  min_lr                         = 8.168455894760166e-06
+  mini_epochs                    = 9
+  minibatch_size                 = 32768
+  grad_norm                      = 0.5
+  num_envs                       = 8192
+  horizon_length                 = 24
+  controller_pgain               = 15.959978999253819
+  controller_dgain               = 0.19395245130287272
+  controller_torque_limit        = 7.05269907953647
+  controller_action_scale        = 0.11081067456177209
+  target_angvel                  = 6.488152939379115
+  angvel_sigma                   = 1.4951769101112702
+  rotate_reward_scale            = 1.5343885211152184
+  obj_linvel_penalty_scale       = -0.06360193968818267
+  torque_penalty_scale           = -0.03223660055199949
+  rotate_penalty_scale           = -0.0506216573469027
+  axial_tilt_penalty_scale       = -2.188288923910589
+  axial_tilt_threshold           = 0.020401360423556215
+  position_penalty_scale         = -0.19065794413134407
+  waypoint_tracking_reward_scale = 5.924272277627635
+  waypoint_sigma                 = 0.3887463122728867
+  log_scale_beta                 = 5.538363351847245
+  ema_alpha                      = 0.2878997883128378
+  jitter_penalty_scale           = -0.6051726495723512
+  reverse_penalty_scale          = -1.1031500317833722
+输出目录: outputs/TP_V4/optuna_trial_0000
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         46.8637
+  Success Rate:        0.1841
+  Mean Rot Angle(rad): 3.8384
+  Composite Score:     449.11
+    = 1.0×46.86 + 100.0×0.1841 + 100.0×3.8384
+
+================================================================================
+[Optuna Trial 0] 训练完成
+================================================================================
+
+                                      [I 2025-12-10 22:58:22,292] Trial 0 finished with value: 449.11370000000005 and parameters: {'alpha_start': 0.5309050891355218, 'learning_rate': 0.0008927180304353628, 'weight_decay': 2.6975154833351135e-05, 'gamma': 0.985, 'tau': 0.85, 'e_clip': 0.1, 'entropy_coef': 0.0022838315689740368, 'critic_coef': 1.0, 'kl_threshold': 0.02896849809425902, 'kl_adaptive_factor': 1.1, 'min_lr': 8.168455894760166e-06, 'mini_epochs': 9, 'minibatch_size': 32768, 'grad_norm': 0.5, 'num_envs': 8192, 'horizon_length': 24, 'controller_pgain': 15.959978999253819, 'controller_dgain': 0.19395245130287272, 'controller_torque_limit': 7.05269907953647, 'controller_action_scale': 0.11081067456177209, 'target_angvel': 6.488152939379115, 'angvel_sigma': 1.4951769101112702, 'rotate_reward_scale': 1.5343885211152184, 'obj_linvel_penalty_scale': -0.06360193968818267, 'torque_penalty_scale': -0.03223660055199949, 'rotate_penalty_scale': -0.0506216573469027, 'axial_tilt_penalty_scale': -2.188288923910589, 'axial_tilt_threshold': 0.020401360423556215, 'position_penalty_scale': -0.19065794413134407, 'waypoint_tracking_reward_scale': 5.924272277627635, 'waypoint_sigma': 0.3887463122728867, 'log_scale_beta': 5.538363351847245, 'ema_alpha': 0.2878997883128378, 'jitter_penalty_scale': -0.6051726495723512, 'reverse_penalty_scale': -1.1031500317833722}. Best is trial 0 with value: 449.11370000000005.
+  0%|          | 0/40 [2:41:23<?, ?it/s]Best trial: 0. Best value: 449.114:   0%|          | 0/40 [2:41:23<?, ?it/s]Best trial: 0. Best value: 449.114:   2%|▎         | 1/40 [2:41:23<104:54:08, 9683.31s/it][Space E] Alpha: 0.941 -> 1.0
+
+================================================================================
+[Optuna Trial 1] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.9414056762673376
+  learning_rate                  = 0.00012260057359187533
+  weight_decay                   = 7.851504189403359e-06
+  gamma                          = 0.992
+  tau                            = 0.85
+  e_clip                         = 0.4
+  entropy_coef                   = 0.006405713385076602
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.05889372875702844
+  kl_adaptive_factor             = 1.15
+  min_lr                         = 1.7050539260269282e-06
+  mini_epochs                    = 10
+  minibatch_size                 = 8192
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 16
+  controller_pgain               = 21.272182233898935
+  controller_dgain               = 0.4923532718776038
+  controller_torque_limit        = 6.683831592708488
+  controller_action_scale        = 0.13396770259681928
+  target_angvel                  = 7.975182385457563
+  angvel_sigma                   = 1.5227328293819942
+  rotate_reward_scale            = 1.9275410183585495
+  obj_linvel_penalty_scale       = -0.19618713098838572
+  torque_penalty_scale           = -0.03676325719020087
+  rotate_penalty_scale           = -0.14528562214698987
+  axial_tilt_penalty_scale       = -1.8635895887362195
+  axial_tilt_threshold           = 0.016287119621526534
+  position_penalty_scale         = -0.19828586176705942
+  waypoint_tracking_reward_scale = 9.537832369630465
+  waypoint_sigma                 = 0.12223812478508372
+  log_scale_beta                 = 3.167488999731593
+  ema_alpha                      = 0.2511102277086097
+  jitter_penalty_scale           = -1.2712018345083775
+  reverse_penalty_scale          = -1.8845301352568105
+输出目录: outputs/TP_V4/optuna_trial_0001
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         -1.9775
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 0.1323
+  Composite Score:     11.25
+    = 1.0×-1.98 + 100.0×0.0000 + 100.0×0.1323
+
+================================================================================
+[Optuna Trial 1] 训练完成
+================================================================================
+
+                                                                                          [I 2025-12-11 02:03:51,159] Trial 1 finished with value: 11.252500000000001 and parameters: {'alpha_start': 0.9414056762673376, 'learning_rate': 0.00012260057359187533, 'weight_decay': 7.851504189403359e-06, 'gamma': 0.992, 'tau': 0.85, 'e_clip': 0.4, 'entropy_coef': 0.006405713385076602, 'critic_coef': 2.0, 'kl_threshold': 0.05889372875702844, 'kl_adaptive_factor': 1.15, 'min_lr': 1.7050539260269282e-06, 'mini_epochs': 10, 'minibatch_size': 8192, 'grad_norm': 1.0, 'num_envs': 8192, 'horizon_length': 16, 'controller_pgain': 21.272182233898935, 'controller_dgain': 0.4923532718776038, 'controller_torque_limit': 6.683831592708488, 'controller_action_scale': 0.13396770259681928, 'target_angvel': 7.975182385457563, 'angvel_sigma': 1.5227328293819942, 'rotate_reward_scale': 1.9275410183585495, 'obj_linvel_penalty_scale': -0.19618713098838572, 'torque_penalty_scale': -0.03676325719020087, 'rotate_penalty_scale': -0.14528562214698987, 'axial_tilt_penalty_scale': -1.8635895887362195, 'axial_tilt_threshold': 0.016287119621526534, 'position_penalty_scale': -0.19828586176705942, 'waypoint_tracking_reward_scale': 9.537832369630465, 'waypoint_sigma': 0.12223812478508372, 'log_scale_beta': 3.167488999731593, 'ema_alpha': 0.2511102277086097, 'jitter_penalty_scale': -1.2712018345083775, 'reverse_penalty_scale': -1.8845301352568105}. Best is trial 0 with value: 449.11370000000005.
+Best trial: 0. Best value: 449.114:   2%|▎         | 1/40 [5:46:52<104:54:08, 9683.31s/it]Best trial: 0. Best value: 449.114:   2%|▎         | 1/40 [5:46:52<104:54:08, 9683.31s/it]Best trial: 0. Best value: 449.114:   5%|▌         | 2/40 [5:46:52<111:11:18, 10533.64s/it][Space E] Alpha: 0.467 -> 1.0
+
+================================================================================
+[Optuna Trial 2] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.467313589685326
+  learning_rate                  = 0.00014495102383254693
+  weight_decay                   = 4.2527284905297604e-05
+  gamma                          = 0.992
+  tau                            = 0.9
+  e_clip                         = 0.1
+  entropy_coef                   = 0.003989754520383794
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.044773805785584736
+  kl_adaptive_factor             = 1.1
+  min_lr                         = 7.688106801474963e-05
+  mini_epochs                    = 6
+  minibatch_size                 = 16384
+  grad_norm                      = 0.25
+  num_envs                       = 8192
+  horizon_length                 = 16
+  controller_pgain               = 19.92433634173866
+  controller_dgain               = 0.37620556045298764
+  controller_torque_limit        = 5.154436253749968
+  controller_action_scale        = 0.09950525249656281
+  target_angvel                  = 9.633063543866616
+  angvel_sigma                   = 1.2395618906669723
+  rotate_reward_scale            = 1.644894872091223
+  obj_linvel_penalty_scale       = -0.12658208595836556
+  torque_penalty_scale           = -0.01043048637668198
+  rotate_penalty_scale           = -0.11369170927327493
+  axial_tilt_penalty_scale       = -1.8278644525941214
+  axial_tilt_threshold           = 0.02523239230657435
+  position_penalty_scale         = -0.25247249120152004
+  waypoint_tracking_reward_scale = 8.641081743059297
+  waypoint_sigma                 = 0.1660797591061237
+  log_scale_beta                 = 4.609987898858266
+  ema_alpha                      = 0.22670594215217893
+  jitter_penalty_scale           = -0.9642253159252415
+  reverse_penalty_scale          = -1.8645653449183874
+输出目录: outputs/TP_V4/optuna_trial_0002
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         -0.6120
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 0.1496
+  Composite Score:     14.35
+    = 1.0×-0.61 + 100.0×0.0000 + 100.0×0.1496
+
+================================================================================
+[Optuna Trial 2] 训练完成
+================================================================================
+
+                                                                                           [I 2025-12-11 04:25:06,196] Trial 2 finished with value: 14.348 and parameters: {'alpha_start': 0.467313589685326, 'learning_rate': 0.00014495102383254693, 'weight_decay': 4.2527284905297604e-05, 'gamma': 0.992, 'tau': 0.9, 'e_clip': 0.1, 'entropy_coef': 0.003989754520383794, 'critic_coef': 1.0, 'kl_threshold': 0.044773805785584736, 'kl_adaptive_factor': 1.1, 'min_lr': 7.688106801474963e-05, 'mini_epochs': 6, 'minibatch_size': 16384, 'grad_norm': 0.25, 'num_envs': 8192, 'horizon_length': 16, 'controller_pgain': 19.92433634173866, 'controller_dgain': 0.37620556045298764, 'controller_torque_limit': 5.154436253749968, 'controller_action_scale': 0.09950525249656281, 'target_angvel': 9.633063543866616, 'angvel_sigma': 1.2395618906669723, 'rotate_reward_scale': 1.644894872091223, 'obj_linvel_penalty_scale': -0.12658208595836556, 'torque_penalty_scale': -0.01043048637668198, 'rotate_penalty_scale': -0.11369170927327493, 'axial_tilt_penalty_scale': -1.8278644525941214, 'axial_tilt_threshold': 0.02523239230657435, 'position_penalty_scale': -0.25247249120152004, 'waypoint_tracking_reward_scale': 8.641081743059297, 'waypoint_sigma': 0.1660797591061237, 'log_scale_beta': 4.609987898858266, 'ema_alpha': 0.22670594215217893, 'jitter_penalty_scale': -0.9642253159252415, 'reverse_penalty_scale': -1.8645653449183874}. Best is trial 0 with value: 449.11370000000005.
+Best trial: 0. Best value: 449.114:   5%|▌         | 2/40 [8:08:07<111:11:18, 10533.64s/it]Best trial: 0. Best value: 449.114:   5%|▌         | 2/40 [8:08:07<111:11:18, 10533.64s/it]Best trial: 0. Best value: 449.114:   8%|▊         | 3/40 [8:08:07<98:36:04, 9593.64s/it]  [Space E] Alpha: 0.876 -> 1.0
+
+================================================================================
+[Optuna Trial 3] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.8764768716919284
+  learning_rate                  = 0.00020930522257520926
+  weight_decay                   = 7.682251390838016e-06
+  gamma                          = 0.992
+  tau                            = 0.95
+  e_clip                         = 0.3
+  entropy_coef                   = 0.00338746445735181
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.026571797195491208
+  kl_adaptive_factor             = 1.15
+  min_lr                         = 3.0458224385894074e-06
+  mini_epochs                    = 4
+  minibatch_size                 = 16384
+  grad_norm                      = 2.0
+  num_envs                       = 8192
+  horizon_length                 = 16
+  controller_pgain               = 13.093819544935634
+  controller_dgain               = 0.22273292134257616
+  controller_torque_limit        = 7.695662565581237
+  controller_action_scale        = 0.12245003417617129
+  target_angvel                  = 6.036788206466518
+  angvel_sigma                   = 1.1014715428660322
+  rotate_reward_scale            = 2.1635017691080556
+  obj_linvel_penalty_scale       = -0.1992407624230672
+  torque_penalty_scale           = -0.03517575845747504
+  rotate_penalty_scale           = -0.06768993159501208
+  axial_tilt_penalty_scale       = -1.8081048023073067
+  axial_tilt_threshold           = 0.02303922519005201
+  position_penalty_scale         = -0.25514613810788805
+  waypoint_tracking_reward_scale = 8.56089610673768
+  waypoint_sigma                 = 0.11778216237381603
+  log_scale_beta                 = 2.6150980380352404
+  ema_alpha                      = 0.24929828102360482
+  jitter_penalty_scale           = -0.8503671009527853
+  reverse_penalty_scale          = -0.7261648842587332
+输出目录: outputs/TP_V4/optuna_trial_0003
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         -1.2236
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 0.0967
+  Composite Score:     8.45
+    = 1.0×-1.22 + 100.0×0.0000 + 100.0×0.0967
+
+================================================================================
+[Optuna Trial 3] 训练完成
+================================================================================
+
+                                                                                         [I 2025-12-11 06:52:03,100] Trial 3 finished with value: 8.4464 and parameters: {'alpha_start': 0.8764768716919284, 'learning_rate': 0.00020930522257520926, 'weight_decay': 7.682251390838016e-06, 'gamma': 0.992, 'tau': 0.95, 'e_clip': 0.3, 'entropy_coef': 0.00338746445735181, 'critic_coef': 1.0, 'kl_threshold': 0.026571797195491208, 'kl_adaptive_factor': 1.15, 'min_lr': 3.0458224385894074e-06, 'mini_epochs': 4, 'minibatch_size': 16384, 'grad_norm': 2.0, 'num_envs': 8192, 'horizon_length': 16, 'controller_pgain': 13.093819544935634, 'controller_dgain': 0.22273292134257616, 'controller_torque_limit': 7.695662565581237, 'controller_action_scale': 0.12245003417617129, 'target_angvel': 6.036788206466518, 'angvel_sigma': 1.1014715428660322, 'rotate_reward_scale': 2.1635017691080556, 'obj_linvel_penalty_scale': -0.1992407624230672, 'torque_penalty_scale': -0.03517575845747504, 'rotate_penalty_scale': -0.06768993159501208, 'axial_tilt_penalty_scale': -1.8081048023073067, 'axial_tilt_threshold': 0.02303922519005201, 'position_penalty_scale': -0.25514613810788805, 'waypoint_tracking_reward_scale': 8.56089610673768, 'waypoint_sigma': 0.11778216237381603, 'log_scale_beta': 2.6150980380352404, 'ema_alpha': 0.24929828102360482, 'jitter_penalty_scale': -0.8503671009527853, 'reverse_penalty_scale': -0.7261648842587332}. Best is trial 0 with value: 449.11370000000005.
+Best trial: 0. Best value: 449.114:   8%|▊         | 3/40 [10:35:04<98:36:04, 9593.64s/it]Best trial: 0. Best value: 449.114:   8%|▊         | 3/40 [10:35:04<98:36:04, 9593.64s/it]Best trial: 0. Best value: 449.114:  10%|█         | 4/40 [10:35:04<92:52:11, 9286.99s/it][Space E] Alpha: 0.743 -> 1.0
+
+================================================================================
+[Optuna Trial 4] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.7432096692252576
+  learning_rate                  = 0.00037009106769118406
+  weight_decay                   = 6.203614068053569e-06
+  gamma                          = 0.995
+  tau                            = 0.9
+  e_clip                         = 0.2
+  entropy_coef                   = 0.006057164806830538
+  critic_coef                    = 2.0
+  kl_threshold                   = 0.020751968917307524
+  kl_adaptive_factor             = 1.15
+  min_lr                         = 1.0737748632897975e-06
+  mini_epochs                    = 10
+  minibatch_size                 = 16384
+  grad_norm                      = 0.25
+  num_envs                       = 8192
+  horizon_length                 = 32
+  controller_pgain               = 24.17001206409015
+  controller_dgain               = 0.4632134085037378
+  controller_torque_limit        = 6.710183510268095
+  controller_action_scale        = 0.0868023545639538
+  target_angvel                  = 8.46002890679668
+  angvel_sigma                   = 1.9900538501042633
+  rotate_reward_scale            = 1.640084015236524
+  obj_linvel_penalty_scale       = -0.12225055214543949
+  torque_penalty_scale           = -0.013678807842161338
+  rotate_penalty_scale           = -0.03888470733686933
+  axial_tilt_penalty_scale       = -1.802984259004732
+  axial_tilt_threshold           = 0.024049681679742183
+  position_penalty_scale         = -0.22810176975604896
+  waypoint_tracking_reward_scale = 6.467959221322467
+  waypoint_sigma                 = 0.32946362752705005
+  log_scale_beta                 = 5.765737065414675
+  ema_alpha                      = 0.27341446371602074
+  jitter_penalty_scale           = -0.5867594474435287
+  reverse_penalty_scale          = -1.2329864017085934
+输出目录: outputs/TP_V4/optuna_trial_0004
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         -0.7962
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 0.2254
+  Composite Score:     21.74
+    = 1.0×-0.80 + 100.0×0.0000 + 100.0×0.2254
+
+================================================================================
+[Optuna Trial 4] 训练完成
+================================================================================
+
+                                                                                          [I 2025-12-11 09:43:28,206] Trial 4 finished with value: 21.7438 and parameters: {'alpha_start': 0.7432096692252576, 'learning_rate': 0.00037009106769118406, 'weight_decay': 6.203614068053569e-06, 'gamma': 0.995, 'tau': 0.9, 'e_clip': 0.2, 'entropy_coef': 0.006057164806830538, 'critic_coef': 2.0, 'kl_threshold': 0.020751968917307524, 'kl_adaptive_factor': 1.15, 'min_lr': 1.0737748632897975e-06, 'mini_epochs': 10, 'minibatch_size': 16384, 'grad_norm': 0.25, 'num_envs': 8192, 'horizon_length': 32, 'controller_pgain': 24.17001206409015, 'controller_dgain': 0.4632134085037378, 'controller_torque_limit': 6.710183510268095, 'controller_action_scale': 0.0868023545639538, 'target_angvel': 8.46002890679668, 'angvel_sigma': 1.9900538501042633, 'rotate_reward_scale': 1.640084015236524, 'obj_linvel_penalty_scale': -0.12225055214543949, 'torque_penalty_scale': -0.013678807842161338, 'rotate_penalty_scale': -0.03888470733686933, 'axial_tilt_penalty_scale': -1.802984259004732, 'axial_tilt_threshold': 0.024049681679742183, 'position_penalty_scale': -0.22810176975604896, 'waypoint_tracking_reward_scale': 6.467959221322467, 'waypoint_sigma': 0.32946362752705005, 'log_scale_beta': 5.765737065414675, 'ema_alpha': 0.27341446371602074, 'jitter_penalty_scale': -0.5867594474435287, 'reverse_penalty_scale': -1.2329864017085934}. Best is trial 0 with value: 449.11370000000005.
+Best trial: 0. Best value: 449.114:  10%|█         | 4/40 [13:26:29<92:52:11, 9286.99s/it]Best trial: 0. Best value: 449.114:  10%|█         | 4/40 [13:26:29<92:52:11, 9286.99s/it]Best trial: 0. Best value: 449.114:  12%|█▎        | 5/40 [13:26:29<93:47:22, 9646.92s/it][Space E] Alpha: 0.626 -> 1.0
+
+================================================================================
+[Optuna Trial 5] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.6261372210153997
+  learning_rate                  = 0.0006284853792838699
+  weight_decay                   = 2.233232477616155e-05
+  gamma                          = 0.992
+  tau                            = 0.95
+  e_clip                         = 0.4
+  entropy_coef                   = 0.001213501749573346
+  critic_coef                    = 1.0
+  kl_threshold                   = 0.017148356910935705
+  kl_adaptive_factor             = 1.15
+  min_lr                         = 1.4814770564945428e-06
+  mini_epochs                    = 4
+  minibatch_size                 = 32768
+  grad_norm                      = 0.5
+  num_envs                       = 8192
+  horizon_length                 = 16
+  controller_pgain               = 13.019932957449457
+  controller_dgain               = 0.16140783453695587
+  controller_torque_limit        = 7.887945244033775
+  controller_action_scale        = 0.1385186084358544
+  target_angvel                  = 8.783896824374793
+  angvel_sigma                   = 1.4089529444142699
+  rotate_reward_scale            = 1.6732943200708457
+  obj_linvel_penalty_scale       = -0.1765344435993371
+  torque_penalty_scale           = -0.03249271305506214
+  rotate_penalty_scale           = -0.06761600029408192
+  axial_tilt_penalty_scale       = -1.7854040772999378
+  axial_tilt_threshold           = 0.023203947534354626
+  position_penalty_scale         = -0.24401322061081143
+  waypoint_tracking_reward_scale = 9.774326403315971
+  waypoint_sigma                 = 0.3030218591774343
+  log_scale_beta                 = 4.103301341324105
+  ema_alpha                      = 0.22234414924687046
+  jitter_penalty_scale           = -1.08039993757221
+  reverse_penalty_scale          = -1.6284035157482637
+输出目录: outputs/TP_V4/optuna_trial_0005
+================================================================================
+
+
+特权信息 (Privileged Information) 维度配置:
+================================================================================
+名称                             索引范围            维度       状态
+--------------------------------------------------------------------------------
+obj_position                   [ 0: 3]         3        [固定]
+obj_mass                       [ 3: 4]         1        [固定]
+obj_friction                   [ 4: 5]         1        [固定]
+obj_com                        [ 5: 8]         3        [固定]
+--------------------------------------------------------------------------------
+obj_orientation                [ 8:12]         4        ✓
+obj_linvel                     [12:15]         3        ✓
+obj_angvel                     [15:18]         3        ✓
+fingertip_position             [18:33]         15       ✓
+fingertip_linvel               [33:48]         15       ✓
+obj_restitution                [48:49]         1        ✓
+tactile                        [49:64]         15       ✓
+--------------------------------------------------------------------------------
+总计: 11 项启用, 实际维度 = 64, 缓冲区大小 = 64
+================================================================================
+
+RunningMeanStd:  (126,)
+RunningMeanStd:  64
+RunningMeanStd:  3
+RunningMeanStd:  (1,)
+
+================================================================================
+
+训练指标:
+  Best Reward:         -0.9159
+  Success Rate:        0.0000
+  Mean Rot Angle(rad): 0.1333
+  Composite Score:     12.41
+    = 1.0×-0.92 + 100.0×0.0000 + 100.0×0.1333
+
+================================================================================
+[Optuna Trial 5] 训练完成
+================================================================================
+
+                                                                                          [I 2025-12-11 11:54:53,215] Trial 5 finished with value: 12.4141 and parameters: {'alpha_start': 0.6261372210153997, 'learning_rate': 0.0006284853792838699, 'weight_decay': 2.233232477616155e-05, 'gamma': 0.992, 'tau': 0.95, 'e_clip': 0.4, 'entropy_coef': 0.001213501749573346, 'critic_coef': 1.0, 'kl_threshold': 0.017148356910935705, 'kl_adaptive_factor': 1.15, 'min_lr': 1.4814770564945428e-06, 'mini_epochs': 4, 'minibatch_size': 32768, 'grad_norm': 0.5, 'num_envs': 8192, 'horizon_length': 16, 'controller_pgain': 13.019932957449457, 'controller_dgain': 0.16140783453695587, 'controller_torque_limit': 7.887945244033775, 'controller_action_scale': 0.1385186084358544, 'target_angvel': 8.783896824374793, 'angvel_sigma': 1.4089529444142699, 'rotate_reward_scale': 1.6732943200708457, 'obj_linvel_penalty_scale': -0.1765344435993371, 'torque_penalty_scale': -0.03249271305506214, 'rotate_penalty_scale': -0.06761600029408192, 'axial_tilt_penalty_scale': -1.7854040772999378, 'axial_tilt_threshold': 0.023203947534354626, 'position_penalty_scale': -0.24401322061081143, 'waypoint_tracking_reward_scale': 9.774326403315971, 'waypoint_sigma': 0.3030218591774343, 'log_scale_beta': 4.103301341324105, 'ema_alpha': 0.22234414924687046, 'jitter_penalty_scale': -1.08039993757221, 'reverse_penalty_scale': -1.6284035157482637}. Best is trial 0 with value: 449.11370000000005.
+Best trial: 0. Best value: 449.114:  12%|█▎        | 5/40 [15:37:54<93:47:22, 9646.92s/it]Best trial: 0. Best value: 449.114:  12%|█▎        | 5/40 [15:37:54<93:47:22, 9646.92s/it]Best trial: 0. Best value: 449.114:  15%|█▌        | 6/40 [15:37:54<85:27:07, 9047.87s/it][Space E] Alpha: 0.517 -> 1.0
+
+================================================================================
+[Optuna Trial 6] 开始训练
+================================================================================
+试验参数:
+  alpha_start                    = 0.5169795089884461
+  learning_rate                  = 0.0005725931002475602
+  weight_decay                   = 5.168487770117261e-06
+  gamma                          = 0.995
+  tau                            = 0.85
+  e_clip                         = 0.1
+  entropy_coef                   = 0.005310950686365516
+  critic_coef                    = 0.5
+  kl_threshold                   = 0.05306191393142502
+  kl_adaptive_factor             = 1.15
+  min_lr                         = 1.3840044764106214e-06
+  mini_epochs                    = 8
+  minibatch_size                 = 32768
+  grad_norm                      = 1.0
+  num_envs                       = 8192
+  horizon_length                 = 24
+  controller_pgain               = 24.495477329710887
+  controller_dgain               = 0.5574077888802287
+  controller_torque_limit        = 5.58737340436789
+  controller_action_scale        = 0.08485529106126158
+  target_angvel                  = 6.403112005509707
+  angvel_sigma                   = 1.0182218256515498
+  rotate_reward_scale            = 1.5944429607559285
+  obj_linvel_penalty_scale       = -0.09754898398754647
+  torque_penalty_scale           = -0.03786434054619313
+  rotate_penalty_scale           = -0.1021536554559358
+  axial_tilt_penalty_scale       = -1.6551246890305453
+  axial_tilt_threshold           = 0.010465438714716517
+  position_penalty_scale         = -0.13710630348221284
+  waypoint_tracking_reward_scale = 6.409273873867
+  waypoint_sigma                 = 0.07372098622001282
+  log_scale_beta                 = 5.028791574866979
+  ema_alpha                      = 0.2257885693559768
+  jitter_penalty_scale           = -0.622527986472947
+  reverse_penalty_scale          = -0.8973934342941714
+输出目录: outputs/TP_V4/optuna_trial_0006
+================================================================================
+

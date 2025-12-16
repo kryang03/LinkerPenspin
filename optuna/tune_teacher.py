@@ -97,7 +97,7 @@ def objective(trial: optuna.trial.Trial, args) -> float:
         "task.env.curriculum.use_adaptive_threshold=True",
     ])
     
-    print(f"[Space E] Alpha: {alpha_start:.3f} -> 1.0")
+    print(f"\n[Space E] Alpha: {alpha_start:.3f} -> 1.0")
     if alpha_start >= 0.99:
         print("  (等效于 SpaceA Baseline: 无物理缩放)")
     
@@ -224,14 +224,17 @@ def objective(trial: optuna.trial.Trial, args) -> float:
     
     # 使用 Gaussian kernel 角速度奖励
     hpo_overrides.append("task.env.reward.use_gaussian_angvel_reward=True")
-    
+#   target_angvel                  = 5.122554395138993
+#   angvel_sigma                   = 1.6564507699318414
+#   target_angvel                  = 5.1136025249167005
+#   angvel_sigma                   = 1.9042321612411715    
     # Gaussian kernel 参数
     # 目标角速度: π rad/s ≈ 0.5 圈/s 是一个合理的起点
-    target_angvel = trial.suggest_float("target_angvel", 6, 10)  # 4.0 ~ 6.0 rad/s
+    target_angvel = trial.suggest_float("target_angvel", 5, 6.5)  # 4.0 ~ 6.0 rad/s
     hpo_overrides.append(f"task.env.reward.target_angvel={target_angvel}")
     
     # 高斯核带宽 σ: 越小奖励越陡峭
-    angvel_reward_sigma = trial.suggest_float("angvel_sigma", 1.0, 2.0)
+    angvel_reward_sigma = trial.suggest_float("angvel_sigma", 1.3, 2.0)
     hpo_overrides.append(f"task.env.reward.angvel_sigma={angvel_reward_sigma}")
     
     # 2. 奖励权重相关 (Reward Scales)

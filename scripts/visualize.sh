@@ -17,8 +17,8 @@
 # 使用“空命令” (:) 配合 Here Document 来实现类似的效果。这告诉 Shell：“把这段内容当作输入传给空命令（即什么都不做）”
 # BLOCK 可以替换成任何你喜欢的结束标识符（如 EOF, COMMENT 等），但必须保证开始和结束的标识符一致，且结束标识符必须顶格写
 : <<'BLOCK'
-scripts/visualize.sh outputs/TP_V3/optuna_trial_0000/teacher_nn 0.4
-scripts/visualize.sh outputs/TP_V3/optuna_trial_0001/teacher_nn 1.0
+scripts/visualize.sh outputs/TP_V4/optuna_trial_0000/teacher_nn 0.4
+scripts/visualize.sh outputs/TP_V3/optuna_trial_0006/teacher_nn 1.0
 ============================================================
 BLOCK
 # CHECKLIST

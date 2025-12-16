@@ -350,7 +350,7 @@ class LinkerHandGrasp(LinkerHandHora):
         quat_y = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), ry)
         quat_z = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 0, 1), rz)
         # 组合旋转: Z * Y * X
-        linker_hand_start_pose.r = quat_z * quat_y * quat_x
+        linker_hand_start_pose.r = quat_x * quat_y * quat_z
         
         if not self.disable_flying_hand:
             # Flying Hand 模式：使用单位变换，因为虚拟关节会控制位置

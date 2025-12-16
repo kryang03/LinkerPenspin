@@ -26,7 +26,7 @@ set -e
 GPU_ID=${1:-0}
 N_TRIALS=${2:-40}
 MAX_STEPS=${3:-400000000}
-STUDY_NAME=${4:-TP_V3}  # 统一架构版本
+STUDY_NAME=${4:-TP_V5}  # 统一架构版本
 
 echo "========================================"
 echo "RL Teacher 超参数优化 (统一架构)"
